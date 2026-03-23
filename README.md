@@ -35,6 +35,17 @@ After that, Vercel will automatically:
 - add the preview URL to the GitHub pull request
 - deploy `main` to the production domain
 
+Set these Vercel environment variables for the web app:
+
+- `Preview`
+  - `NEXT_PUBLIC_API_BASE_URL=https://your-staging-api.onrender.com`
+- `Production`
+  - `NEXT_PUBLIC_API_BASE_URL=https://your-production-api.onrender.com`
+- `Development`
+  - `NEXT_PUBLIC_API_BASE_URL=http://localhost:4000`
+
+The web app reads this variable to decide which API base URL to call in each environment.
+
 ### API deployment with Render
 
 Use the root-level `render.yaml` blueprint to create two Render services:
