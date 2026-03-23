@@ -2,8 +2,17 @@ name: CD
 
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        description: Deployment target
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
   push:
     branches:
+      - develop
       - main
 
 permissions:
@@ -14,13 +23,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    name: Deploy via webhook
+  changes:
+    name: Detect changed apps
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      api: ${{ steps.filter.outputs.api }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            web:
+              - 'apps/web/**'
+              - 'packages/ui/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'tsconfig.base.json'
+            api:
+              - 'apps/api/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'tsconfig.base.json'
+
+  web:
+    name: Validate web for deploy
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    environment: production
-    env:
-      DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
 
     steps:
       - name: Checkout repository
@@ -35,18 +71,86 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Lint web
+        run: npm run lint --workspace @pinequest/web
 
-      - name: Build
-        run: npm run build
+      - name: Build web
+        run: npm run build --workspace @pinequest/web
 
-      - name: Skip when deploy secret is missing
-        if: env.DEPLOY_WEBHOOK_URL == ''
-        run: |
-          echo "DEPLOY_WEBHOOK_URL secret is not configured."
-          echo "Add it in GitHub repository settings to enable automatic deploys."
+  api:
+    name: Validate API for deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
 
-      - name: Trigger deployment webhook
-        if: env.DEPLOY_WEBHOOK_URL != ''
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint API
+        run: npm run lint --workspace @pinequest/api --if-present
+
+      - name: Build API
+        run: npm run build --workspace @pinequest/api
+
+  deploy-staging:
+    name: Deploy to staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs:
+      - changes
+      - web
+      - api
+    if: |
+      always() &&
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
+        (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
+      ) &&
+      needs.changes.result == 'success' &&
+      (needs.web.result == 'success' || needs.web.result == 'skipped') &&
+      (needs.api.result == 'success' || needs.api.result == 'skipped') &&
+      (needs.changes.outputs.web == 'true' || needs.changes.outputs.api == 'true')
+    environment: staging
+    env:
+      DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+
+    steps:
+      - name: Trigger staging deployment webhook
+        run: curl --fail --silent --show-error --location --request POST "$DEPLOY_WEBHOOK_URL"
+
+  deploy-production:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs:
+      - changes
+      - web
+      - api
+    if: |
+      always() &&
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
+      ) &&
+      needs.changes.result == 'success' &&
+      (needs.web.result == 'success' || needs.web.result == 'skipped') &&
+      (needs.api.result == 'success' || needs.api.result == 'skipped') &&
+      (needs.changes.outputs.web == 'true' || needs.changes.outputs.api == 'true')
+    environment: production
+    env:
+      DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+
+    steps:
+      - name: Trigger production deployment webhook
         run: curl --fail --silent --show-error --location --request POST "$DEPLOY_WEBHOOK_URL"
