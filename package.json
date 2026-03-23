@@ -2,12 +2,18 @@
   "name": "pinequest-s3-e2-team-9",
   "version": "1.0.0",
   "private": true,
-  "description": "Next.js app for pinequest-s3-e2-team-9",
+  "description": "Monorepo for pinequest-s3-e2-team-9",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint ."
+    "dev": "npm run dev --workspace @pinequest/web",
+    "dev:api": "npm run dev --workspace @pinequest/api",
+    "build": "npm run build --workspaces --if-present",
+    "start": "npm run start --workspace @pinequest/web",
+    "start:api": "npm run start --workspace @pinequest/api",
+    "lint": "npm run lint --workspaces --if-present"
   },
   "repository": {
     "type": "git",
@@ -20,17 +26,5 @@
     "url": "https://github.com/pinecone-studio/pinequest-s3-e2-team-9/issues"
   },
   "homepage": "https://github.com/pinecone-studio/pinequest-s3-e2-team-9#readme",
-  "dependencies": {
-    "next": "^16.2.1",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
-  },
-  "devDependencies": {
-    "@types/node": "^25.5.0",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.1",
-    "typescript": "^5.9.3"
-  }
+  "dependencies": {}
 }
