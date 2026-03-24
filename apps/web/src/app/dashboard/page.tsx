@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SignOutButton, useAuth, useUser } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { SpotlightCard } from "@pinequest/ui";
 import { AuthStatusCard, ClerkConfigCard } from "../auth-status-card";
 
@@ -28,8 +28,9 @@ const hasClerkConfig = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
 function DashboardContent() {
   const router = useRouter();
-  const { isLoaded: isAuthLoaded, userId } = useAuth();
+  const { isLoaded: isAuthLoaded, signOut, userId } = useAuth();
   const { user } = useUser();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
     if (isAuthLoaded && !userId) {
@@ -66,6 +67,20 @@ function DashboardContent() {
     user?.primaryEmailAddress?.emailAddress ??
     user?.emailAddresses[0]?.emailAddress ??
     "Loading email...";
+
+  const handleSignOut = async () => {
+    if (isSigningOut) {
+      return;
+    }
+
+    setIsSigningOut(true);
+
+    try {
+      await signOut({ redirectUrl: "/sign-in" });
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
 
   return (
     <main className="page">
@@ -105,11 +120,14 @@ function DashboardContent() {
           <Link className="secondary-button" href="/">
             Back to home
           </Link>
-          <SignOutButton redirectUrl="/sign-in">
-            <button className="primary-button" type="button">
-              Sign out
-            </button>
-          </SignOutButton>
+          <button
+            className="primary-button"
+            disabled={isSigningOut}
+            onClick={handleSignOut}
+            type="button"
+          >
+            {isSigningOut ? "Signing out..." : "Sign out"}
+          </button>
         </div>
       </SpotlightCard>
     </main>
