@@ -1,24 +1,35 @@
-import express from "express";
-
-const app = express();
-const port = Number(process.env.PORT ?? 4000);
-
-app.use(express.json());
-
-app.get("/health", (_req, res) => {
-  res.json({
-    ok: true,
-    service: "api",
-    port,
+const json = (payload: unknown, init?: ResponseInit): Response =>
+  new Response(JSON.stringify(payload), {
+    ...init,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      ...(init?.headers ?? {}),
+    },
   });
-});
 
-app.get("/api/hello", (_req, res) => {
-  res.json({
-    message: "Hello from the Pinequest API",
-  });
-});
+export default {
+  async fetch(request: Request): Promise<Response> {
+    const { pathname } = new URL(request.url);
 
-app.listen(port, () => {
-  console.log(`API server running on http://localhost:${port}`);
-});
+    if (request.method === "GET" && pathname === "/health") {
+      return json({
+        ok: true,
+        service: "api",
+        runtime: "cloudflare-workers",
+      });
+    }
+
+    if (request.method === "GET" && pathname === "/api/hello") {
+      return json({
+        message: "Hello from the Pinequest API",
+      });
+    }
+
+    return json(
+      {
+        error: "Not Found",
+      },
+      { status: 404 },
+    );
+  },
+};

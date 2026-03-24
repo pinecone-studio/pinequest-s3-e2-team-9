@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "wrangler dev",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js"
+    "start": "wrangler dev",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
     "@graphql-yoga/common": "^3.9.1",

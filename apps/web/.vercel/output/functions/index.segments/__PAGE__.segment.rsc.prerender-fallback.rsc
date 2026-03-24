@@ -1,0 +1,5 @@
+1:"$Sreact.fragment"
+2:I[887,[],"OutletBoundary"]
+3:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","main",null,{"className":"page","children":["$","section",null,{"className":"spotlight-card","children":[["$","p",null,{"className":"spotlight-eyebrow","children":"Monorepo is ready"}],["$","h1",null,{"className":"spotlight-title","children":"Pinequest Team 9"}],["$","p",null,{"className":"spotlight-description","children":"The Next.js app now lives in apps/web and shares UI from packages/ui."}],["$","div",null,{"className":"spotlight-actions","children":["$","div",null,{"className":"pill-row","children":[["$","span",null,{"className":"pill","children":"apps/web"}],["$","span",null,{"className":"pill","children":"packages/ui"}],["$","span",null,{"className":"pill","children":"npm workspaces"}]]}]}]]}]}],null,["$","$L2",null,{"children":["$","$3",null,{"name":"Next.MetadataOutlet","children":"$@4"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"41cJCoNxOPcLUG5f09abj"}
+4:null

@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next-on-pages",
+    "build": "next build --webpack",
+    "build:pages": "next-on-pages",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",
