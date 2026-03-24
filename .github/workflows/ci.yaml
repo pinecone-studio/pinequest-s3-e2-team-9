@@ -316,7 +316,7 @@ jobs:
       - detect_changes
       - web_preview
       - api_preview
-    if: github.event_name == 'pull_request' && (needs.detect_changes.outputs.web == 'true' || needs.detect_changes.outputs.api == 'true')
+    if: always() && github.event_name == 'pull_request' && (needs.detect_changes.outputs.web == 'true' || needs.detect_changes.outputs.api == 'true')
     permissions:
       contents: read
       pull-requests: write
