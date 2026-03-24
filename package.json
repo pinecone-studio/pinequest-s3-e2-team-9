@@ -8,16 +8,17 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace @pinequest/web",
-    "dev:api": "npm run dev --workspace @pinequest/api",
-    "build": "npm run build --workspaces --if-present",
-    "build:web": "npm run build --workspace @pinequest/web",
-    "build:api": "npm run build --workspace @pinequest/api",
-    "build:pages": "npm run build:pages --workspace @pinequest/web",
-    "start": "npm run start --workspace @pinequest/web",
-    "start:api": "npm run start --workspace @pinequest/api",
-    "lint": "npm run lint --workspaces --if-present",
-    "type-check": "npm run type-check --workspaces --if-present"
+    "dev": "cd apps/web && bun run dev",
+    "dev:web": "cd apps/web && bun run dev",
+    "dev:api": "cd apps/api && bun run dev",
+    "build": "cd apps/web && bun run build",
+    "build:web": "cd apps/web && bun run build",
+    "build:api": "cd apps/api && bun run build",
+    "build:pages": "cd apps/web && bun run build:pages",
+    "start": "cd apps/web && bun run start",
+    "start:api": "cd apps/api && bun run start",
+    "lint": "cd apps/web && bun run lint",
+    "type-check": "cd apps/web && bun run type-check"
   },
   "repository": {
     "type": "git",

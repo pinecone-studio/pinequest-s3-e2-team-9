@@ -1,0 +1,7 @@
+query HealthQuery {
+  health {
+    ok
+    service
+    runtime
+  }
+}

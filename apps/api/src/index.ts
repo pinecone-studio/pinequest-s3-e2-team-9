@@ -1,11 +1,258 @@
+import { buildSchema, graphql } from "graphql";
+import { schemaSource } from "./graphql/schema";
+
+const corsHeaders = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, POST, OPTIONS",
+  "access-control-allow-headers": "content-type, apollo-require-preflight",
+} satisfies Record<string, string>;
+
 const json = (payload: unknown, init?: ResponseInit): Response =>
   new Response(JSON.stringify(payload), {
     ...init,
     headers: {
       "content-type": "application/json; charset=utf-8",
+      ...corsHeaders,
       ...(init?.headers ?? {}),
     },
   });
+
+const html = (markup: string, init?: ResponseInit): Response =>
+  new Response(markup, {
+    ...init,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      ...corsHeaders,
+      ...(init?.headers ?? {}),
+    },
+  });
+
+const empty = (init?: ResponseInit): Response =>
+  new Response(null, {
+    ...init,
+    headers: {
+      ...corsHeaders,
+      ...(init?.headers ?? {}),
+    },
+  });
+
+const schema = buildSchema(schemaSource);
+
+const rootValue = {
+  health: () => ({
+    ok: true,
+    service: "api",
+    runtime: "cloudflare-workers",
+  }),
+  hello: ({ name }: { name?: string }) => ({
+    message: `Hello${name ? `, ${name}` : ""} from the PineQuest GraphQL API`,
+  }),
+};
+
+type GraphQLRequestBody = {
+  query?: string;
+  variables?: Record<string, unknown> | null;
+  operationName?: string | null;
+};
+
+const graphiqlPage = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PineQuest GraphQL</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f6f8fb;
+        color: #0f172a;
+      }
+      body {
+        margin: 0;
+        padding: 32px 20px;
+      }
+      main {
+        max-width: 880px;
+        margin: 0 auto;
+        background: white;
+        border: 1px solid #dbe3f0;
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+      p {
+        margin: 0 0 16px;
+        color: #475569;
+      }
+      textarea {
+        width: 100%;
+        min-height: 180px;
+        border-radius: 12px;
+        border: 1px solid #cbd5e1;
+        padding: 14px;
+        font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+        box-sizing: border-box;
+        margin-bottom: 12px;
+      }
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        background: #0f172a;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      pre {
+        margin: 16px 0 0;
+        background: #0f172a;
+        color: #e2e8f0;
+        border-radius: 12px;
+        padding: 16px;
+        overflow: auto;
+        min-height: 120px;
+      }
+      code {
+        background: #e2e8f0;
+        padding: 2px 6px;
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>PineQuest GraphQL</h1>
+      <p>Run a query against <code>/graphql</code> directly from the browser.</p>
+      <textarea id="query">{
+  health {
+    ok
+    service
+    runtime
+  }
+}</textarea>
+      <button id="run" type="button">Run Query</button>
+      <pre id="result">Click "Run Query" to execute.</pre>
+    </main>
+    <script>
+      const button = document.getElementById("run");
+      const queryInput = document.getElementById("query");
+      const result = document.getElementById("result");
+
+      async function runQuery() {
+        result.textContent = "Loading...";
+
+        try {
+          const response = await fetch("/graphql", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ query: queryInput.value }),
+          });
+
+          const payload = await response.json();
+          result.textContent = JSON.stringify(payload, null, 2);
+        } catch (error) {
+          result.textContent = JSON.stringify(
+            { errors: [{ message: error instanceof Error ? error.message : "Request failed" }] },
+            null,
+            2,
+          );
+        }
+      }
+
+      button.addEventListener("click", runQuery);
+    </script>
+  </body>
+</html>`;
+
+const parseGraphQLRequest = async (
+  request: Request,
+): Promise<GraphQLRequestBody | Response> => {
+  if (request.method === "GET") {
+    const { searchParams } = new URL(request.url);
+    return {
+      query: searchParams.get("query") ?? undefined,
+      operationName: searchParams.get("operationName"),
+      variables: searchParams.get("variables")
+        ? JSON.parse(searchParams.get("variables") as string)
+        : null,
+    };
+  }
+
+  try {
+    return (await request.json()) as GraphQLRequestBody;
+  } catch {
+    return json(
+      {
+        errors: [{ message: "Invalid JSON body" }],
+      },
+      { status: 400 },
+    );
+  }
+};
+
+const handleGraphQL = async (request: Request): Promise<Response> => {
+  if (request.method === "OPTIONS") {
+    return empty({ status: 204 });
+  }
+
+  if (request.method !== "GET" && request.method !== "POST") {
+    return json(
+      {
+        errors: [{ message: "Method Not Allowed" }],
+      },
+      { status: 405 },
+    );
+  }
+
+  const parsed = await parseGraphQLRequest(request);
+  if (parsed instanceof Response) {
+    return parsed;
+  }
+
+  if (request.method === "GET" && !parsed.query) {
+    return html(graphiqlPage);
+  }
+
+  if (!parsed.query) {
+    return json(
+      {
+        errors: [{ message: "GraphQL query is required" }],
+      },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const result = await graphql({
+      schema,
+      source: parsed.query,
+      rootValue,
+      variableValues: parsed.variables ?? undefined,
+      operationName: parsed.operationName ?? undefined,
+    });
+
+    return json(result, {
+      status: result.errors?.length ? 400 : 200,
+    });
+  } catch (error) {
+    return json(
+      {
+        errors: [
+          {
+            message:
+              error instanceof Error ? error.message : "Unexpected GraphQL error",
+          },
+        ],
+      },
+      { status: 500 },
+    );
+  }
+};
 
 export default {
   async fetch(request: Request): Promise<Response> {
@@ -19,6 +266,7 @@ export default {
         routes: {
           health: "/health",
           hello: "/api/hello",
+          graphql: "/graphql",
         },
       });
     }
@@ -35,6 +283,10 @@ export default {
       return json({
         message: "Hello from the Pinequest API",
       });
+    }
+
+    if (pathname === "/graphql") {
+      return handleGraphQL(request);
     }
 
     return json(
