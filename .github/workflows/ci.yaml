@@ -68,7 +68,7 @@ jobs:
           echo "api=$api" >> "$GITHUB_OUTPUT"
 
   web_verify:
-    name: Web Verify
+    name: Frontend Lint and Build
     runs-on: ubuntu-latest
     needs: detect_changes
     if: needs.detect_changes.outputs.web == 'true'
@@ -96,7 +96,7 @@ jobs:
         run: npm run build --workspace @pinequest/web
 
   api_verify:
-    name: API Verify
+    name: Backend Build
     runs-on: ubuntu-latest
     needs: detect_changes
     if: needs.detect_changes.outputs.api == 'true'
@@ -121,7 +121,7 @@ jobs:
         run: npm run build --workspace @pinequest/api
 
   web_preview:
-    name: Web Preview
+    name: Frontend Preview
     runs-on: ubuntu-latest
     needs:
       - detect_changes
@@ -211,7 +211,7 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
   api_preview:
-    name: API Preview
+    name: Backend Preview
     runs-on: ubuntu-latest
     needs:
       - detect_changes
