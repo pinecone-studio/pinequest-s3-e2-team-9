@@ -149,6 +149,8 @@ jobs:
     if: github.event_name == 'pull_request' && needs.detect_changes.outputs.web == 'true'
     outputs:
       preview_url: ${{ steps.preview-url.outputs.url }}
+      alias_url: ${{ steps.preview-url.outputs.alias_url }}
+      deployment_url: ${{ steps.preview-url.outputs.deployment_url }}
 
     steps:
       - name: Check Cloudflare credentials
@@ -259,6 +261,8 @@ jobs:
         run: |
           url="${ALIAS_URL:-$DEPLOY_URL}"
           echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "alias_url=${ALIAS_URL}" >> "$GITHUB_OUTPUT"
+          echo "deployment_url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
 
   api_preview:
     name: Backend Preview
@@ -269,6 +273,7 @@ jobs:
     if: github.event_name == 'pull_request' && needs.detect_changes.outputs.api == 'true'
     outputs:
       preview_url: ${{ steps.deploy.outputs.deployment-url }}
+      deployment_url: ${{ steps.deploy.outputs.deployment-url }}
 
     steps:
       - name: Check Cloudflare credentials
@@ -328,13 +333,22 @@ jobs:
           script: |
             const marker = "<!-- pinequest-preview -->";
             const webUrl = `${{ needs.web_preview.outputs.preview_url }}`.trim();
+            const webAliasUrl = `${{ needs.web_preview.outputs.alias_url }}`.trim();
+            const webDeploymentUrl = `${{ needs.web_preview.outputs.deployment_url }}`.trim();
             const apiUrl = `${{ needs.api_preview.outputs.preview_url }}`.trim();
+            const apiDeploymentUrl = `${{ needs.api_preview.outputs.deployment_url }}`.trim();
             const branch = "${{ github.head_ref }}";
-            const sha = "${{ github.sha }}".slice(0, 7);
+            const sha = "${{ github.event.pull_request.head.sha || github.sha }}".slice(0, 7);
 
             const rows = [];
             if (webUrl) rows.push(`| Web Preview URL | ${webUrl} |`);
+            if (webDeploymentUrl && webDeploymentUrl !== webUrl && webDeploymentUrl !== webAliasUrl) {
+              rows.push(`| Web Deployment URL | ${webDeploymentUrl} |`);
+            }
             if (apiUrl) rows.push(`| API Preview URL | ${apiUrl} |`);
+            if (apiDeploymentUrl && apiDeploymentUrl !== apiUrl) {
+              rows.push(`| API Deployment URL | ${apiDeploymentUrl} |`);
+            }
             rows.push(`| Branch | \`${branch}\` |`);
             rows.push(`| Commit | \`${sha}\` |`);
 
