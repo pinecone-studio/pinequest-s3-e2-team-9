@@ -7,7 +7,10 @@
     "build": "tsc -p tsconfig.json",
     "start": "wrangler dev",
     "type-check": "tsc -p tsconfig.json --noEmit",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 execute DB --local --file=./migrations/0001_init.sql",
+    "db:seed:local": "wrangler d1 execute DB --local --file=./migrations/0002_seed.sql",
+    "db:seed:remote": "wrangler d1 execute DB --remote --file=./migrations/0002_seed.sql"
   },
   "dependencies": {
     "@graphql-yoga/common": "^3.9.1",

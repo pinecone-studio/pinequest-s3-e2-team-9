@@ -38,7 +38,7 @@ export const schemaSource = /* GraphQL */ `
   type Query {
     health: Health!
     hello(name: String): Hello!
-    me: User!
+    me: User
     users: [User!]!
     classes: [Class!]!
     class(id: ID!): Class

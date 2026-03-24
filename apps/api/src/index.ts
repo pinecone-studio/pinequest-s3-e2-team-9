@@ -1,5 +1,5 @@
 import { buildSchema, graphql } from "graphql";
-import { rootValue } from "./graphql/root-value";
+import { createRootValue, type D1DatabaseLike } from "./graphql/root-value";
 import { schemaSource } from "./graphql/schema";
 
 const corsHeaders = {
@@ -38,6 +38,10 @@ const empty = (init?: ResponseInit): Response =>
   });
 
 const schema = buildSchema(schemaSource);
+
+type Env = {
+  DB: D1DatabaseLike;
+};
 
 type GraphQLRequestBody = {
   query?: string;
@@ -185,7 +189,7 @@ const parseGraphQLRequest = async (
   }
 };
 
-const handleGraphQL = async (request: Request): Promise<Response> => {
+const handleGraphQL = async (request: Request, env: Env): Promise<Response> => {
   if (request.method === "OPTIONS") {
     return empty({ status: 204 });
   }
@@ -221,7 +225,7 @@ const handleGraphQL = async (request: Request): Promise<Response> => {
     const result = await graphql({
       schema,
       source: parsed.query,
-      rootValue,
+      rootValue: createRootValue(env.DB),
       variableValues: parsed.variables ?? undefined,
       operationName: parsed.operationName ?? undefined,
     });
@@ -245,7 +249,7 @@ const handleGraphQL = async (request: Request): Promise<Response> => {
 };
 
 export default {
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(request.url);
 
     if (request.method === "GET" && pathname === "/") {
@@ -276,7 +280,7 @@ export default {
     }
 
     if (pathname === "/graphql") {
-      return handleGraphQL(request);
+      return handleGraphQL(request, env);
     }
 
     return json(
