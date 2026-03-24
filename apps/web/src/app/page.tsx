@@ -10,7 +10,7 @@ export default function Home() {
       >
         <div className="pill-row">
           <span className="pill">apps/web</span>
-          <span className="pill">packages/ui</span>
+          <span className="pill">packages/ujbhvi</span>
           <span className="pill">npm workspaces</span>
         </div>
       </SpotlightCard>
