@@ -3,18 +3,9 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { UserButton, useAuth, useUser } from "@clerk/nextjs";
+import { UserButton, useAuth } from "@clerk/nextjs";
 import { SpotlightCard } from "@pinequest/ui";
 import { AuthStatusCard, ClerkConfigCard } from "../auth-status-card";
-
-const getDisplayName = (
-  firstName?: string | null,
-  lastName?: string | null,
-  username?: string | null,
-) => {
-  const name = [firstName, lastName].filter(Boolean).join(" ");
-  return name || username || "Clerk user";
-};
 
 const shortenId = (value: string) => {
   if (value.length <= 18) {
@@ -29,7 +20,6 @@ const hasClerkConfig = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 function DashboardContent() {
   const router = useRouter();
   const { isLoaded: isAuthLoaded, userId } = useAuth();
-  const { isLoaded: isUserLoaded, user } = useUser();
 
   useEffect(() => {
     if (isAuthLoaded && !userId) {
@@ -37,7 +27,7 @@ function DashboardContent() {
     }
   }, [isAuthLoaded, router, userId]);
 
-  if (!isAuthLoaded || !isUserLoaded) {
+  if (!isAuthLoaded) {
     return (
       <AuthStatusCard
         description="Verifying your Clerk session before opening the protected dashboard."
@@ -57,13 +47,6 @@ function DashboardContent() {
     );
   }
 
-  const displayName = getDisplayName(
-    user?.firstName,
-    user?.lastName,
-    user?.username,
-  );
-  const email = user?.emailAddresses[0]?.emailAddress ?? "No email found";
-
   return (
     <main className="page">
       <SpotlightCard
@@ -74,11 +57,10 @@ function DashboardContent() {
         <div className="dashboard-header">
           <div>
             <p className="auth-kicker">Session verified</p>
-            <h2 className="auth-heading">{displayName}</h2>
+            <h2 className="auth-heading">Teacher access confirmed</h2>
             <p className="auth-copy">
-              Clerk is supplying the active user session on the client and the
-              route stays locked until a valid login exists. If a user is not
-              logged in, they are redirected to `/sign-in`.
+              This page unlocks as soon as Clerk confirms the browser session.
+              Signed-out users are redirected to `/sign-in` immediately.
             </p>
           </div>
           <UserButton />
@@ -90,8 +72,8 @@ function DashboardContent() {
             <p className="dashboard-value">{shortenId(userId)}</p>
           </article>
           <article className="dashboard-card">
-            <p className="dashboard-label">Primary email</p>
-            <p className="dashboard-value">{email}</p>
+            <p className="dashboard-label">Session source</p>
+            <p className="dashboard-value">Clerk browser session</p>
           </article>
           <article className="dashboard-card">
             <p className="dashboard-label">Route status</p>
