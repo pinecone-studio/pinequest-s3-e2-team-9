@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
-import { ApolloAppProvider } from "@/components/apollo-provider";
-
-const geist = Geist({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
   title: "Pinequest Team 9",
@@ -20,8 +14,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={geist.className}>
-        <ApolloAppProvider>{children}</ApolloAppProvider>
+      <body>
+        <ClerkProvider>{children}</ClerkProvider>
       </body>
     </html>
   );
