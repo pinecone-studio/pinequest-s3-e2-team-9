@@ -1,4 +1,5 @@
 import { buildSchema, graphql } from "graphql";
+import { rootValue } from "./graphql/root-value";
 import { schemaSource } from "./graphql/schema";
 
 const corsHeaders = {
@@ -37,17 +38,6 @@ const empty = (init?: ResponseInit): Response =>
   });
 
 const schema = buildSchema(schemaSource);
-
-const rootValue = {
-  health: () => ({
-    ok: true,
-    service: "api",
-    runtime: "cloudflare-workers",
-  }),
-  hello: ({ name }: { name?: string }) => ({
-    message: `Hello${name ? `, ${name}` : ""} from the PineQuest GraphQL API`,
-  }),
-};
 
 type GraphQLRequestBody = {
   query?: string;
