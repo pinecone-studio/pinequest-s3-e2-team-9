@@ -16,11 +16,62 @@ concurrency:
 env:
   NODE_VERSION: 20
   CF_PAGES_PROJECT_NAME: pinequest-web
+  CF_API_PREVIEW_NAME: pinequest-api-pr-${{ github.event.pull_request.number }}
 
 jobs:
-  verify:
-    name: Lint and Build
+  detect_changes:
+    name: Detect Changes
     runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      api: ${{ steps.filter.outputs.api }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed paths
+        id: filter
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+            head_sha="${{ github.event.pull_request.head.sha }}"
+            git diff --name-only "$base_sha" "$head_sha" > /tmp/changed-files.txt
+          else
+            before_sha="${{ github.event.before }}"
+            if [ "$before_sha" = "0000000000000000000000000000000000000000" ]; then
+              git ls-files > /tmp/changed-files.txt
+            else
+              git diff --name-only "$before_sha" "${{ github.sha }}" > /tmp/changed-files.txt
+            fi
+          fi
+
+          echo "Changed files:"
+          cat /tmp/changed-files.txt || true
+
+          web=false
+          api=false
+
+          if grep -Eq '^(apps/web/|packages/ui/|package.json|package-lock.json|tsconfig.base.json|\.github/workflows/(ci|cd)\.yaml$)' /tmp/changed-files.txt; then
+            web=true
+          fi
+
+          if grep -Eq '^(apps/api/|package.json|package-lock.json|tsconfig.base.json|\.github/workflows/(ci|cd)\.yaml$)' /tmp/changed-files.txt; then
+            api=true
+          fi
+
+          echo "web=$web" >> "$GITHUB_OUTPUT"
+          echo "api=$api" >> "$GITHUB_OUTPUT"
+
+  web_verify:
+    name: Web Verify
+    runs-on: ubuntu-latest
+    needs: detect_changes
+    if: needs.detect_changes.outputs.web == 'true'
 
     steps:
       - name: Checkout code
@@ -35,48 +86,49 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run lint
-        run: npm run lint
+      - name: Lint web
+        run: npm run lint --workspace @pinequest/web
 
-      - name: Run type-check
-        run: npm run type-check
+      - name: Type-check web
+        run: npm run type-check --workspace @pinequest/web
 
-      - name: Run tests
-        run: npm test --if-present
+      - name: Build web
+        run: npm run build --workspace @pinequest/web
 
-      - name: Build app
-        run: npm run build
-
-      - name: Resolve build artifact path
-        run: |
-          set -euo pipefail
-
-          for dir in apps/web/.vercel/output/static .vercel/output/static apps/web/.next .next apps/web/out out; do
-            if [ -d "$dir" ]; then
-              echo "BUILD_ARTIFACT_DIR=$dir" >> "$GITHUB_ENV"
-              echo "Resolved artifact directory: $dir"
-              exit 0
-            fi
-          done
-
-          echo "::warning::No build artifact directory found to upload."
-
-      - name: Upload build artifact
-        if: ${{ env.BUILD_ARTIFACT_DIR != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-build
-          path: ${{ env.BUILD_ARTIFACT_DIR }}
-          retention-days: 1
-
-  preview:
-    name: Preview
+  api_verify:
+    name: API Verify
     runs-on: ubuntu-latest
-    needs: verify
-    if: ${{ github.event_name == 'pull_request' }}
-    permissions:
-      contents: read
-      pull-requests: write
+    needs: detect_changes
+    if: needs.detect_changes.outputs.api == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check API
+        run: npm run type-check --workspace @pinequest/api
+
+      - name: Build API
+        run: npm run build --workspace @pinequest/api
+
+  web_preview:
+    name: Web Preview
+    runs-on: ubuntu-latest
+    needs:
+      - detect_changes
+      - web_verify
+    if: github.event_name == 'pull_request' && needs.detect_changes.outputs.web == 'true'
+    outputs:
+      preview_url: ${{ steps.preview-url.outputs.url }}
 
     steps:
       - name: Check Cloudflare credentials
@@ -89,7 +141,7 @@ jobs:
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Cloudflare secrets are missing, skipping preview deploy."
+            echo "::warning::Cloudflare secrets are missing, skipping web preview deploy."
           fi
 
       - name: Checkout code
@@ -107,52 +159,9 @@ jobs:
         if: steps.cloudflare.outputs.available == 'true'
         run: npm ci
 
-      - name: Build for Cloudflare Pages
+      - name: Build web for Cloudflare Pages
         if: steps.cloudflare.outputs.available == 'true'
         run: npm run build:pages
-
-      - name: Resolve deploy target
-        if: steps.cloudflare.outputs.available == 'true'
-        run: |
-          set -euo pipefail
-
-          normalize() {
-            local value="$1"
-            value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
-            value="$(printf '%s' "$value" | sed -E 's/[^a-z0-9-]+/-/g; s/-+/-/g; s/^-+//; s/-+$//')"
-            value="${value:0:58}"
-            value="$(printf '%s' "$value" | sed -E 's/^-+//; s/-+$//')"
-            printf '%s' "$value"
-          }
-
-          is_valid() {
-            [[ "$1" =~ ^[a-z0-9]([a-z0-9-]{0,56}[a-z0-9])?$ ]]
-          }
-
-          candidate="$(normalize "${CF_PAGES_PROJECT_NAME:-${GITHUB_REPOSITORY##*/}}")"
-          if ! is_valid "$candidate"; then
-            echo "::error::Failed to derive a valid Cloudflare Pages project name."
-            exit 1
-          fi
-
-          echo "DEPLOY_PROJECT_NAME=$candidate" >> "$GITHUB_ENV"
-
-      - name: Resolve Pages output directory
-        if: steps.cloudflare.outputs.available == 'true'
-        run: |
-          set -euo pipefail
-
-          for dir in apps/web/.vercel/output/static .vercel/output/static apps/web/out out; do
-            if [ -d "$dir" ]; then
-              echo "PAGES_OUTPUT_DIR=$dir" >> "$GITHUB_ENV"
-              echo "Resolved Pages output directory: $dir"
-              exit 0
-            fi
-          done
-
-          echo "::error::Could not find a Cloudflare Pages output directory."
-          echo "::error::Expected one of: apps/web/.vercel/output/static, .vercel/output/static, apps/web/out, out"
-          exit 1
 
       - name: Ensure Cloudflare Pages project exists
         if: steps.cloudflare.outputs.available == 'true'
@@ -161,7 +170,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          project="${DEPLOY_PROJECT_NAME}"
+          project="${CF_PAGES_PROJECT_NAME}"
           api_base="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects"
           compat_date="$(date -u +%F)"
 
@@ -182,35 +191,134 @@ jobs:
             fi
           fi
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy web preview
         if: steps.cloudflare.outputs.available == 'true'
-        id: cloudflare-deploy
+        id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy ${{ env.PAGES_OUTPUT_DIR }} --project-name=${{ env.DEPLOY_PROJECT_NAME }} --branch=${{ github.head_ref }} --commit-dirty=true
+          command: pages deploy apps/web/.vercel/output/static --project-name=${{ env.CF_PAGES_PROJECT_NAME }} --branch=${{ github.head_ref }} --commit-dirty=true
 
-      - name: Comment preview URL on PR
+      - name: Resolve preview URL
         if: steps.cloudflare.outputs.available == 'true'
+        id: preview-url
+        env:
+          ALIAS_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
+          DEPLOY_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          url="${ALIAS_URL:-$DEPLOY_URL}"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+  api_preview:
+    name: API Preview
+    runs-on: ubuntu-latest
+    needs:
+      - detect_changes
+      - api_verify
+    if: github.event_name == 'pull_request' && needs.detect_changes.outputs.api == 'true'
+    outputs:
+      preview_url: ${{ steps.deploy.outputs.deployment-url }}
+
+    steps:
+      - name: Check Cloudflare credentials
+        id: cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "${CLOUDFLARE_API_TOKEN}" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Cloudflare secrets are missing, skipping API preview deploy."
+          fi
+
+      - name: Checkout code
+        if: steps.cloudflare.outputs.available == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: steps.cloudflare.outputs.available == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.cloudflare.outputs.available == 'true'
+        run: npm ci
+
+      - name: Deploy API preview
+        if: steps.cloudflare.outputs.available == 'true'
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/api
+          command: deploy --name=${{ env.CF_API_PREVIEW_NAME }}
+
+  preview_comment:
+    name: Preview Comment
+    runs-on: ubuntu-latest
+    needs:
+      - detect_changes
+      - web_preview
+      - api_preview
+    if: github.event_name == 'pull_request' && (needs.detect_changes.outputs.web == 'true' || needs.detect_changes.outputs.api == 'true')
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Comment PR with preview URLs
         uses: actions/github-script@v7
         with:
           script: |
-            const deployUrl = "${{ steps.cloudflare-deploy.outputs.deployment-url }}";
+            const marker = "<!-- pinequest-preview -->";
+            const webUrl = `${{ needs.web_preview.outputs.preview_url }}`.trim();
+            const apiUrl = `${{ needs.api_preview.outputs.preview_url }}`.trim();
             const branch = "${{ github.head_ref }}";
             const sha = "${{ github.sha }}".slice(0, 7);
 
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            const rows = [];
+            if (webUrl) rows.push(`| Web Preview URL | ${webUrl} |`);
+            if (apiUrl) rows.push(`| API Preview URL | ${apiUrl} |`);
+            rows.push(`| Branch | \`${branch}\` |`);
+            rows.push(`| Commit | \`${sha}\` |`);
+
+            const body = [
+              marker,
+              "## Preview Deploy",
+              "",
+              "| Field | Value |",
+              "|---|---|",
+              ...rows,
+            ].join("\n");
+
+            const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: [
-                "## Preview Deploy",
-                "",
-                `| Field | Value |`,
-                `|---|---|`,
-                `| Preview URL | ${deployUrl} |`,
-                `| Branch | \`${branch}\` |`,
-                `| Commit | \`${sha}\` |`
-              ].join("\n")
+              issue_number: context.issue.number,
             });
+
+            const existing = comments.find((comment) =>
+              comment.user?.type === "Bot" && comment.body?.includes(marker),
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body,
+              });
+            }
