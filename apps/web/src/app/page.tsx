@@ -1,12 +1,37 @@
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
+"use client";
 
-export default async function Home() {
-  const { userId, redirectToSignIn } = await auth();
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
+import { AuthStatusCard, ClerkConfigCard } from "./auth-status-card";
 
-  if (!userId) {
-    return redirectToSignIn();
+const hasClerkConfig = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+
+function HomeRedirect() {
+  const router = useRouter();
+  const { isLoaded, userId } = useAuth();
+
+  useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
+    router.replace(userId ? "/dashboard" : "/sign-in");
+  }, [isLoaded, router, userId]);
+
+  return (
+    <AuthStatusCard
+      description="Checking the current Clerk session before routing you to the right page."
+      eyebrow="Loading"
+      title="Preparing Pinequest Team 9"
+    />
+  );
+}
+
+export default function Home() {
+  if (!hasClerkConfig) {
+    return <ClerkConfigCard />;
   }
 
-  redirect("/dashboard");
+  return <HomeRedirect />;
 }

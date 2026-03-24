@@ -13,6 +13,7 @@ concurrency:
 env:
   NODE_VERSION: 20
   CF_PAGES_PROJECT_NAME: pinequest-web
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
 
 jobs:
   detect_changes:

@@ -17,6 +17,7 @@ env:
   NODE_VERSION: 20
   CF_PAGES_PROJECT_NAME: pinequest-web
   CF_API_PREVIEW_NAME: pinequest-api-pr-${{ github.event.pull_request.number }}
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
 
 jobs:
   detect_changes:

@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { UserButton, useAuth, useUser } from "@clerk/nextjs";
 import { SpotlightCard } from "@pinequest/ui";
+import { AuthStatusCard, ClerkConfigCard } from "../auth-status-card";
 
 const getDisplayName = (
   firstName?: string | null,
@@ -20,14 +24,39 @@ const shortenId = (value: string) => {
   return `${value.slice(0, 9)}...${value.slice(-6)}`;
 };
 
-export default async function DashboardPage() {
-  const { userId, redirectToSignIn } = await auth();
+const hasClerkConfig = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
-  if (!userId) {
-    return redirectToSignIn();
+function DashboardContent() {
+  const router = useRouter();
+  const { isLoaded: isAuthLoaded, userId } = useAuth();
+  const { isLoaded: isUserLoaded, user } = useUser();
+
+  useEffect(() => {
+    if (isAuthLoaded && !userId) {
+      router.replace("/sign-in");
+    }
+  }, [isAuthLoaded, router, userId]);
+
+  if (!isAuthLoaded || !isUserLoaded) {
+    return (
+      <AuthStatusCard
+        description="Verifying your Clerk session before opening the protected dashboard."
+        eyebrow="Checking Access"
+        title="Loading dashboard"
+      />
+    );
   }
 
-  const user = await currentUser();
+  if (!userId) {
+    return (
+      <AuthStatusCard
+        description="Redirecting to the login screen because there is no active Clerk session."
+        eyebrow="Signed Out"
+        title="Dashboard access requires login"
+      />
+    );
+  }
+
   const displayName = getDisplayName(
     user?.firstName,
     user?.lastName,
@@ -40,16 +69,16 @@ export default async function DashboardPage() {
       <SpotlightCard
         eyebrow="Protected Route"
         title="Clerk Dashboard"
-        description="This page is protected by Clerk proxy middleware and does not render for signed-out users."
+        description="This page only renders after the Clerk session is confirmed in the browser. Signed-out users are redirected to the login screen."
       >
         <div className="dashboard-header">
           <div>
             <p className="auth-kicker">Session verified</p>
             <h2 className="auth-heading">{displayName}</h2>
             <p className="auth-copy">
-              Clerk is supplying user context on the server and the route stays
-              locked until a valid session exists. If a user is not logged in,
-              they are redirected to `/sign-in`.
+              Clerk is supplying the active user session on the client and the
+              route stays locked until a valid login exists. If a user is not
+              logged in, they are redirected to `/sign-in`.
             </p>
           </div>
           <UserButton />
@@ -66,7 +95,7 @@ export default async function DashboardPage() {
           </article>
           <article className="dashboard-card">
             <p className="dashboard-label">Route status</p>
-            <p className="dashboard-value">Protected via Clerk auth middleware</p>
+            <p className="dashboard-value">Protected via Clerk session gate</p>
           </article>
         </div>
 
@@ -81,4 +110,12 @@ export default async function DashboardPage() {
       </SpotlightCard>
     </main>
   );
+}
+
+export default function DashboardPage() {
+  if (!hasClerkConfig) {
+    return <ClerkConfigCard />;
+  }
+
+  return <DashboardContent />;
 }

@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
+import { AppProviders } from "./app-providers";
 import "./globals.css";
-
-export const runtime = "edge";
 
 export const metadata: Metadata = {
   title: "Pinequest Team 9",
@@ -17,12 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ClerkProvider
-          signInFallbackRedirectUrl="/dashboard"
-          signInUrl="/sign-in"
-        >
-          {children}
-        </ClerkProvider>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );
