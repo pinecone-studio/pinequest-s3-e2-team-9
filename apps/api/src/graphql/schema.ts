@@ -10,6 +10,7 @@ export const schemaSource = /* GraphQL */ `
     TRUE_FALSE
     SHORT_ANSWER
     ESSAY
+    IMAGE_UPLOAD
   }
 
   enum Difficulty {
@@ -112,6 +113,8 @@ export const schemaSource = /* GraphQL */ `
     id: ID!
     title: String!
     description: String
+    subject: String!
+    questionCount: Int!
     owner: User!
     questions: [Question!]!
     createdAt: String!

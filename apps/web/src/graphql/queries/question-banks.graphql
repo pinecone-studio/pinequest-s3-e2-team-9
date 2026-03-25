@@ -1,0 +1,10 @@
+query QuestionBanksQuery {
+  questionBanks {
+    id
+    title
+    description
+    subject
+    questionCount
+    createdAt
+  }
+}

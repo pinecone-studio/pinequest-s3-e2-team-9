@@ -7,8 +7,10 @@
     "build": "tsc -p tsconfig.json",
     "start": "wrangler dev",
     "type-check": "tsc -p tsconfig.json --noEmit",
+    "seed:generate": "tsx ./scripts/generate-question-bank-seed.ts",
     "deploy": "wrangler deploy",
-    "db:migrate:local": "wrangler d1 execute DB --local --file=./migrations/0001_init.sql",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "db:seed:local": "wrangler d1 execute DB --local --file=./migrations/0002_seed.sql",
     "db:seed:remote": "wrangler d1 execute DB --remote --file=./migrations/0002_seed.sql"
   },

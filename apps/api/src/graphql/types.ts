@@ -1,5 +1,10 @@
 export type Role = "ADMIN" | "TEACHER" | "STUDENT";
-export type QuestionType = "MCQ" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY";
+export type QuestionType =
+  | "MCQ"
+  | "TRUE_FALSE"
+  | "SHORT_ANSWER"
+  | "ESSAY"
+  | "IMAGE_UPLOAD";
 export type Difficulty = "EASY" | "MEDIUM" | "HARD";
 export type ExamMode = "SCHEDULED" | "OPEN_WINDOW";
 export type ExamStatus = "DRAFT" | "PUBLISHED" | "CLOSED";
@@ -25,6 +30,7 @@ export type QuestionBankRow = {
   id: string;
   title: string;
   description: string | null;
+  subject: string;
   owner_id: string;
   created_at: string;
 };

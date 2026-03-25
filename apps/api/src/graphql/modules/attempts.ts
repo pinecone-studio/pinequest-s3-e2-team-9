@@ -71,7 +71,7 @@ const scoreAnswer = (
     return null;
   }
 
-  if (question.type === "ESSAY") {
+  if (question.type === "ESSAY" || question.type === "IMAGE_UPLOAD") {
     return null;
   }
 

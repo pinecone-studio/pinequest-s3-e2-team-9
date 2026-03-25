@@ -9,3 +9,5 @@ dist
 node_modules
 .wrangler
 apps/api/.wrangler
+apps/web/.vercel/output
+apps/web/tsconfig.tsbuildinfo
