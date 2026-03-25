@@ -42,6 +42,9 @@ export function EmailIdentifierStep({
           onChange={(event) => {
             onEmailAddressChange(event.target.value);
           }}
+          onInput={(event) => {
+            onEmailAddressChange(event.currentTarget.value);
+          }}
           placeholder="teacher@school.edu"
           type="email"
           value={emailAddress}
@@ -58,7 +61,6 @@ export function EmailIdentifierStep({
 
       <button
         className="h-14 w-full rounded-2xl bg-[linear-gradient(135deg,#0B5FFF_0%,#2563EB_55%,#6EA8FF_100%)] px-5 text-[16px] font-semibold text-white shadow-[0_18px_38px_rgba(11,95,255,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
-        disabled={isSubmitting || emailAddress.trim().length === 0}
         type="submit"
       >
         {isSubmitting ? "Илгээж байна..." : "Код авах"}
@@ -116,6 +118,9 @@ export function VerificationStep({
           name="otpCode"
           onChange={(event) => {
             onCodeChange(event.target.value.replace(/\D/g, ""));
+          }}
+          onInput={(event) => {
+            onCodeChange(event.currentTarget.value.replace(/\D/g, ""));
           }}
           placeholder="123456"
           type="text"

@@ -1,8 +1,6 @@
 import { SignUp } from "@clerk/nextjs";
 import { AuthShell } from "@/app/components/auth-shell";
 
-export const runtime = "edge";
-
 const clerkAuthAppearance = {
   theme: "simple",
   variables: {
@@ -61,12 +59,7 @@ export default function SignUpPage() {
       panelTitle="Бүртгүүлэх"
       panelDescription="Шинэ account нээгээд local sign-up flow-оор шууд Pinequest-ийн дотоод хэсэгт бэлэн болно."
     >
-      <SignUp
-        appearance={clerkAuthAppearance}
-        path="/sign-up"
-        routing="path"
-        signInUrl="/sign-in"
-      />
+      <SignUp appearance={clerkAuthAppearance} routing="hash" signInUrl="/sign-in" />
     </AuthShell>
   );
 }

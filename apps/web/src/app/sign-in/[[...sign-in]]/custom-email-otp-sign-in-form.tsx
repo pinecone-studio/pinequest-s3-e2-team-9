@@ -10,6 +10,26 @@ import {
 } from "./sign-in-form-sections";
 import { collectErrorMessages, getSafeRedirectPath } from "./sign-in-utils";
 
+const collectSubmissionErrorMessages = (error: unknown) => {
+  if (!error || typeof error !== "object" || !("errors" in error)) {
+    return [];
+  }
+
+  const entries = (error as {
+    errors?: Array<{
+      longMessage?: string;
+      message?: string;
+    }>;
+  }).errors;
+
+  const messages =
+    entries
+      ?.map((entry) => entry.longMessage ?? entry.message)
+      .filter((message): message is string => Boolean(message)) ?? [];
+
+  return [...new Set(messages)];
+};
+
 export function CustomEmailOtpSignInForm() {
   const { userId, isLoaded: isAuthLoaded } = useAuth();
   const { signIn, errors, fetchStatus } = useSignIn();
@@ -20,6 +40,12 @@ export function CustomEmailOtpSignInForm() {
   const [emailAddress, setEmailAddress] = useState("");
   const [code, setCode] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [identifierSubmissionErrors, setIdentifierSubmissionErrors] = useState<string[]>(
+    [],
+  );
+  const [verificationSubmissionErrors, setVerificationSubmissionErrors] = useState<
+    string[]
+  >([]);
 
   const redirectTarget = useMemo(
     () => getSafeRedirectPath(searchParams.get("redirect_url")),
@@ -50,34 +76,48 @@ export function CustomEmailOtpSignInForm() {
     setStatusMessage(null);
   }, [redirectTarget, router, signIn]);
 
-  const identifierErrors = collectErrorMessages({
-    fieldMessages: [errors.fields.identifier?.message],
-    globalErrors: errors.global,
-  });
+  const identifierErrors = [
+    ...collectErrorMessages({
+      fieldMessages: [errors.fields.identifier?.message],
+      globalErrors: errors.global,
+    }),
+    ...identifierSubmissionErrors,
+  ];
 
-  const verificationErrors = collectErrorMessages({
-    fieldMessages: [errors.fields.code?.message],
-    globalErrors: errors.global,
-  });
+  const verificationErrors = [
+    ...collectErrorMessages({
+      fieldMessages: [errors.fields.code?.message],
+      globalErrors: errors.global,
+    }),
+    ...verificationSubmissionErrors,
+  ];
 
   const handleSubmitEmail = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      const normalizedEmail = emailAddress.trim().toLowerCase();
+      const normalizedEmail = String(
+        new FormData(event.currentTarget).get("emailAddress") ?? "",
+      )
+        .trim()
+        .toLowerCase();
       if (!normalizedEmail) {
         return;
       }
       setStatusMessage(null);
+      setIdentifierSubmissionErrors([]);
+      setVerificationSubmissionErrors([]);
       const { error: createError } = await signIn.create({
         identifier: normalizedEmail,
       });
       if (createError) {
+        setIdentifierSubmissionErrors(collectSubmissionErrorMessages(createError));
         return;
       }
       const { error: sendError } = await signIn.emailCode.sendCode({
         emailAddress: normalizedEmail,
       });
       if (sendError) {
+        setIdentifierSubmissionErrors(collectSubmissionErrorMessages(sendError));
         return;
       }
       if (signIn.status === "complete") {
@@ -95,14 +135,19 @@ export function CustomEmailOtpSignInForm() {
   const handleVerifyCode = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      if (!code.trim()) {
+      const submittedCode = String(new FormData(event.currentTarget).get("otpCode") ?? "")
+        .replace(/\D/g, "")
+        .trim();
+      if (!submittedCode) {
         return;
       }
       setStatusMessage(null);
+      setVerificationSubmissionErrors([]);
       const { error } = await signIn.emailCode.verifyCode({
-        code: code.trim(),
+        code: submittedCode,
       });
       if (error) {
+        setVerificationSubmissionErrors(collectSubmissionErrorMessages(error));
         return;
       }
       if (signIn.status === "complete") {
@@ -111,13 +156,15 @@ export function CustomEmailOtpSignInForm() {
       }
       setStatusMessage("Кодыг шалгаж байна...");
     },
-    [code, finishSignIn, signIn],
+    [finishSignIn, signIn],
   );
 
   const handleResendCode = useCallback(async () => {
     setStatusMessage(null);
+    setVerificationSubmissionErrors([]);
     const { error } = await signIn.emailCode.sendCode();
     if (error) {
+      setVerificationSubmissionErrors(collectSubmissionErrorMessages(error));
       return;
     }
     setStatusMessage(`${emailAddress} хаяг руу шинэ код дахин илгээлээ.`);
@@ -128,6 +175,8 @@ export function CustomEmailOtpSignInForm() {
     setStep("identifier");
     setCode("");
     setStatusMessage(null);
+    setIdentifierSubmissionErrors([]);
+    setVerificationSubmissionErrors([]);
   }, [signIn]);
 
   const isSubmitting = fetchStatus === "fetching";

@@ -1,7 +1,6 @@
+import { Suspense } from "react";
 import { AuthShell } from "@/app/components/auth-shell";
-import { CustomEmailOtpSignInForm } from "./custom-email-otp-sign-in-form";
-
-export const runtime = "edge";
+import { CustomEmailOtpSignInForm } from "@/app/sign-in/[[...sign-in]]/custom-email-otp-sign-in-form";
 
 export default function SignInPage() {
   return (
@@ -13,7 +12,9 @@ export default function SignInPage() {
       panelTitle="Нэвтрэх"
       panelDescription="Имэйлээ оруулаад нэг удаагийн кодоор account-аа баталгаажуулж protected workspace руу орно."
     >
-      <CustomEmailOtpSignInForm />
+      <Suspense fallback={null}>
+        <CustomEmailOtpSignInForm />
+      </Suspense>
     </AuthShell>
   );
 }
