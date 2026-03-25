@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { ApolloAppProvider } from "@/components/apollo-provider";
@@ -21,7 +22,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={geist.className}>
-        <ApolloAppProvider>{children}</ApolloAppProvider>
+        <ClerkProvider
+          afterSignOutUrl="/sign-in"
+          signInUrl="/sign-in"
+          signInFallbackRedirectUrl="/"
+          signUpUrl="/sign-up"
+          signUpFallbackRedirectUrl="/"
+        >
+          <ApolloAppProvider>{children}</ApolloAppProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navItems } from "./dashboard-data";
+import { SidebarAccountPanel } from "./sidebar-account-panel";
 
 export function Sidebar() {
   const pathname = usePathname();
   return (
-    <aside className="w-full border-b border-[#E4E7EC] bg-[#F6F9FC] lg:w-[224px] lg:border-b-0 lg:border-r">
+    <aside className="flex w-full flex-col border-b border-[#E4E7EC] bg-[#F6F9FC] lg:w-[224px] lg:border-b-0 lg:border-r">
       <div className="flex h-14 items-center gap-2 border-b border-[#E4E7EC] px-4">
         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[conic-gradient(from_120deg,#5B7CFF,#7DD3FC,#5B7CFF)] text-[10px] font-semibold text-white">
           S+
@@ -42,6 +43,9 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <div className="border-t border-[#E4E7EC] px-3 py-3">
+        <SidebarAccountPanel />
+      </div>
     </aside>
   );
 }
