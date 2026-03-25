@@ -19,6 +19,7 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "autoprefixer": "^10.4.21",
     "@graphql-codegen/cli": "^6.2.1",
     "@graphql-codegen/typed-document-node": "^6.1.7",
     "@graphql-codegen/typescript": "^5.0.9",
@@ -31,6 +32,8 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.1",
     "graphql": "^16.13.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5.9.3"
   }
 }
