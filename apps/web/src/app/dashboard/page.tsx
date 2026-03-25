@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { SpotlightCard } from "@pinequest/ui";
-import { AuthStatusCard, ClerkConfigCard } from "../auth-status-card";
+import { AuthStatusCard } from "../auth-status-card";
+import { DashboardShell } from "../components/dashboard-shell";
 
 const getDisplayName = (
   firstName?: string | null,
@@ -16,17 +15,9 @@ const getDisplayName = (
   return name || username || "Clerk user";
 };
 
-const shortenId = (value: string) => {
-  if (value.length <= 18) {
-    return value;
-  }
-
-  return `${value.slice(0, 9)}...${value.slice(-6)}`;
-};
-
 const hasClerkConfig = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
-function DashboardContent() {
+function ProtectedDashboard() {
   const router = useRouter();
   const { isLoaded: isAuthLoaded, signOut, userId } = useAuth();
   const { user } = useUser();
@@ -83,61 +74,36 @@ function DashboardContent() {
   };
 
   return (
-    <main className="page">
-      <SpotlightCard
-        eyebrow="Protected Route"
-        title="Clerk Dashboard"
-        description="This page only renders after the Clerk session is confirmed in the browser. Signed-out users are redirected to the login screen."
-      >
-        <div className="dashboard-header">
+    <DashboardShell
+      banner={
+        <section className="flex flex-col gap-4 rounded-xl border border-[#D0D5DD] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="auth-kicker">Session verified</p>
-            <h2 className="auth-heading">{displayName}</h2>
-            <p className="auth-copy">
-              Clerk is supplying the active user session on the client. Profile
-              details stream in after the page unlocks, but signed-out users
-              are redirected to `/sign-in` immediately.
+            <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#12664F]">
+              Clerk session
             </p>
+            <p className="mt-1 text-[16px] font-semibold text-[#0F1216]">
+              {displayName}
+            </p>
+            <p className="mt-1 text-[13px] text-[#52555B]">{email}</p>
           </div>
-        </div>
-
-        <div className="dashboard-grid">
-          <article className="dashboard-card">
-            <p className="dashboard-label">User ID</p>
-            <p className="dashboard-value">{shortenId(userId)}</p>
-          </article>
-          <article className="dashboard-card">
-            <p className="dashboard-label">Primary email</p>
-            <p className="dashboard-value">{email}</p>
-          </article>
-          <article className="dashboard-card">
-            <p className="dashboard-label">Route status</p>
-            <p className="dashboard-value">Protected via Clerk session gate</p>
-          </article>
-        </div>
-
-        <div className="button-row">
-          <Link className="secondary-button" href="/">
-            Back to home
-          </Link>
           <button
-            className="primary-button"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-[#0F4C3B] px-4 py-2 text-[14px] font-medium text-white transition hover:bg-[#12664F] disabled:cursor-wait disabled:opacity-70"
             disabled={isSigningOut}
             onClick={handleSignOut}
             type="button"
           >
             {isSigningOut ? "Signing out..." : "Sign out"}
           </button>
-        </div>
-      </SpotlightCard>
-    </main>
+        </section>
+      }
+    />
   );
 }
 
 export default function DashboardPage() {
   if (!hasClerkConfig) {
-    return <ClerkConfigCard />;
+    return <DashboardShell />;
   }
 
-  return <DashboardContent />;
+  return <ProtectedDashboard />;
 }

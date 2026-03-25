@@ -2,12 +2,15 @@
 
 import type { ReactNode } from "react";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ApolloAppProvider } from "@/components/apollo-provider";
 
 const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 export function AppProviders({ children }: { children: ReactNode }) {
+  const app = <ApolloAppProvider>{children}</ApolloAppProvider>;
+
   if (!publishableKey) {
-    return children;
+    return app;
   }
 
   return (
@@ -16,7 +19,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       signInFallbackRedirectUrl="/dashboard"
       signInUrl="/sign-in"
     >
-      {children}
+      {app}
     </ClerkProvider>
   );
 }

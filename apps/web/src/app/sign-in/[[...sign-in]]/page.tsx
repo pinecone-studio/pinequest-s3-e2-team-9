@@ -20,12 +20,12 @@ function SignInGate() {
     }
   }, [isLoaded, router, userId]);
 
-  if (userId) {
+  if (!isLoaded || userId) {
     return (
       <AuthStatusCard
-        description="A valid session already exists, so you are being redirected to the dashboard."
-        eyebrow="Redirecting"
-        title="Opening dashboard"
+        description="Checking the current session before showing the one-time code login form."
+        eyebrow="Loading"
+        title="Preparing sign in"
       />
     );
   }

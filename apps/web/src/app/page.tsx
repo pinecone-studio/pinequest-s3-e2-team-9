@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { AuthStatusCard, ClerkConfigCard } from "./auth-status-card";
+import { AuthStatusCard } from "./auth-status-card";
+import { DashboardShell } from "./components/dashboard-shell";
 
 const hasClerkConfig = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
@@ -30,7 +31,7 @@ function HomeRedirect() {
 
 export default function Home() {
   if (!hasClerkConfig) {
-    return <ClerkConfigCard />;
+    return <DashboardShell />;
   }
 
   return <HomeRedirect />;

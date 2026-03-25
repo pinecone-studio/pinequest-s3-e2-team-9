@@ -19,7 +19,9 @@ export function Sidebar() {
       <nav className="flex-1 space-y-1 px-3 py-3 text-[14px]">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href;
+          const isActive =
+            pathname === item.href ||
+            (item.href === "/" && pathname === "/dashboard");
           return (
             <Link
               key={item.label}
