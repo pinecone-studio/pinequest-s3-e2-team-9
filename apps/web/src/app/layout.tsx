@@ -3,6 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { ApolloAppProvider } from "@/components/apollo-provider";
+import { ClerkSignOutFix } from "@/app/components/clerk-sign-out-fix";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -29,6 +30,7 @@ export default function RootLayout({
           signUpUrl="/sign-up"
           signUpFallbackRedirectUrl="/"
         >
+          <ClerkSignOutFix />
           <ApolloAppProvider>{children}</ApolloAppProvider>
         </ClerkProvider>
       </body>

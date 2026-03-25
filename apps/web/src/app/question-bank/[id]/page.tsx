@@ -1,8 +1,6 @@
 import { QuestionBankDetailView } from "../../components/sections/question-bank-detail-view";
 import { Sidebar } from "../../components/sidebar";
 
-export const runtime = "edge";
-
 type QuestionBankDetailPageProps = {
   params: Promise<{ id: string }>;
 };

@@ -1,20 +1,29 @@
+const isRootRelativePath = (value: string) =>
+  value.startsWith("/") && !value.startsWith("//");
+
 export const getSafeRedirectPath = (rawRedirectUrl: string | null) => {
   if (!rawRedirectUrl) {
     return "/";
   }
 
-  try {
-    const origin =
-      typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
-    const url = new URL(rawRedirectUrl, origin);
+  if (isRootRelativePath(rawRedirectUrl)) {
+    return rawRedirectUrl;
+  }
 
-    if (typeof window !== "undefined" && url.origin !== window.location.origin) {
+  if (typeof window === "undefined") {
+    return "/";
+  }
+
+  try {
+    const url = new URL(rawRedirectUrl);
+
+    if (url.origin !== window.location.origin) {
       return "/";
     }
 
     return `${url.pathname}${url.search}${url.hash}` || "/";
   } catch {
-    return rawRedirectUrl.startsWith("/") ? rawRedirectUrl : "/";
+    return "/";
   }
 };
 

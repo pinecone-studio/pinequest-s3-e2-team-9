@@ -12,15 +12,11 @@ export default clerkMiddleware(
       await auth.protect();
     }
   },
-  (req) => {
-    const isPreviewHost = req.nextUrl.hostname.endsWith(".pages.dev");
-
-    return {
-      signInUrl: "/sign-in",
-      signUpUrl: "/sign-up",
-      debug: isPreviewHost,
-    };
-  },
+  () => ({
+    signInUrl: "/sign-in",
+    signUpUrl: "/sign-up",
+    debug: process.env.CLERK_DEBUG === "true",
+  }),
 );
 
 export const config = {

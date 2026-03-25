@@ -15,7 +15,7 @@ concurrency:
 
 env:
   NODE_VERSION: 20
-  CF_PAGES_PROJECT_NAME: pinequest-web
+  CF_WEB_WORKER_NAME: pinequest-web
 
 jobs:
   detect_changes:
@@ -179,8 +179,36 @@ jobs:
         if: steps.cloudflare.outputs.available == 'true'
         run: npm ci
 
-      - name: Build web for Cloudflare Pages
+      - name: Compute web preview name
         if: steps.cloudflare.outputs.available == 'true'
+        env:
+          API_PREVIEW_URL: ${{ needs.api_preview.outputs.preview_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REF_NAME: ${{ github.ref_name }}
+          BASE_NAME: ${{ env.CF_WEB_WORKER_NAME }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${PR_NUMBER}" ]; then
+            suffix="pr-${PR_NUMBER}"
+          else
+            suffix="${REF_NAME}"
+          fi
+
+          sanitized="$(echo "${suffix}" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//; s/-{2,}/-/g')"
+
+          if [ -z "${sanitized}" ]; then
+            sanitized="preview"
+          fi
+
+          echo "name=${BASE_NAME}-${sanitized}" >> "$GITHUB_OUTPUT"
+        id: web-name
+
+      - name: Compute web GraphQL endpoint
+        if: steps.cloudflare.outputs.available == 'true'
+        id: web-graphql
         env:
           API_PREVIEW_URL: ${{ needs.api_preview.outputs.preview_url }}
           DEFAULT_GRAPHQL_ENDPOINT: ${{ vars.NEXT_PUBLIC_GRAPHQL_ENDPOINT }}
@@ -188,58 +216,70 @@ jobs:
           set -euo pipefail
 
           if [ -n "${API_PREVIEW_URL}" ]; then
-            export NEXT_PUBLIC_GRAPHQL_ENDPOINT="${API_PREVIEW_URL}/graphql"
+            echo "endpoint=${API_PREVIEW_URL}/graphql" >> "$GITHUB_OUTPUT"
           else
-            export NEXT_PUBLIC_GRAPHQL_ENDPOINT="${DEFAULT_GRAPHQL_ENDPOINT}"
+            echo "endpoint=${DEFAULT_GRAPHQL_ENDPOINT}" >> "$GITHUB_OUTPUT"
           fi
 
-          npm run build:pages
-
-      - name: Ensure Cloudflare Pages project exists
+      - name: Render web preview Wrangler config
         if: steps.cloudflare.outputs.available == 'true'
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TARGET_NAME: ${{ steps.web-name.outputs.name }}
         run: |
-          set -euo pipefail
-          project="${CF_PAGES_PROJECT_NAME}"
-          api_base="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects"
-          compat_date="$(date -u +%F)"
+          node <<'NODE'
+          const fs = require("node:fs");
+          const inputPath = "apps/web/wrangler.jsonc";
+          const outputPath = "apps/web/wrangler.preview.jsonc";
+          const config = JSON.parse(fs.readFileSync(inputPath, "utf8"));
 
-          status="$(curl -sS -o /tmp/cf-project-check.json -w "%{http_code}" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            "${api_base}/${project}")"
+          config.name = process.env.TARGET_NAME;
+          if (Array.isArray(config.services)) {
+            for (const service of config.services) {
+              if (service && typeof service === "object") {
+                service.service = process.env.TARGET_NAME;
+              }
+            }
+          }
 
-          if [ "${status}" != "200" ] || ! grep -Eq '"success"[[:space:]]*:[[:space:]]*true' /tmp/cf-project-check.json; then
-            create_response="$(curl -sS -X POST "${api_base}" \
-              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-              -H "Content-Type: application/json" \
-              --data "{\"name\":\"${project}\",\"production_branch\":\"main\",\"deployment_configs\":{\"preview\":{\"compatibility_date\":\"${compat_date}\",\"compatibility_flags\":[\"nodejs_compat\"]},\"production\":{\"compatibility_date\":\"${compat_date}\",\"compatibility_flags\":[\"nodejs_compat\"]}}}")"
+          fs.writeFileSync(outputPath, JSON.stringify(config, null, 2));
+          NODE
 
-            if ! echo "${create_response}" | grep -Eq '"success"[[:space:]]*:[[:space:]]*true'; then
-              echo "::error::Failed to create Pages project '${project}'."
-              echo "${create_response}"
-              exit 1
-            fi
-          fi
+      - name: Build web for Cloudflare Workers
+        if: steps.cloudflare.outputs.available == 'true'
+        working-directory: apps/web
+        env:
+          NEXT_PUBLIC_GRAPHQL_ENDPOINT: ${{ steps.web-graphql.outputs.endpoint }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+        run: npm run build:worker -- --config wrangler.preview.jsonc
 
       - name: Deploy web preview
         if: steps.cloudflare.outputs.available == 'true'
-        id: deploy
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/web/.vercel/output/static --project-name=${{ env.CF_PAGES_PROJECT_NAME }} --branch=${{ github.head_ref || github.ref_name }} --commit-dirty=true
-
-      - name: Resolve preview URL
-        if: steps.cloudflare.outputs.available == 'true'
         id: preview-url
         env:
-          ALIAS_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
-          DEPLOY_URL: ${{ steps.deploy.outputs.deployment-url }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          NEXT_PUBLIC_GRAPHQL_ENDPOINT: ${{ steps.web-graphql.outputs.endpoint }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
         run: |
-          url="${ALIAS_URL:-$DEPLOY_URL}"
+          set -euo pipefail
+          trap 'rm -f apps/web/.deploy.secrets.env' EXIT
+
+          printf 'CLERK_SECRET_KEY=%s\n' "${CLERK_SECRET_KEY}" > apps/web/.deploy.secrets.env
+
+          log_file="$(mktemp)"
+          (
+            cd apps/web
+            npx opennextjs-cloudflare deploy \
+              --config wrangler.preview.jsonc \
+              --keep-vars \
+              --var "NEXT_PUBLIC_GRAPHQL_ENDPOINT:${NEXT_PUBLIC_GRAPHQL_ENDPOINT}" \
+              --var "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}" \
+              --secrets-file .deploy.secrets.env
+          ) 2>&1 | tee "${log_file}"
+
+          url="$(grep -Eo 'https://[A-Za-z0-9._/-]+\.workers\.dev' "${log_file}" | tail -n1)"
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       - name: Publish web preview URL

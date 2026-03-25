@@ -13,12 +13,14 @@
     "dev:api": "npm run dev --workspace @pinequest/api",
     "build": "npm run build --workspace @pinequest/web",
     "build:web": "npm run build --workspace @pinequest/web",
+    "build:worker": "npm run build:worker --workspace @pinequest/web",
     "build:api": "npm run build --workspace @pinequest/api",
-    "build:pages": "npm run build:pages --workspace @pinequest/web",
     "start": "npm run start --workspace @pinequest/web",
     "start:api": "npm run start --workspace @pinequest/api",
     "lint": "npm run lint --workspace @pinequest/web",
-    "type-check": "npm run type-check --workspace @pinequest/web"
+    "type-check": "npm run type-check --workspace @pinequest/web",
+    "preview:web": "npm run preview --workspace @pinequest/web",
+    "deploy:web": "npm run deploy --workspace @pinequest/web"
   },
   "repository": {
     "type": "git",

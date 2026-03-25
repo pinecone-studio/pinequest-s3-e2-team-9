@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pinequest-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-03-24",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "pinequest-web"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  }
+}

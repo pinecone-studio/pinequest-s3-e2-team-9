@@ -129,11 +129,8 @@ export function useEmailOtpSignIn() {
         return;
       }
 
-      if (signIn.status === "complete") {
-        await finishSignIn();
-        return;
-      }
-      setStatusMessage("Кодыг шалгаж байна...");
+      setStatusMessage("Нэвтрүүлж байна...");
+      await finishSignIn();
     },
     [finishSignIn, signIn],
   );
