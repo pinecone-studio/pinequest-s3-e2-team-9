@@ -1,10 +1,7 @@
 import type { ReactElement } from "react";
 import type { IconProps } from "./icons";
 import {
-  AlertIcon,
-  ArchiveIcon,
   BookIcon,
-  CalendarIcon,
   ChartIcon,
   CheckIcon,
   ClipboardIcon,
@@ -13,7 +10,6 @@ import {
   MonitorIcon,
   PlusIcon,
   UsersIcon,
-  WarningIcon,
 } from "./icons";
 
 type IconComponent = (props: IconProps) => ReactElement;
@@ -21,12 +17,6 @@ type IconComponent = (props: IconProps) => ReactElement;
 export type NavItem = {
   label: string;
   href: string;
-  icon: IconComponent;
-};
-export type AttentionCard = {
-  value: string;
-  label: string;
-  tone: string;
   icon: IconComponent;
 };
 export type QuickAction = {
@@ -43,33 +33,6 @@ export const navItems: NavItem[] = [
   { label: "Асуултын сан", href: "/question-bank", icon: BookIcon },
   { label: "Үнэлгээ", href: "/assessment", icon: ChartIcon },
   { label: "Шалгалтын хяналт", href: "/proctoring", icon: MonitorIcon },
-];
-
-export const attentionCards: AttentionCard[] = [
-  {
-    value: "3",
-    label: "Шалгах хариултууд",
-    tone: "bg-[#EAB5321A] text-[#EAB532]",
-    icon: AlertIcon,
-  },
-  {
-    value: "0",
-    label: "Удахгүй болох шалгалт",
-    tone: "bg-[#F0F2F5] text-[#52555B]",
-    icon: CalendarIcon,
-  },
-  {
-    value: "1",
-    label: "Архив (нийтлэгдээгүй)",
-    tone: "bg-[#F0F2F5] text-[#52555B]",
-    icon: ArchiveIcon,
-  },
-  {
-    value: "1",
-    label: "Сэжигтэй үйлдэл илэрсэн",
-    tone: "bg-[#D409241A] text-[#D40924]",
-    icon: WarningIcon,
-  },
 ];
 
 export const quickActions: QuickAction[] = [

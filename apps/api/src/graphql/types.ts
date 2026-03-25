@@ -129,6 +129,10 @@ export type PublishExamArgs = {
   examId: string;
 };
 
+export type CloseExamArgs = {
+  examId: string;
+};
+
 export type StartAttemptArgs = {
   examId: string;
   studentId: string;

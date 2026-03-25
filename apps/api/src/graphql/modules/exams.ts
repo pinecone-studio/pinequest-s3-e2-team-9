@@ -3,6 +3,7 @@ import {
   makeId,
   now,
   type AddQuestionToExamArgs,
+  type CloseExamArgs,
   type ByIdArgs,
   type CreateExamArgs,
   type ExamQuestionRow,
@@ -164,6 +165,18 @@ export const createExamQueriesAndMutations = ({
   publishExam: async ({ examId }: PublishExamArgs) => {
     await findExamById(db, examId);
     await run(db, "UPDATE exams SET status = 'PUBLISHED' WHERE id = ?", [examId]);
+    return toExam(db, await findExamById(db, examId));
+  },
+  closeExam: async ({ examId }: CloseExamArgs) => {
+    await findExamById(db, examId);
+    await run(db, "UPDATE exams SET status = 'CLOSED' WHERE id = ?", [examId]);
+    await run(
+      db,
+      `UPDATE attempts
+       SET status = 'SUBMITTED', submitted_at = COALESCE(submitted_at, ?)
+       WHERE exam_id = ? AND status = 'IN_PROGRESS'`,
+      [now(), examId],
+    );
     return toExam(db, await findExamById(db, examId));
   },
 });

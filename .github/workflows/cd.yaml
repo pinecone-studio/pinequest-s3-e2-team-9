@@ -160,6 +160,8 @@ jobs:
 
       - name: Build web for Cloudflare Pages
         if: steps.cloudflare.outputs.available == 'true'
+        env:
+          NEXT_PUBLIC_GRAPHQL_ENDPOINT: ${{ vars.NEXT_PUBLIC_GRAPHQL_ENDPOINT }}
         run: npm run build:pages
 
       - name: Deploy web to Cloudflare Pages

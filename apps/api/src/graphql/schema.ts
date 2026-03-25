@@ -73,6 +73,7 @@ export const schemaSource = /* GraphQL */ `
     ): Exam!
     addQuestionToExam(examId: ID!, questionId: ID!, points: Int!): Exam!
     publishExam(examId: ID!): Exam!
+    closeExam(examId: ID!): Exam!
     startAttempt(examId: ID!, studentId: ID!): Attempt!
     saveAnswer(attemptId: ID!, questionId: ID!, value: String!): Attempt!
     submitAttempt(attemptId: ID!): Attempt!

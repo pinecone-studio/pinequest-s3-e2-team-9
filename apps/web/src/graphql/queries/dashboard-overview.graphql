@@ -1,0 +1,36 @@
+query DashboardOverview {
+  me {
+    id
+    fullName
+    role
+  }
+  exams {
+    id
+    title
+    status
+    durationMinutes
+    createdAt
+    class {
+      id
+      name
+      students {
+        id
+      }
+    }
+    questions {
+      id
+      points
+    }
+    attempts {
+      id
+      status
+      totalScore
+      startedAt
+      submittedAt
+      student {
+        id
+        fullName
+      }
+    }
+  }
+}

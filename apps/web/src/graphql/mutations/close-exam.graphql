@@ -1,0 +1,6 @@
+mutation CloseExam($examId: ID!) {
+  closeExam(examId: $examId) {
+    id
+    status
+  }
+}
