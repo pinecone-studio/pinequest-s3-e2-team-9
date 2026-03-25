@@ -1,2 +1,2 @@
 export * from "./icons-base";
-export * from "./icons-actions";
+export * as ActionsIcons from "./icons-actions";
