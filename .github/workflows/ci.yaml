@@ -37,16 +37,36 @@ jobs:
         run: |
           set -euo pipefail
 
+          has_commit() {
+            git cat-file -e "$1^{commit}" 2>/dev/null
+          }
+
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             base_sha="${{ github.event.pull_request.base.sha }}"
             head_sha="${{ github.event.pull_request.head.sha }}"
-            git diff --name-only "$base_sha" "$head_sha" > /tmp/changed-files.txt
+
+            if has_commit "$base_sha" && has_commit "$head_sha"; then
+              git diff --name-only "$base_sha" "$head_sha" > /tmp/changed-files.txt
+            else
+              echo "Falling back because PR SHAs are not both available locally."
+              base_ref="${{ github.event.pull_request.base.ref }}"
+              git fetch --no-tags origin "$base_ref"
+              merge_base="$(git merge-base HEAD "origin/$base_ref")"
+              git diff --name-only "$merge_base" HEAD > /tmp/changed-files.txt
+            fi
           else
             before_sha="${{ github.event.before }}"
             if [ "$before_sha" = "0000000000000000000000000000000000000000" ]; then
               git ls-files > /tmp/changed-files.txt
-            else
+            elif has_commit "$before_sha" && has_commit "${{ github.sha }}"; then
               git diff --name-only "$before_sha" "${{ github.sha }}" > /tmp/changed-files.txt
+            else
+              echo "Falling back because push SHAs are not both available locally."
+              if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+                git diff --name-only HEAD^ HEAD > /tmp/changed-files.txt
+              else
+                git ls-files > /tmp/changed-files.txt
+              fi
             fi
           fi
 
