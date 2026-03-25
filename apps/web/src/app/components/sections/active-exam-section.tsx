@@ -75,11 +75,23 @@ export function ActiveExamSection() {
         </div>
 
         <div className="mt-5 flex flex-wrap gap-3">
-          <button className="flex min-w-[200px] flex-1 items-center justify-center gap-2 rounded-md border border-[#D0D5DD] bg-white px-3 py-2 text-[14px] font-medium text-[#344054] shadow-sm">
+          <button
+            className={[
+              "flex min-w-[200px] flex-1 items-center justify-center gap-2",
+              "rounded-md border border-[#D0D5DD] bg-white px-3 py-2",
+              "text-[14px] font-medium text-[#344054] shadow-sm",
+            ].join(" ")}
+          >
             <EyeIcon className="h-4 w-4 text-[#0F1216]" />
             Шалгалтыг хянах
           </button>
-          <button className="flex min-w-[200px] flex-1 items-center justify-center gap-2 rounded-md border border-[#DFE1E5] bg-[#FAFAFA] px-3 py-2 text-[14px] font-medium text-[#0F1216] shadow-sm">
+          <button
+            className={[
+              "flex min-w-[200px] flex-1 items-center justify-center gap-2",
+              "rounded-md border border-[#DFE1E5] bg-[#FAFAFA] px-3 py-2",
+              "text-[14px] font-medium text-[#0F1216] shadow-sm",
+            ].join(" ")}
+          >
             <DetailsIcon className="h-4 w-4 text-[#0F1216]" />
             Дэлгэрэнгүй харах
           </button>

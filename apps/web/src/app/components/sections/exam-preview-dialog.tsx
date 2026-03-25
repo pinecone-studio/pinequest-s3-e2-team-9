@@ -21,7 +21,12 @@ export function ExamPreviewDialog({ open, onClose }: ExamPreviewDialogProps) {
       onClick={onClose}
     >
       <div
-        className="relative h-[1124px] max-h-[calc(100vh-48px)] w-[672px] max-w-[90vw] overflow-y-auto rounded-lg border border-[#DFE1E5] bg-[#FAFAFA] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]"
+        className={[
+          "relative h-[1124px] w-[672px] max-w-[90vw]",
+          "max-h-[calc(100vh-48px)] overflow-y-auto rounded-lg border",
+          "border-[#DFE1E5] bg-[#FAFAFA]",
+          "shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]",
+        ].join(" ")}
         onClick={(event) => event.stopPropagation()}
       >
         <button

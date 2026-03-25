@@ -58,7 +58,14 @@ export function MyExamsSection() {
             className="h-9 w-full rounded-md border border-[#DFE1E5] bg-white px-9 text-[14px] text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#52555B]"
           />
         </label>
-        <button className="inline-flex h-9 w-full items-center justify-between gap-2 rounded-md border border-[#DFE1E5] bg-white px-3 text-[14px] text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] sm:w-[140px]">
+        <button
+          className={[
+            "inline-flex h-9 w-full items-center justify-between gap-2",
+            "rounded-md border border-[#DFE1E5] bg-white px-3 text-[14px]",
+            "text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)]",
+            "sm:w-[140px]",
+          ].join(" ")}
+        >
           Бүх төлөв
           <ChevronDownIcon className="h-4 w-4 text-[#52555B]" />
         </button>
