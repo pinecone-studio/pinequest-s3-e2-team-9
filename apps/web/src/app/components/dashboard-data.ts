@@ -18,7 +18,11 @@ import {
 
 type IconComponent = (props: IconProps) => ReactElement;
 
-export type NavItem = { label: string; active: boolean; icon: IconComponent };
+export type NavItem = {
+  label: string;
+  href: string;
+  icon: IconComponent;
+};
 export type AttentionCard = {
   value: string;
   label: string;
@@ -32,13 +36,13 @@ export type QuickAction = {
 };
 
 export const navItems: NavItem[] = [
-  { label: "Нүүр", active: true, icon: HomeIcon },
-  { label: "Шалгалт үүсгэх", active: false, icon: GridIcon },
-  { label: "Миний шалгалтууд", active: false, icon: ClipboardIcon },
-  { label: "Ангиуд", active: false, icon: UsersIcon },
-  { label: "Асуултын сан", active: false, icon: BookIcon },
-  { label: "Үнэлгээ", active: false, icon: ChartIcon },
-  { label: "Шалгалтын хяналт", active: false, icon: MonitorIcon },
+  { label: "Нүүр", href: "/", icon: HomeIcon },
+  { label: "Шалгалт үүсгэх", href: "/create-exam", icon: GridIcon },
+  { label: "Миний шалгалтууд", href: "/my-exams", icon: ClipboardIcon },
+  { label: "Ангиуд", href: "/classes", icon: UsersIcon },
+  { label: "Асуултын сан", href: "/question-bank", icon: BookIcon },
+  { label: "Үнэлгээ", href: "/assessment", icon: ChartIcon },
+  { label: "Шалгалтын хяналт", href: "/proctoring", icon: MonitorIcon },
 ];
 
 export const attentionCards: AttentionCard[] = [
