@@ -1,5 +1,6 @@
 import { all, first, invariant, run, type D1DatabaseLike } from "../../lib/d1";
 import {
+  type DeleteQuestionArgs,
   makeId,
   now,
   toJsonArray,
@@ -10,6 +11,7 @@ import {
   type QuestionRow,
   type QuestionsArgs,
   type Role,
+  type UpdateQuestionArgs,
   type UserRow,
 } from "../types";
 
@@ -51,6 +53,12 @@ export const findQuestionById = async (
   invariant(question, `Question ${id} not found`);
   return question;
 };
+
+const normalizeQuestionOptions = (
+  type: QuestionRow["type"],
+  options?: string[],
+) =>
+  type === "TRUE_FALSE" ? ["True", "False"] : type === "MCQ" ? options ?? [] : [];
 
 type QuestionModuleDependencies = {
   db: D1DatabaseLike;
@@ -152,12 +160,7 @@ export const createQuestionQueriesAndMutations = ({
     const actor = await requireActor(db, ["ADMIN", "TEACHER"]);
     const id = makeId("question");
     const createdAt = now();
-    const normalizedOptions =
-      type === "TRUE_FALSE"
-        ? ["True", "False"]
-        : type === "MCQ"
-          ? options ?? []
-          : [];
+    const normalizedOptions = normalizeQuestionOptions(type, options);
 
     await run(
       db,
@@ -191,5 +194,43 @@ export const createQuestionQueriesAndMutations = ({
     );
 
     return toQuestion(db, await findQuestionById(db, id));
+  },
+  updateQuestion: async ({
+    id,
+    type,
+    title,
+    prompt,
+    options,
+    correctAnswer,
+    difficulty,
+    tags,
+  }: UpdateQuestionArgs) => {
+    const question = await findQuestionById(db, id);
+    await requireActor(db, ["ADMIN", "TEACHER"]);
+
+    await run(
+      db,
+      `UPDATE questions
+       SET type = ?, title = ?, prompt = ?, options_json = ?, correct_answer = ?, difficulty = ?, tags_json = ?
+       WHERE id = ?`,
+      [
+        type,
+        title,
+        prompt,
+        toJsonArray(normalizeQuestionOptions(type, options)),
+        correctAnswer ?? null,
+        difficulty ?? question.difficulty,
+        toJsonArray(tags),
+        id,
+      ],
+    );
+
+    return toQuestion(db, await findQuestionById(db, id));
+  },
+  deleteQuestion: async ({ id }: DeleteQuestionArgs) => {
+    await findQuestionById(db, id);
+    await requireActor(db, ["ADMIN", "TEACHER"]);
+    await run(db, "DELETE FROM questions WHERE id = ?", [id]);
+    return true;
   },
 });

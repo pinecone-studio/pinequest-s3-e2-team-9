@@ -117,6 +117,21 @@ export type CreateQuestionArgs = {
   tags?: string[];
 };
 
+export type UpdateQuestionArgs = {
+  id: string;
+  type: QuestionType;
+  title: string;
+  prompt: string;
+  options?: string[];
+  correctAnswer?: string;
+  difficulty?: Difficulty;
+  tags?: string[];
+};
+
+export type DeleteQuestionArgs = {
+  id: string;
+};
+
 export type CreateExamArgs = {
   classId: string;
   title: string;

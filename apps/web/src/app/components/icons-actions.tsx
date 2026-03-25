@@ -102,6 +102,20 @@ export function ArrowRightIcon({ className }: IconProps) {
     </svg>
   );
 }
+export function ArrowLeftIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+    >
+      <path d="M19 12H5" />
+      <path d="m11 6-6 6 6 6" />
+    </svg>
+  );
+}
 
 export function SearchIcon({ className }: IconProps) {
   return (
@@ -114,6 +128,21 @@ export function SearchIcon({ className }: IconProps) {
     >
       <circle cx="11" cy="11" r="6.5" />
       <path d="M16 16l4 4" />
+    </svg>
+  );
+}
+export function FilterIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 6h16l-6.5 7.2V18l-3 2v-6.8L4 6Z" />
     </svg>
   );
 }

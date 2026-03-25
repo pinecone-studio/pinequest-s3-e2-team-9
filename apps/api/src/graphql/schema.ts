@@ -65,6 +65,17 @@ export const schemaSource = /* GraphQL */ `
       difficulty: Difficulty = MEDIUM
       tags: [String!]
     ): Question!
+    updateQuestion(
+      id: ID!
+      type: QuestionType!
+      title: String!
+      prompt: String!
+      options: [String!]
+      correctAnswer: String
+      difficulty: Difficulty = MEDIUM
+      tags: [String!]
+    ): Question!
+    deleteQuestion(id: ID!): Boolean!
     createExam(
       classId: ID!
       title: String!

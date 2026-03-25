@@ -1,0 +1,23 @@
+mutation CreateQuestionMutation(
+  $bankId: ID!
+  $type: QuestionType!
+  $title: String!
+  $prompt: String!
+  $options: [String!]
+  $correctAnswer: String
+  $difficulty: Difficulty!
+  $tags: [String!]
+) {
+  createQuestion(
+    bankId: $bankId
+    type: $type
+    title: $title
+    prompt: $prompt
+    options: $options
+    correctAnswer: $correctAnswer
+    difficulty: $difficulty
+    tags: $tags
+  ) {
+    id
+  }
+}

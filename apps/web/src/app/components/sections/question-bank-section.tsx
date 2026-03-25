@@ -1,12 +1,15 @@
 "use client";
 
 import { useQuery } from "@apollo/client/react";
+import Link from "next/link";
 import { QuestionBanksQueryDocument } from "@/graphql/generated";
 import { BookIcon, PlusIcon, SearchIcon } from "../icons";
 import {
   formatQuestionBankDate,
   type QuestionBankItem,
 } from "../question-bank-utils";
+
+const QUESTION_BANK_SKELETONS = Array.from({ length: 6 }, (_, index) => index);
 
 const mapQuestionBankItems = (
   banks: {
@@ -75,10 +78,6 @@ export function QuestionBankSection() {
         />
       </label>
 
-      {loading ? (
-        <p className="text-[14px] text-[#52555B]">Асуултын санг уншиж байна...</p>
-      ) : null}
-
       {errorMessage ? <p className="text-[14px] text-[#B42318]">{errorMessage}</p> : null}
 
       {!loading && !errorMessage && !items.length ? (
@@ -88,10 +87,33 @@ export function QuestionBankSection() {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {loading
+          ? QUESTION_BANK_SKELETONS.map((item) => (
+              <div
+                key={item}
+                className="rounded-xl border border-[#DFE1E5] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
+              >
+                <div className="animate-pulse">
+                  <div className="flex items-start justify-between">
+                    <div className="h-10 w-10 rounded-lg bg-[#E9EDF3]" />
+                    <div className="h-7 w-20 rounded-md bg-[#E9EDF3]" />
+                  </div>
+                  <div className="mt-4 h-5 w-2/3 rounded bg-[#E9EDF3]" />
+                  <div className="mt-2 h-4 w-full rounded bg-[#E9EDF3]" />
+                  <div className="mt-2 h-4 w-5/6 rounded bg-[#E9EDF3]" />
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="h-4 w-20 rounded bg-[#E9EDF3]" />
+                    <div className="h-4 w-24 rounded bg-[#E9EDF3]" />
+                  </div>
+                </div>
+              </div>
+            ))
+          : null}
         {items.map((item) => (
-          <article
+          <Link
             key={item.id}
-            className="relative rounded-xl border border-[#DFE1E5] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
+            href={`/question-bank/${item.id}`}
+            className="relative block cursor-pointer rounded-xl border border-[#DFE1E5] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition hover:-translate-y-0.5 hover:shadow-[0px_8px_24px_rgba(15,18,22,0.08)]"
           >
             <div className="flex items-start justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1922301A] text-[#192230]">
@@ -111,7 +133,7 @@ export function QuestionBankSection() {
               <span>{item.questions}</span>
               <span>{item.date}</span>
             </div>
-          </article>
+          </Link>
         ))}
       </div>
     </section>

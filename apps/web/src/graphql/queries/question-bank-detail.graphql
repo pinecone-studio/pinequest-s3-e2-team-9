@@ -1,0 +1,19 @@
+query QuestionBankDetailQuery($id: ID!) {
+  questionBank(id: $id) {
+    id
+    title
+    description
+    subject
+    questionCount
+    questions {
+      id
+      title
+      prompt
+      type
+      difficulty
+      options
+      correctAnswer
+      tags
+    }
+  }
+}

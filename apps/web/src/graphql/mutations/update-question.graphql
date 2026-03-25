@@ -1,0 +1,23 @@
+mutation UpdateQuestionMutation(
+  $id: ID!
+  $type: QuestionType!
+  $title: String!
+  $prompt: String!
+  $options: [String!]
+  $correctAnswer: String
+  $difficulty: Difficulty!
+  $tags: [String!]
+) {
+  updateQuestion(
+    id: $id
+    type: $type
+    title: $title
+    prompt: $prompt
+    options: $options
+    correctAnswer: $correctAnswer
+    difficulty: $difficulty
+    tags: $tags
+  ) {
+    id
+  }
+}
