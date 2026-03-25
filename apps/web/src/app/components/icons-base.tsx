@@ -1,5 +1,19 @@
+/* eslint-disable max-lines */
 export type IconProps = { className?: string };
-
+export function SearchIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.35-4.35" />
+    </svg>
+  );
+}
 export function HomeIcon({ className }: IconProps) {
   return (
     <svg
