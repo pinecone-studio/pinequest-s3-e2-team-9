@@ -1,0 +1,26 @@
+mutation CreateExam(
+  $classId: ID!
+  $title: String!
+  $description: String
+  $mode: ExamMode!
+  $durationMinutes: Int!
+) {
+  createExam(
+    classId: $classId
+    title: $title
+    description: $description
+    mode: $mode
+    durationMinutes: $durationMinutes
+  ) {
+    id
+    title
+    status
+    mode
+    durationMinutes
+    createdAt
+    class {
+      id
+      name
+    }
+  }
+}
