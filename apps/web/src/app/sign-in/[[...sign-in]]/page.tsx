@@ -1,6 +1,8 @@
 import { AuthShell } from "@/app/components/auth-shell";
 import { CustomEmailOtpSignInForm } from "./custom-email-otp-sign-in-form";
 
+export const runtime = "edge";
+
 export default function SignInPage() {
   return (
     <AuthShell

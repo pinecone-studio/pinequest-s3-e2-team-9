@@ -1,6 +1,8 @@
 import { SignUp } from "@clerk/nextjs";
 import { AuthShell } from "@/app/components/auth-shell";
 
+export const runtime = "edge";
+
 const clerkAuthAppearance = {
   theme: "simple",
   variables: {
