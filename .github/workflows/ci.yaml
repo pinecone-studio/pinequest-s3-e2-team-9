@@ -316,7 +316,7 @@ jobs:
           fi
 
           prefix="pinequest-api-"
-          max_suffix_length=$((63 - ${#prefix}))
+          max_suffix_length=$((54 - ${#prefix}))
 
           if [ ${#sanitized} -gt ${max_suffix_length} ]; then
             short_sha="$(printf '%s' "${SHA}" | cut -c1-8)"
