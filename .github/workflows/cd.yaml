@@ -162,6 +162,8 @@ jobs:
         if: steps.cloudflare.outputs.available == 'true'
         env:
           NEXT_PUBLIC_GRAPHQL_ENDPOINT: ${{ vars.NEXT_PUBLIC_GRAPHQL_ENDPOINT }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
         run: npm run build:pages
 
       - name: Deploy web to Cloudflare Pages
