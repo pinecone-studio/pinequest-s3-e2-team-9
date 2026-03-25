@@ -163,7 +163,16 @@ const toQuestionBank = (db: D1DatabaseLike, bank: QuestionBankRow) => ({
   id: bank.id,
   title: bank.title,
   description: bank.description,
+  subject: bank.subject,
   createdAt: bank.created_at,
+  questionCount: async () => {
+    const aggregate = await first<{ count: number | null }>(
+      db,
+      "SELECT COUNT(*) AS count FROM questions WHERE bank_id = ?",
+      [bank.id],
+    );
+    return aggregate?.count ?? 0;
+  },
   owner: async () => toUser(db, await findUser(db, bank.owner_id)),
   questions: async () => {
     const rows = await all<QuestionRow>(

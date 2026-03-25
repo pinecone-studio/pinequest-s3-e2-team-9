@@ -19,7 +19,7 @@ export const findQuestionBankById = async (
 ): Promise<QuestionBankRow> => {
   const bank = await first<QuestionBankRow>(
     db,
-    "SELECT id, title, description, owner_id, created_at FROM question_banks WHERE id = ?",
+    "SELECT id, title, description, subject, owner_id, created_at FROM question_banks WHERE id = ?",
     [id],
   );
   invariant(bank, `Question bank ${id} not found`);
@@ -68,7 +68,7 @@ export const createQuestionQueriesAndMutations = ({
   questionBanks: async () => {
     const rows = await all<QuestionBankRow>(
       db,
-      `SELECT id, title, description, owner_id, created_at
+      `SELECT id, title, description, subject, owner_id, created_at
        FROM question_banks
        ORDER BY created_at DESC`,
     );
@@ -77,7 +77,7 @@ export const createQuestionQueriesAndMutations = ({
   questionBank: async ({ id }: ByIdArgs) => {
     const bank = await first<QuestionBankRow>(
       db,
-      `SELECT id, title, description, owner_id, created_at
+      `SELECT id, title, description, subject, owner_id, created_at
        FROM question_banks
        WHERE id = ?`,
       [id],
@@ -131,9 +131,9 @@ export const createQuestionQueriesAndMutations = ({
 
     await run(
       db,
-      `INSERT INTO question_banks (id, title, description, owner_id, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
-      [id, title, description ?? null, actor.id, createdAt],
+      `INSERT INTO question_banks (id, title, description, subject, owner_id, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [id, title, description ?? null, "Асуултын сан", actor.id, createdAt],
     );
 
     return toQuestionBank(db, await findQuestionBankById(db, id));
