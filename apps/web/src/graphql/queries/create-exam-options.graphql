@@ -1,0 +1,16 @@
+query CreateExamOptions {
+  classes {
+    id
+    name
+  }
+  questions {
+    id
+    title
+    type
+    difficulty
+    bank {
+      id
+      title
+    }
+  }
+}

@@ -1,0 +1,13 @@
+mutation AddQuestionToExam($examId: ID!, $questionId: ID!, $points: Int!) {
+  addQuestionToExam(examId: $examId, questionId: $questionId, points: $points) {
+    id
+    questions {
+      id
+      points
+      order
+      question {
+        id
+      }
+    }
+  }
+}
