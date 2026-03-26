@@ -1,8 +1,8 @@
 "use client";
 
 import { useDashboardOverviewQuery } from "@/graphql/generated";
-import { buildDashboardPageViewModel } from "@/app/components/dashboard/dashboard-page-view-model";
-import type { DashboardPageViewModel } from "@/app/components/dashboard/dashboard-types";
+import { buildDashboardPageViewModel } from "../components/dashboard/dashboard-page-view-model";
+import type { DashboardPageViewModel } from "../components/dashboard/dashboard-types";
 
 type UseDashboardDataResult = {
   viewModel: DashboardPageViewModel | null;

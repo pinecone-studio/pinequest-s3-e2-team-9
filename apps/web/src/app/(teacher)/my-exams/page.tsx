@@ -1,10 +1,13 @@
 import { AppShell } from "../components/app-shell";
 import { MyExamsSection } from "../components/sections/my-exams-section";
+import { RoleGuard } from "@/components/role-guard";
 
 export default function MyExamsPage() {
   return (
-    <AppShell>
-      <MyExamsSection />
-    </AppShell>
+    <RoleGuard allowedRoles={["TEACHER"]}>
+      <AppShell>
+        <MyExamsSection />
+      </AppShell>
+    </RoleGuard>
   );
 }

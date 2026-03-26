@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState } from "react";
-import { useDashboardData } from "@/app/hooks/use-dashboard-data";
+import { useDashboardData } from "../hooks/use-dashboard-data";
 import { DashboardEmptyState, DashboardErrorState, DashboardSkeleton } from "./dashboard-page-states";
 import { DashboardHero } from "./dashboard-hero";
 import { DashboardQuickActions } from "./dashboard-quick-actions";

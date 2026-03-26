@@ -61,3 +61,17 @@ export const collectSubmissionErrorMessages = (error: unknown) => {
 
   return [...new Set(messages)];
 };
+
+export const submissionErrorHasCode = (error: unknown, code: string) => {
+  if (!error || typeof error !== "object" || !("errors" in error)) {
+    return false;
+  }
+
+  const entries = (error as {
+    errors?: Array<{
+      code?: string;
+    }>;
+  }).errors;
+
+  return entries?.some((entry) => entry.code === code) ?? false;
+};

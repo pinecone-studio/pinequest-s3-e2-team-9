@@ -52,6 +52,7 @@ export function CustomEmailOtpSignInForm() {
           onSubmit={handleVerifyCode}
         />
       )}
+      <div id="clerk-captcha" />
     </div>
   );
 }

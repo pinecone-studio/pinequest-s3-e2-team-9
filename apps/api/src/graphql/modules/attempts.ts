@@ -1,5 +1,6 @@
 import { all, first, invariant, run, type D1DatabaseLike } from "../../lib/d1";
 import { closeExpiredExams } from "./exams";
+import type { RequestContext } from "../../auth";
 import {
   makeId,
   normalize,
@@ -12,6 +13,7 @@ import {
   type SaveAnswerArgs,
   type StartAttemptArgs,
   type SubmitAttemptArgs,
+  type Role,
   type UserRow,
 } from "../types";
 
@@ -114,6 +116,7 @@ export const recalculateAttemptScores = async (
 
 type AttemptMutationDependencies = {
   db: D1DatabaseLike;
+  requireActor: (context: RequestContext, roles: Role[]) => Promise<UserRow>;
   findExam: (db: D1DatabaseLike, id: string) => Promise<ExamRow>;
   findUser: (db: D1DatabaseLike, id: string) => Promise<UserRow>;
   findQuestion: (db: D1DatabaseLike, id: string) => Promise<QuestionRow>;
@@ -122,24 +125,39 @@ type AttemptMutationDependencies = {
 
 export const createAttemptMutations = ({
   db,
+  requireActor,
   findExam,
   findUser,
   findQuestion,
   toAttempt,
 }: AttemptMutationDependencies) => ({
-  startAttempt: async ({ examId, studentId }: StartAttemptArgs) => {
+  startAttempt: async (
+    { examId, studentId }: StartAttemptArgs,
+    context: RequestContext,
+  ) => {
     await closeExpiredExams(db);
+    const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
     const exam = await findExam(db, examId);
     invariant(
       exam.status === "PUBLISHED",
       "Only published exams can be started.",
     );
-    await findUser(db, studentId);
+    const effectiveStudentId =
+      actor.role === "STUDENT" ? actor.id : studentId;
+
+    if (actor.role === "STUDENT") {
+      invariant(
+        studentId === actor.id,
+        "Students can only start their own attempts.",
+      );
+    }
+
+    await findUser(db, effectiveStudentId);
 
     const existingAttempt = await findLatestAttemptForExamStudent(
       db,
       examId,
-      studentId,
+      effectiveStudentId,
     );
 
     if (existingAttempt) {
@@ -163,13 +181,23 @@ export const createAttemptMutations = ({
         submitted_at
       )
       VALUES (?, ?, ?, ?, 0, 0, 0, ?, NULL)`,
-      [id, examId, studentId, "IN_PROGRESS", startedAt],
+      [id, examId, effectiveStudentId, "IN_PROGRESS", startedAt],
     );
 
     return toAttempt(db, await findAttemptById(db, id));
   },
-  saveAnswer: async ({ attemptId, questionId, value }: SaveAnswerArgs) => {
+  saveAnswer: async (
+    { attemptId, questionId, value }: SaveAnswerArgs,
+    context: RequestContext,
+  ) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
     const attempt = await findAttemptById(db, attemptId);
+    if (actor.role === "STUDENT") {
+      invariant(
+        attempt.student_id === actor.id,
+        "Students can only update their own attempts.",
+      );
+    }
     invariant(attempt.status === "IN_PROGRESS", "Only in-progress attempts can be edited.");
 
     const question = await findQuestion(db, questionId);
@@ -228,8 +256,18 @@ export const createAttemptMutations = ({
     await recalculateAttemptScores(db, attemptId);
     return toAttempt(db, await findAttemptById(db, attemptId));
   },
-  submitAttempt: async ({ attemptId }: SubmitAttemptArgs) => {
+  submitAttempt: async (
+    { attemptId }: SubmitAttemptArgs,
+    context: RequestContext,
+  ) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
     const attempt = await findAttemptById(db, attemptId);
+    if (actor.role === "STUDENT") {
+      invariant(
+        attempt.student_id === actor.id,
+        "Students can only submit their own attempts.",
+      );
+    }
 
     if (attempt.status === "SUBMITTED" || attempt.status === "GRADED") {
       return toAttempt(db, attempt);

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarIcon, CheckCircleIcon } from "@/app/components/icons";
+import { CalendarIcon, CheckCircleIcon } from "../../components/icons";
 
 type ClassCardProps = {
   href: string;

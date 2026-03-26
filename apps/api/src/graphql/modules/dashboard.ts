@@ -1,5 +1,6 @@
 import { all, first, type D1DatabaseLike } from "../../lib/d1";
-import { findActor } from "../root-lookups";
+import type { RequestContext } from "../../auth";
+import type { Role, UserRow } from "../types";
 
 type CountRow = { count: number | null };
 type UpcomingExamRow = {
@@ -20,25 +21,19 @@ type RecentResultRow = {
 
 const toSafeCount = (value: number | null | undefined): number => value ?? 0;
 
-export const createDashboardOverviewQuery = (db: D1DatabaseLike) => ({
-  dashboardOverview: async () => {
-    const actor = await findActor(db);
-    const teacherId = actor?.id ?? null;
-    const nowIso = new Date().toISOString();
+type DashboardModuleDependencies = {
+  db: D1DatabaseLike;
+  requireActor: (context: RequestContext, roles: Role[]) => Promise<UserRow>;
+};
 
-    if (!teacherId) {
-      return {
-        teacherName: "Багш",
-        summary: {
-          pendingReviewCount: 0,
-          draftExamCount: 0,
-          ongoingExamCount: 0,
-          scheduledExamCount: 0,
-        },
-        upcomingExams: [],
-        recentResults: [],
-      };
-    }
+export const createDashboardOverviewQuery = ({
+  db,
+  requireActor,
+}: DashboardModuleDependencies) => ({
+  dashboardOverview: async (_args: unknown, context: RequestContext) => {
+    const actor = await requireActor(context, ["TEACHER"]);
+    const teacherId = actor.id;
+    const nowIso = new Date().toISOString();
 
     const [pendingReview, draftExam, ongoingExam, scheduledExam, upcomingExams, recentResults] =
       await Promise.all([
@@ -139,7 +134,7 @@ export const createDashboardOverviewQuery = (db: D1DatabaseLike) => ({
       ]);
 
     return {
-      teacherName: actor?.full_name ?? "Багш",
+      teacherName: actor.full_name,
       summary: {
         pendingReviewCount: toSafeCount(pendingReview?.count),
         draftExamCount: toSafeCount(draftExam?.count),

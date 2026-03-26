@@ -1,4 +1,4 @@
-import { ClockIcon, DotsIcon } from "@/app/components/icons";
+import { ClockIcon, DotsIcon } from "../../components/icons";
 import { ClassesStatusBadge } from "./classes-status-badge";
 
 type StudentRow = {

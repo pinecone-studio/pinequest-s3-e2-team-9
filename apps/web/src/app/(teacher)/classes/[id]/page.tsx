@@ -1,5 +1,6 @@
-import { AppShell } from "@/app/components/app-shell";
+import { AppShell } from "../../components/app-shell";
 import { ClassDetailPageContent } from "./class-detail-page-content";
+import { RoleGuard } from "@/components/role-guard";
 
 type ClassDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -11,8 +12,10 @@ export default async function ClassDetailPage({
   const { id } = await params;
 
   return (
-    <AppShell>
-      <ClassDetailPageContent id={id} />
-    </AppShell>
+    <RoleGuard allowedRoles={["TEACHER"]}>
+      <AppShell>
+        <ClassDetailPageContent id={id} />
+      </AppShell>
+    </RoleGuard>
   );
 }

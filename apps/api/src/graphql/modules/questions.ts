@@ -1,4 +1,5 @@
 import { all, first, invariant, run, type D1DatabaseLike } from "../../lib/d1";
+import type { RequestContext } from "../../auth";
 import {
   type DeleteQuestionArgs,
   makeId,
@@ -62,7 +63,7 @@ const normalizeQuestionOptions = (
 
 type QuestionModuleDependencies = {
   db: D1DatabaseLike;
-  requireActor: (db: D1DatabaseLike, roles: Role[]) => Promise<UserRow>;
+  requireActor: (context: RequestContext, roles: Role[]) => Promise<UserRow>;
   toQuestionBank: (db: D1DatabaseLike, bank: QuestionBankRow) => unknown;
   toQuestion: (db: D1DatabaseLike, question: QuestionRow) => unknown;
 };
@@ -73,67 +74,135 @@ export const createQuestionQueriesAndMutations = ({
   toQuestionBank,
   toQuestion,
 }: QuestionModuleDependencies) => ({
-  questionBanks: async () => {
-    const rows = await all<QuestionBankRow>(
-      db,
-      `SELECT id, title, description, subject, owner_id, created_at
-       FROM question_banks
-       ORDER BY created_at DESC`,
-    );
+  questionBanks: async (_args: unknown, context: RequestContext) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const rows =
+      actor.role === "ADMIN"
+        ? await all<QuestionBankRow>(
+            db,
+            `SELECT id, title, description, subject, owner_id, created_at
+             FROM question_banks
+             ORDER BY created_at DESC`,
+          )
+        : await all<QuestionBankRow>(
+            db,
+            `SELECT id, title, description, subject, owner_id, created_at
+             FROM question_banks
+             WHERE owner_id = ?
+             ORDER BY created_at DESC`,
+            [actor.id],
+          );
     return rows.map((row) => toQuestionBank(db, row));
   },
-  questionBank: async ({ id }: ByIdArgs) => {
-    const bank = await first<QuestionBankRow>(
-      db,
-      `SELECT id, title, description, subject, owner_id, created_at
-       FROM question_banks
-       WHERE id = ?`,
-      [id],
-    );
+  questionBank: async ({ id }: ByIdArgs, context: RequestContext) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const bank =
+      actor.role === "ADMIN"
+        ? await first<QuestionBankRow>(
+            db,
+            `SELECT id, title, description, subject, owner_id, created_at
+             FROM question_banks
+             WHERE id = ?`,
+            [id],
+          )
+        : await first<QuestionBankRow>(
+            db,
+            `SELECT id, title, description, subject, owner_id, created_at
+             FROM question_banks
+             WHERE id = ? AND owner_id = ?`,
+            [id, actor.id],
+          );
     return bank ? toQuestionBank(db, bank) : null;
   },
-  questions: async ({ bankId }: QuestionsArgs) => {
-    const rows = bankId
-      ? await all<QuestionRow>(
-          db,
-          `SELECT
-            id,
-            bank_id,
-            type,
-            title,
-            prompt,
-            options_json,
-            correct_answer,
-            difficulty,
-            tags_json,
-            created_by_id,
-            created_at
-          FROM questions
-          WHERE bank_id = ?
-          ORDER BY created_at DESC`,
-          [bankId],
-        )
-      : await all<QuestionRow>(
-          db,
-          `SELECT
-            id,
-            bank_id,
-            type,
-            title,
-            prompt,
-            options_json,
-            correct_answer,
-            difficulty,
-            tags_json,
-            created_by_id,
-            created_at
-          FROM questions
-          ORDER BY created_at DESC`,
-        );
+  questions: async ({ bankId }: QuestionsArgs, context: RequestContext) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const rows =
+      actor.role === "ADMIN"
+        ? bankId
+          ? await all<QuestionRow>(
+              db,
+              `SELECT
+                id,
+                bank_id,
+                type,
+                title,
+                prompt,
+                options_json,
+                correct_answer,
+                difficulty,
+                tags_json,
+                created_by_id,
+                created_at
+              FROM questions
+              WHERE bank_id = ?
+              ORDER BY created_at DESC`,
+              [bankId],
+            )
+          : await all<QuestionRow>(
+              db,
+              `SELECT
+                id,
+                bank_id,
+                type,
+                title,
+                prompt,
+                options_json,
+                correct_answer,
+                difficulty,
+                tags_json,
+                created_by_id,
+                created_at
+              FROM questions
+              ORDER BY created_at DESC`,
+            )
+        : bankId
+          ? await all<QuestionRow>(
+              db,
+              `SELECT
+                q.id,
+                q.bank_id,
+                q.type,
+                q.title,
+                q.prompt,
+                q.options_json,
+                q.correct_answer,
+                q.difficulty,
+                q.tags_json,
+                q.created_by_id,
+                q.created_at
+              FROM questions q
+              JOIN question_banks qb ON qb.id = q.bank_id
+              WHERE q.bank_id = ? AND qb.owner_id = ?
+              ORDER BY q.created_at DESC`,
+              [bankId, actor.id],
+            )
+          : await all<QuestionRow>(
+              db,
+              `SELECT
+                q.id,
+                q.bank_id,
+                q.type,
+                q.title,
+                q.prompt,
+                q.options_json,
+                q.correct_answer,
+                q.difficulty,
+                q.tags_json,
+                q.created_by_id,
+                q.created_at
+              FROM questions q
+              JOIN question_banks qb ON qb.id = q.bank_id
+              WHERE qb.owner_id = ?
+              ORDER BY q.created_at DESC`,
+              [actor.id],
+            );
     return rows.map((row) => toQuestion(db, row));
   },
-  createQuestionBank: async ({ title, description }: CreateQuestionBankArgs) => {
-    const actor = await requireActor(db, ["ADMIN", "TEACHER"]);
+  createQuestionBank: async (
+    { title, description }: CreateQuestionBankArgs,
+    context: RequestContext,
+  ) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
     const id = makeId("bank");
     const createdAt = now();
 
@@ -146,18 +215,24 @@ export const createQuestionQueriesAndMutations = ({
 
     return toQuestionBank(db, await findQuestionBankById(db, id));
   },
-  createQuestion: async ({
-    bankId,
-    type,
-    title,
-    prompt,
-    options,
-    correctAnswer,
-    difficulty,
-    tags,
-  }: CreateQuestionArgs) => {
-    await findQuestionBankById(db, bankId);
-    const actor = await requireActor(db, ["ADMIN", "TEACHER"]);
+  createQuestion: async (
+    {
+      bankId,
+      type,
+      title,
+      prompt,
+      options,
+      correctAnswer,
+      difficulty,
+      tags,
+    }: CreateQuestionArgs,
+    context: RequestContext,
+  ) => {
+    const bank = await findQuestionBankById(db, bankId);
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    if (actor.role === "TEACHER") {
+      invariant(bank.owner_id === actor.id, "You can only create questions in your own question banks.");
+    }
     const id = makeId("question");
     const createdAt = now();
     const normalizedOptions = normalizeQuestionOptions(type, options);
@@ -195,18 +270,25 @@ export const createQuestionQueriesAndMutations = ({
 
     return toQuestion(db, await findQuestionById(db, id));
   },
-  updateQuestion: async ({
-    id,
-    type,
-    title,
-    prompt,
-    options,
-    correctAnswer,
-    difficulty,
-    tags,
-  }: UpdateQuestionArgs) => {
+  updateQuestion: async (
+    {
+      id,
+      type,
+      title,
+      prompt,
+      options,
+      correctAnswer,
+      difficulty,
+      tags,
+    }: UpdateQuestionArgs,
+    context: RequestContext,
+  ) => {
     const question = await findQuestionById(db, id);
-    await requireActor(db, ["ADMIN", "TEACHER"]);
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    if (actor.role === "TEACHER") {
+      const bank = await findQuestionBankById(db, question.bank_id);
+      invariant(bank.owner_id === actor.id, "You can only update questions in your own question banks.");
+    }
 
     await run(
       db,
@@ -227,9 +309,13 @@ export const createQuestionQueriesAndMutations = ({
 
     return toQuestion(db, await findQuestionById(db, id));
   },
-  deleteQuestion: async ({ id }: DeleteQuestionArgs) => {
-    await findQuestionById(db, id);
-    await requireActor(db, ["ADMIN", "TEACHER"]);
+  deleteQuestion: async ({ id }: DeleteQuestionArgs, context: RequestContext) => {
+    const question = await findQuestionById(db, id);
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    if (actor.role === "TEACHER") {
+      const bank = await findQuestionBankById(db, question.bank_id);
+      invariant(bank.owner_id === actor.id, "You can only delete questions in your own question banks.");
+    }
     await run(db, "DELETE FROM questions WHERE id = ?", [id]);
     return true;
   },

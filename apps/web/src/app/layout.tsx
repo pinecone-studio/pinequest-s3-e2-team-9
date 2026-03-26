@@ -27,8 +27,8 @@ export default function RootLayout({
           afterSignOutUrl="/sign-in"
           signInUrl="/sign-in"
           signInFallbackRedirectUrl="/"
-          signUpUrl="/sign-up"
-          signUpFallbackRedirectUrl="/"
+          signUpUrl="/sign-in"
+          signUpFallbackRedirectUrl="/sign-in"
         >
           <ClerkSignOutFix />
           <ApolloAppProvider>{children}</ApolloAppProvider>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ClockIcon, UsersIcon } from "@/app/components/icons";
+import { ClockIcon, UsersIcon } from "../../components/icons";
 
 type ClassStartExamDialogProps = {
   examTitle: string;

@@ -53,8 +53,8 @@ export function EmailIdentifierStep({
 
       {messages.length > 0 ? (
         <div className="rounded-[22px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[14px] leading-6 text-[#B42318]">
-          {messages.map((message) => (
-            <p key={message}>{message}</p>
+          {messages.map((message, index) => (
+            <p key={`${message}-${index}`}>{message}</p>
           ))}
         </div>
       ) : null}
@@ -130,8 +130,8 @@ export function VerificationStep({
 
       {messages.length > 0 ? (
         <div className="rounded-[22px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[14px] leading-6 text-[#B42318]">
-          {messages.map((message) => (
-            <p key={message}>{message}</p>
+          {messages.map((message, index) => (
+            <p key={`${message}-${index}`}>{message}</p>
           ))}
         </div>
       ) : null}

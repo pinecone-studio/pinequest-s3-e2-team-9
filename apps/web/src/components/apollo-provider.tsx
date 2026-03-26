@@ -1,13 +1,18 @@
 "use client";
 
+import { useAuth } from "@clerk/nextjs";
 import { ApolloProvider } from "@apollo/client/react";
 import type { PropsWithChildren } from "react";
-import { getApolloClient } from "@/lib/apollo-client";
+import { useMemo } from "react";
+import { createApolloClient } from "@/lib/apollo-client";
 
 type ApolloAppProviderProps = PropsWithChildren;
 
 export const ApolloAppProvider = ({
   children,
 }: ApolloAppProviderProps) => {
-  return <ApolloProvider client={getApolloClient()}>{children}</ApolloProvider>;
+  const { getToken } = useAuth();
+  const client = useMemo(() => createApolloClient(getToken), [getToken]);
+
+  return <ApolloProvider client={client}>{children}</ApolloProvider>;
 };

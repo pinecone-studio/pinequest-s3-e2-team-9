@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRightIcon, ClipboardIcon } from "@/app/components/icons";
+import { ArrowRightIcon, ClipboardIcon } from "../../components/icons";
 import { ClassesSearchInput } from "../components/classes-search-input";
 import { ClassesStatePanel } from "../components/classes-state-panel";
 import { ClassExamsTable } from "../components/class-exams-table";

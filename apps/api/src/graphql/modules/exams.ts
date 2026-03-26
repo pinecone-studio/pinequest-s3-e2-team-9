@@ -1,4 +1,5 @@
 import { all, first, invariant, run, type D1DatabaseLike } from "../../lib/d1";
+import type { RequestContext } from "../../auth";
 import {
   type AssignExamToClassArgs,
   makeId,
@@ -61,8 +62,8 @@ export const findExamById = async (
 
 type ExamModuleDependencies = {
   db: D1DatabaseLike;
-  requireActor: (db: D1DatabaseLike, roles: Role[]) => Promise<UserRow>;
-  findClass: (db: D1DatabaseLike, id: string) => Promise<{ id: string }>;
+  requireActor: (context: RequestContext, roles: Role[]) => Promise<UserRow>;
+  findClass: (db: D1DatabaseLike, id: string) => Promise<{ id: string; teacher_id: string }>;
   findQuestion: (db: D1DatabaseLike, id: string) => Promise<QuestionRow>;
   toExam: (db: D1DatabaseLike, exam: ExamRow) => unknown;
 };
@@ -74,61 +75,160 @@ export const createExamQueriesAndMutations = ({
   findQuestion,
   toExam,
 }: ExamModuleDependencies) => ({
-  exams: async () => {
+  exams: async (_args: unknown, context: RequestContext) => {
     await closeExpiredExams(db);
-    const rows = await all<ExamRow>(
-      db,
-      `SELECT
-        id,
-        class_id,
-        title,
-        description,
-        mode,
-        status,
-        duration_minutes,
-        started_at,
-        ends_at,
-        created_by_id,
-        scheduled_for,
-        created_at
-      FROM exams
-      ORDER BY created_at DESC`,
-    );
+    const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
+    const rows =
+      actor.role === "ADMIN"
+        ? await all<ExamRow>(
+            db,
+            `SELECT
+              id,
+              class_id,
+              title,
+              description,
+              mode,
+              status,
+              duration_minutes,
+              started_at,
+              ends_at,
+              created_by_id,
+              scheduled_for,
+              created_at
+            FROM exams
+            ORDER BY created_at DESC`,
+          )
+        : actor.role === "TEACHER"
+          ? await all<ExamRow>(
+              db,
+              `SELECT
+                e.id,
+                e.class_id,
+                e.title,
+                e.description,
+                e.mode,
+                e.status,
+                e.duration_minutes,
+                e.started_at,
+                e.ends_at,
+                e.created_by_id,
+                e.scheduled_for,
+                e.created_at
+              FROM exams e
+              JOIN classes c ON c.id = e.class_id
+              WHERE c.teacher_id = ?
+              ORDER BY e.created_at DESC`,
+              [actor.id],
+            )
+          : await all<ExamRow>(
+              db,
+              `SELECT DISTINCT
+                e.id,
+                e.class_id,
+                e.title,
+                e.description,
+                e.mode,
+                e.status,
+                e.duration_minutes,
+                e.started_at,
+                e.ends_at,
+                e.created_by_id,
+                e.scheduled_for,
+                e.created_at
+              FROM exams e
+              JOIN class_students cs ON cs.class_id = e.class_id
+              WHERE cs.student_id = ?
+              ORDER BY e.created_at DESC`,
+              [actor.id],
+            );
     return rows.map((row) => toExam(db, row));
   },
-  exam: async ({ id }: ByIdArgs) => {
+  exam: async ({ id }: ByIdArgs, context: RequestContext) => {
     await closeExpiredExams(db);
-    const exam = await first<ExamRow>(
-      db,
-      `SELECT
-        id,
-        class_id,
-        title,
-        description,
-        mode,
-        status,
-        duration_minutes,
-        started_at,
-        ends_at,
-        created_by_id,
-        scheduled_for,
-        created_at
-      FROM exams
-      WHERE id = ?`,
-      [id],
-    );
+    const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
+    const exam =
+      actor.role === "ADMIN"
+        ? await first<ExamRow>(
+            db,
+            `SELECT
+              id,
+              class_id,
+              title,
+              description,
+              mode,
+              status,
+              duration_minutes,
+              started_at,
+              ends_at,
+              created_by_id,
+              scheduled_for,
+              created_at
+            FROM exams
+            WHERE id = ?`,
+            [id],
+          )
+        : actor.role === "TEACHER"
+          ? await first<ExamRow>(
+              db,
+              `SELECT
+                e.id,
+                e.class_id,
+                e.title,
+                e.description,
+                e.mode,
+                e.status,
+                e.duration_minutes,
+                e.started_at,
+                e.ends_at,
+                e.created_by_id,
+                e.scheduled_for,
+                e.created_at
+              FROM exams e
+              JOIN classes c ON c.id = e.class_id
+              WHERE e.id = ? AND c.teacher_id = ?`,
+              [id, actor.id],
+            )
+          : await first<ExamRow>(
+              db,
+              `SELECT DISTINCT
+                e.id,
+                e.class_id,
+                e.title,
+                e.description,
+                e.mode,
+                e.status,
+                e.duration_minutes,
+                e.started_at,
+                e.ends_at,
+                e.created_by_id,
+                e.scheduled_for,
+                e.created_at
+              FROM exams e
+              JOIN class_students cs ON cs.class_id = e.class_id
+              WHERE e.id = ? AND cs.student_id = ?`,
+              [id, actor.id],
+            );
     return exam ? toExam(db, exam) : null;
   },
-  createExam: async ({
-    classId,
-    title,
-    description,
-    mode,
-    durationMinutes,
-    scheduledFor,
-  }: CreateExamArgs) => {
-    await findClass(db, classId);
-    const actor = await requireActor(db, ["ADMIN", "TEACHER"]);
+  createExam: async (
+    {
+      classId,
+      title,
+      description,
+      mode,
+      durationMinutes,
+      scheduledFor,
+    }: CreateExamArgs,
+    context: RequestContext,
+  ) => {
+    const classroom = await findClass(db, classId);
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    if (actor.role === "TEACHER") {
+      invariant(
+        classroom.teacher_id === actor.id,
+        "You can only create exams for your own classes.",
+      );
+    }
     const id = makeId("exam");
     const createdAt = now();
 
@@ -167,10 +267,28 @@ export const createExamQueriesAndMutations = ({
 
     return toExam(db, await findExamById(db, id));
   },
-  assignExamToClass: async ({ examId, classId }: AssignExamToClassArgs) => {
-    await findClass(db, classId);
-    const actor = await requireActor(db, ["ADMIN", "TEACHER"]);
+  assignExamToClass: async (
+    { examId, classId }: AssignExamToClassArgs,
+    context: RequestContext,
+  ) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const targetClass = await findClass(db, classId);
+    if (actor.role === "TEACHER") {
+      invariant(
+        targetClass.teacher_id === actor.id,
+        "You can only assign exams to your own classes.",
+      );
+    }
+
     const sourceExam = await findExamById(db, examId);
+    if (actor.role === "TEACHER") {
+      const sourceClass = await findClass(db, sourceExam.class_id);
+      invariant(
+        sourceClass.teacher_id === actor.id,
+        "You can only assign exams that belong to your own classes.",
+      );
+    }
+
     invariant(
       sourceExam.class_id !== classId,
       "Энэ шалгалт сонгосон ангид аль хэдийн харьяалагдаж байна.",
@@ -237,8 +355,19 @@ export const createExamQueriesAndMutations = ({
 
     return toExam(db, await findExamById(db, nextExamId));
   },
-  addQuestionToExam: async ({ examId, questionId, points }: AddQuestionToExamArgs) => {
-    await findExamById(db, examId);
+  addQuestionToExam: async (
+    { examId, questionId, points }: AddQuestionToExamArgs,
+    context: RequestContext,
+  ) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const exam = await findExamById(db, examId);
+    if (actor.role === "TEACHER") {
+      const classroom = await findClass(db, exam.class_id);
+      invariant(
+        classroom.teacher_id === actor.id,
+        "You can only edit exams for your own classes.",
+      );
+    }
     await findQuestion(db, questionId);
 
     const existing = await first<ExamQuestionRow>(
@@ -268,8 +397,16 @@ export const createExamQueriesAndMutations = ({
 
     return toExam(db, await findExamById(db, examId));
   },
-  publishExam: async ({ examId }: PublishExamArgs) => {
+  publishExam: async ({ examId }: PublishExamArgs, context: RequestContext) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
     const exam = await findExamById(db, examId);
+    if (actor.role === "TEACHER") {
+      const classroom = await findClass(db, exam.class_id);
+      invariant(
+        classroom.teacher_id === actor.id,
+        "You can only publish exams for your own classes.",
+      );
+    }
     invariant(exam.status === "DRAFT", "Only draft exams can be started.");
     const startedAt = now();
     const endsAt = getExamEndTimestamp(startedAt, exam.duration_minutes);
@@ -280,8 +417,16 @@ export const createExamQueriesAndMutations = ({
     );
     return toExam(db, await findExamById(db, examId));
   },
-  closeExam: async ({ examId }: CloseExamArgs) => {
+  closeExam: async ({ examId }: CloseExamArgs, context: RequestContext) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
     const exam = await findExamById(db, examId);
+    if (actor.role === "TEACHER") {
+      const classroom = await findClass(db, exam.class_id);
+      invariant(
+        classroom.teacher_id === actor.id,
+        "You can only close exams for your own classes.",
+      );
+    }
     if (exam.status !== "CLOSED") {
       await run(
         db,

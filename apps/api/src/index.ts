@@ -1,4 +1,12 @@
 import { buildSchema, graphql } from "graphql";
+import {
+  ApiAuthError,
+  authenticateActor,
+  createRequestContext,
+  ensureClerkUserForAppUser,
+  findUserByEmail,
+  toAuthResponse,
+} from "./auth";
 import type { D1DatabaseLike } from "./lib/d1";
 import { createRootValue } from "./graphql/root-value";
 import { schemaSource } from "./graphql/schema";
@@ -6,7 +14,8 @@ import { schemaSource } from "./graphql/schema";
 const corsHeaders = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, OPTIONS",
-  "access-control-allow-headers": "content-type, apollo-require-preflight",
+  "access-control-allow-headers":
+    "authorization, content-type, apollo-require-preflight",
 } satisfies Record<string, string>;
 
 const json = (payload: unknown, init?: ResponseInit): Response =>
@@ -42,6 +51,7 @@ const schema = buildSchema(schemaSource);
 
 type Env = {
   DB: D1DatabaseLike;
+  CLERK_SECRET_KEY?: string;
 };
 
 type GraphQLRequestBody = {
@@ -223,10 +233,12 @@ const handleGraphQL = async (request: Request, env: Env): Promise<Response> => {
   }
 
   try {
+    const contextValue = await createRequestContext(request, env.DB, env);
     const result = await graphql({
       schema,
       source: parsed.query,
       rootValue: createRootValue(env.DB),
+      contextValue,
       variableValues: parsed.variables ?? undefined,
       operationName: parsed.operationName ?? undefined,
     });
@@ -249,9 +261,113 @@ const handleGraphQL = async (request: Request, env: Env): Promise<Response> => {
   }
 };
 
+type EmailAccessRequestBody = {
+  email?: string;
+};
+
+const parseEmailAccessRequest = async (
+  request: Request,
+): Promise<EmailAccessRequestBody | Response> => {
+  try {
+    return (await request.json()) as EmailAccessRequestBody;
+  } catch {
+    return json(
+      {
+        error: "Invalid JSON body",
+      },
+      { status: 400 },
+    );
+  }
+};
+
+const handleLoginEligibility = async (
+  request: Request,
+  env: Env,
+): Promise<Response> => {
+  if (request.method === "OPTIONS") {
+    return empty({ status: 204 });
+  }
+
+  if (request.method !== "POST") {
+    return json(
+      {
+        error: "Method Not Allowed",
+      },
+      { status: 405 },
+    );
+  }
+
+  const parsed = await parseEmailAccessRequest(request);
+  if (parsed instanceof Response) {
+    return parsed;
+  }
+
+  const email = parsed.email?.trim().toLowerCase();
+  if (!email) {
+    return json(
+      {
+        error: "Email is required",
+      },
+      { status: 400 },
+    );
+  }
+
+  const user = await findUserByEmail(env.DB, email);
+  if (!user) {
+    return json(
+      {
+        error: "This email address is not allowed to sign in.",
+      },
+      { status: 403 },
+    );
+  }
+
+  await ensureClerkUserForAppUser(user, env);
+
+  return json(toAuthResponse(user));
+};
+
+const handleSession = async (request: Request, env: Env): Promise<Response> => {
+  if (request.method === "OPTIONS") {
+    return empty({ status: 204 });
+  }
+
+  if (request.method !== "GET") {
+    return json(
+      {
+        error: "Method Not Allowed",
+      },
+      { status: 405 },
+    );
+  }
+
+  try {
+    const actor = await authenticateActor(request, env.DB, env);
+    if (!actor) {
+      throw new ApiAuthError(401, "Authentication required.");
+    }
+
+    return json(toAuthResponse(actor.user));
+  } catch (error) {
+    const status = error instanceof ApiAuthError ? error.status : 500;
+    const message =
+      error instanceof Error ? error.message : "Unable to resolve session.";
+    return json(
+      {
+        error: message,
+      },
+      { status },
+    );
+  }
+};
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(request.url);
+
+    if (request.method === "OPTIONS") {
+      return empty({ status: 204 });
+    }
 
     if (request.method === "GET" && pathname === "/") {
       return json({
@@ -261,6 +377,8 @@ export default {
         routes: {
           health: "/health",
           hello: "/api/hello",
+          loginEligibility: "/auth/login-eligibility",
+          session: "/auth/session",
           graphql: "/graphql",
         },
       });
@@ -278,6 +396,14 @@ export default {
       return json({
         message: "Hello from the Pinequest API",
       });
+    }
+
+    if (pathname === "/auth/login-eligibility") {
+      return handleLoginEligibility(request, env);
+    }
+
+    if (pathname === "/auth/session") {
+      return handleSession(request, env);
     }
 
     if (pathname === "/graphql") {

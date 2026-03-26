@@ -1,6 +1,6 @@
 "use client";
 
-import { PlusIcon } from "@/app/components/icons";
+import { PlusIcon } from "../components/icons";
 import { ClassCard } from "./components/class-card";
 import { ClassesSearchInput } from "./components/classes-search-input";
 import { ClassesStatePanel } from "./components/classes-state-panel";

@@ -1,6 +1,6 @@
 "use client";
 
-import { SearchIcon } from "@/app/components/icons";
+import { SearchIcon } from "../../components/icons";
 
 type ClassesSearchInputProps = {
   placeholder: string;
