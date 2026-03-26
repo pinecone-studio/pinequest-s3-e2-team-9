@@ -14,8 +14,8 @@ export default function AdminPage() {
             Admin хэсгийн folder structure бэлэн боллоо
           </h1>
           <p className="mt-3 max-w-2xl text-[16px] leading-7 text-[#475467]">
-            Энэ route нь одоогоор суурь төлөвт байна. Дараагийн admin page, component, data layer-уудыг энэ
-            хэсэгт төвлөрүүлж хөгжүүлэхэд бэлэн.
+            Энэ route нь одоогоор суурь төлөвт байна. Дараагийн admin page,
+            component, data layer-уудыг энэ хэсэгт төвлөрүүлж хөгжүүлэхэд бэлэн.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link

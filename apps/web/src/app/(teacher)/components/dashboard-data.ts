@@ -1,7 +1,6 @@
 import type { ReactElement } from "react";
 import type { IconProps } from "./icons";
 import {
-  BookIcon,
   ChartIcon,
   CheckIcon,
   ClipboardIcon,
@@ -11,7 +10,7 @@ import {
   PlusIcon,
   UsersIcon,
 } from "./icons";
-
+import { ClassesIcon, QuestionBox } from "./icons-svg";
 type IconComponent = (props: IconProps) => ReactElement;
 
 export type NavItem = {
@@ -28,8 +27,8 @@ export type QuickAction = {
 export const navItems: NavItem[] = [
   { label: "Нүүр", href: "/", icon: HomeIcon },
   { label: "Миний шалгалтууд", href: "/my-exams", icon: ClipboardIcon },
-  { label: "Ангиуд", href: "/classes", icon: UsersIcon },
-  { label: "Асуултын сан", href: "/question-bank", icon: BookIcon },
+  { label: "Ангиуд", href: "/classes", icon: ClassesIcon },
+  { label: "Асуултын сан", href: "/question-bank", icon: QuestionBox },
   { label: "Шалгалт үүсгэх", href: "/create-exam", icon: GridIcon },
   { label: "Үнэлгээ", href: "/my-exams", icon: ChartIcon },
   { label: "Хяналт", href: "/my-exams", icon: MonitorIcon },
@@ -54,6 +53,6 @@ export const quickActions: QuickAction[] = [
   {
     label: "Асуултын сан руу орох",
     tone: "bg-[#FAFAFA] text-[#0F1216] border-[#DFE1E5]",
-    icon: BookIcon,
+    icon: QuestionBox,
   },
 ];

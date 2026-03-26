@@ -77,7 +77,7 @@ export function DashboardPageContainer() {
       {!viewModel.hasAnyData ? (
         <DashboardEmptyState />
       ) : (
-        <div className="grid gap-5 xl:grid-cols-[1.02fr_1fr_1fr]">
+        <div className="grid h-[312px] w-[1120px] justify-center gap-4 xl:grid-cols-[repeat(3,362.67px)]">
           <DashboardQuickActions actions={viewModel.quickActions} />
           <DashboardUpcomingList
             emptyMessage={

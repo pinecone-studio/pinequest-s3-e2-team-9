@@ -21,11 +21,8 @@ export function DashboardTopBar({ value, onChange }: DashboardTopBarProps) {
         />
       </label>
 
-      <button
-        className="flex h-[58px] w-[58px] items-center justify-center rounded-full border border-white/70 bg-white/92 text-[#344054] shadow-[0_12px_32px_rgba(34,63,122,0.08)] transition hover:-translate-y-0.5 hover:text-[#175CFF] focus:outline-none focus:ring-4 focus:ring-[#D9E7FF]"
-        type="button"
-      >
-        <BellIcon className="h-5 w-5" />
+      <button>
+        <BellIcon className="w-30 h-30" />
       </button>
     </div>
   );

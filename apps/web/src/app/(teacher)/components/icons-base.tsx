@@ -138,7 +138,7 @@ export function ClockIcon({ className }: IconProps) {
   );
 }
 
-export function CalendarIcon({ className }: IconProps) {
+export function CalendarsIcon({ className }: IconProps) {
   return (
     <svg
       className={className}

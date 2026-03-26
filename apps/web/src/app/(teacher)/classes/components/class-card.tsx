@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarIcon, CheckCircleIcon } from "../../components/icons";
+import { CalendarsIcon, CheckExamIcon } from "../../components/icons";
 
 type ClassCardProps = {
   href: string;
@@ -31,11 +31,11 @@ export function ClassCard({
       </div>
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[14px] text-[#52555B]">
         <span className="inline-flex items-center gap-2">
-          <CalendarIcon className="h-4 w-4" />
+          <CalendarsIcon className="h-4 w-4" />
           {upcomingLabel}
         </span>
         <span className="inline-flex items-center gap-2">
-          <CheckCircleIcon className="h-4 w-4" />
+          <CheckExamIcon className="h-4 w-4" />
           {completedLabel}
         </span>
       </div>
