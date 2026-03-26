@@ -4,6 +4,7 @@ mutation CreateExam(
   $description: String
   $mode: ExamMode!
   $durationMinutes: Int!
+  $scheduledFor: String
 ) {
   createExam(
     classId: $classId
@@ -11,12 +12,14 @@ mutation CreateExam(
     description: $description
     mode: $mode
     durationMinutes: $durationMinutes
+    scheduledFor: $scheduledFor
   ) {
     id
     title
     status
     mode
     durationMinutes
+    scheduledFor
     createdAt
     class {
       id

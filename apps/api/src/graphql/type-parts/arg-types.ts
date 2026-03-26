@@ -40,6 +40,7 @@ export type CreateExamArgs = {
   description?: string;
   mode?: ExamMode;
   durationMinutes: number;
+  scheduledFor?: string;
 };
 
 export type AddQuestionToExamArgs = {

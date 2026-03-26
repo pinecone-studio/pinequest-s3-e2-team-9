@@ -93,6 +93,41 @@ export enum ClassStudentStatus {
   NotStarted = 'NOT_STARTED'
 }
 
+export type DashboardMetricSummary = {
+  __typename?: 'DashboardMetricSummary';
+  draftExamCount: Scalars['Int']['output'];
+  ongoingExamCount: Scalars['Int']['output'];
+  pendingReviewCount: Scalars['Int']['output'];
+  scheduledExamCount: Scalars['Int']['output'];
+};
+
+export type DashboardOverview = {
+  __typename?: 'DashboardOverview';
+  recentResults: Array<DashboardRecentResult>;
+  summary: DashboardMetricSummary;
+  teacherName: Scalars['String']['output'];
+  upcomingExams: Array<DashboardUpcomingExam>;
+};
+
+export type DashboardRecentResult = {
+  __typename?: 'DashboardRecentResult';
+  averageScorePercent: Scalars['Int']['output'];
+  failCount: Scalars['Int']['output'];
+  id: Scalars['ID']['output'];
+  passCount: Scalars['Int']['output'];
+  progressPercent: Scalars['Int']['output'];
+  title: Scalars['String']['output'];
+};
+
+export type DashboardUpcomingExam = {
+  __typename?: 'DashboardUpcomingExam';
+  id: Scalars['ID']['output'];
+  questionCount: Scalars['Int']['output'];
+  scheduledFor: Scalars['String']['output'];
+  status: ExamStatus;
+  title: Scalars['String']['output'];
+};
+
 export enum Difficulty {
   Easy = 'EASY',
   Hard = 'HARD',
@@ -110,6 +145,7 @@ export type Exam = {
   id: Scalars['ID']['output'];
   mode: ExamMode;
   questions: Array<ExamQuestion>;
+  scheduledFor?: Maybe<Scalars['String']['output']>;
   status: ExamStatus;
   title: Scalars['String']['output'];
 };
@@ -185,6 +221,7 @@ export type MutationCreateExamArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   durationMinutes: Scalars['Int']['input'];
   mode?: InputMaybe<ExamMode>;
+  scheduledFor?: InputMaybe<Scalars['String']['input']>;
   title: Scalars['String']['input'];
 };
 
@@ -252,6 +289,7 @@ export type Query = {
   attempts: Array<Attempt>;
   class?: Maybe<Class>;
   classes: Array<Class>;
+  dashboardOverview: DashboardOverview;
   exam?: Maybe<Exam>;
   exams: Array<Exam>;
   health: Health;
@@ -366,10 +404,11 @@ export type CreateExamMutationVariables = Exact<{
   description?: InputMaybe<Scalars['String']['input']>;
   mode: ExamMode;
   durationMinutes: Scalars['Int']['input'];
+  scheduledFor?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type CreateExamMutation = { __typename?: 'Mutation', createExam: { __typename?: 'Exam', id: string, title: string, status: ExamStatus, mode: ExamMode, durationMinutes: number, createdAt: string, class: { __typename?: 'Class', id: string, name: string } } };
+export type CreateExamMutation = { __typename?: 'Mutation', createExam: { __typename?: 'Exam', id: string, title: string, status: ExamStatus, mode: ExamMode, durationMinutes: number, scheduledFor?: string | null, createdAt: string, class: { __typename?: 'Class', id: string, name: string } } };
 
 export type CreateQuestionMutationMutationVariables = Exact<{
   bankId: Scalars['ID']['input'];
@@ -426,7 +465,7 @@ export type CreateExamOptionsQuery = { __typename?: 'Query', classes: Array<{ __
 export type DashboardOverviewQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type DashboardOverviewQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string, role: Role } | null, exams: Array<{ __typename?: 'Exam', id: string, title: string, status: ExamStatus, durationMinutes: number, createdAt: string, class: { __typename?: 'Class', id: string, name: string, students: Array<{ __typename?: 'User', id: string }> }, questions: Array<{ __typename?: 'ExamQuestion', id: string, points: number }>, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, startedAt: string, submittedAt?: string | null, student: { __typename?: 'User', id: string, fullName: string } }> }> };
+export type DashboardOverviewQuery = { __typename?: 'Query', dashboardOverview: { __typename?: 'DashboardOverview', teacherName: string, summary: { __typename?: 'DashboardMetricSummary', pendingReviewCount: number, draftExamCount: number, ongoingExamCount: number, scheduledExamCount: number }, upcomingExams: Array<{ __typename?: 'DashboardUpcomingExam', id: string, title: string, scheduledFor: string, questionCount: number, status: ExamStatus }>, recentResults: Array<{ __typename?: 'DashboardRecentResult', id: string, title: string, passCount: number, failCount: number, progressPercent: number, averageScorePercent: number }> } };
 
 export type HealthQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -529,19 +568,21 @@ export type CloseExamMutationHookResult = ReturnType<typeof useCloseExamMutation
 export type CloseExamMutationResult = ApolloReactCommon.MutationResult<CloseExamMutation>;
 export type CloseExamMutationOptions = ApolloReactCommon.BaseMutationOptions<CloseExamMutation, CloseExamMutationVariables>;
 export const CreateExamDocument = gql`
-    mutation CreateExam($classId: ID!, $title: String!, $description: String, $mode: ExamMode!, $durationMinutes: Int!) {
+    mutation CreateExam($classId: ID!, $title: String!, $description: String, $mode: ExamMode!, $durationMinutes: Int!, $scheduledFor: String) {
   createExam(
     classId: $classId
     title: $title
     description: $description
     mode: $mode
     durationMinutes: $durationMinutes
+    scheduledFor: $scheduledFor
   ) {
     id
     title
     status
     mode
     durationMinutes
+    scheduledFor
     createdAt
     class {
       id
@@ -570,6 +611,7 @@ export type CreateExamMutationFn = ApolloReactCommon.MutationFunction<CreateExam
  *      description: // value for 'description'
  *      mode: // value for 'mode'
  *      durationMinutes: // value for 'durationMinutes'
+ *      scheduledFor: // value for 'scheduledFor'
  *   },
  * });
  */
@@ -898,38 +940,28 @@ export type CreateExamOptionsSuspenseQueryHookResult = ReturnType<typeof useCrea
 export type CreateExamOptionsQueryResult = ApolloReactCommon.QueryResult<CreateExamOptionsQuery, CreateExamOptionsQueryVariables>;
 export const DashboardOverviewDocument = gql`
     query DashboardOverview {
-  me {
-    id
-    fullName
-    role
-  }
-  exams {
-    id
-    title
-    status
-    durationMinutes
-    createdAt
-    class {
-      id
-      name
-      students {
-        id
-      }
+  dashboardOverview {
+    teacherName
+    summary {
+      pendingReviewCount
+      draftExamCount
+      ongoingExamCount
+      scheduledExamCount
     }
-    questions {
+    upcomingExams {
       id
-      points
-    }
-    attempts {
-      id
+      title
+      scheduledFor
+      questionCount
       status
-      totalScore
-      startedAt
-      submittedAt
-      student {
-        id
-        fullName
-      }
+    }
+    recentResults {
+      id
+      title
+      passCount
+      failCount
+      progressPercent
+      averageScorePercent
     }
   }
 }

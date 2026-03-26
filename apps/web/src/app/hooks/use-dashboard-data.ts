@@ -1,53 +1,29 @@
 "use client";
 
-import {
-  useCloseExamMutation,
-  useDashboardOverviewQuery,
-} from "@/graphql/generated";
-import {
-  buildDashboardViewModel,
-} from "@/app/components/dashboard/dashboard-view-model";
-import type { DashboardViewModel } from "@/app/components/dashboard/dashboard-types";
+import { useDashboardOverviewQuery } from "@/graphql/generated";
+import { buildDashboardPageViewModel } from "@/app/components/dashboard/dashboard-page-view-model";
+import type { DashboardPageViewModel } from "@/app/components/dashboard/dashboard-types";
 
 type UseDashboardDataResult = {
-  viewModel: DashboardViewModel | null;
+  viewModel: DashboardPageViewModel | null;
   loading: boolean;
   error: Error | null;
-  closeExamError: Error | null;
-  isClosingExam: boolean;
-  closeExam: (examId: string) => Promise<boolean>;
   refetch: () => Promise<unknown>;
 };
 
 export const useDashboardData = (): UseDashboardDataResult => {
   const dashboardQuery = useDashboardOverviewQuery({
     ssr: false,
+    errorPolicy: "all",
     notifyOnNetworkStatusChange: true,
   });
 
-  const [runCloseExam, closeExamState] = useCloseExamMutation();
-
-  const closeExam = async (examId: string): Promise<boolean> => {
-    try {
-      await runCloseExam({
-        variables: { examId },
-      });
-      await dashboardQuery.refetch();
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
   return {
     viewModel: dashboardQuery.data
-      ? buildDashboardViewModel(dashboardQuery.data)
+      ? buildDashboardPageViewModel(dashboardQuery.data)
       : null,
     loading: dashboardQuery.loading,
     error: dashboardQuery.error ?? null,
-    closeExamError: closeExamState.error ?? null,
-    isClosingExam: closeExamState.loading,
-    closeExam,
     refetch: dashboardQuery.refetch,
   };
 };

@@ -13,6 +13,7 @@ export const schemaRootTypes = /* GraphQL */ `
     exam(id: ID!): Exam
     attempts: [Attempt!]!
     attempt(id: ID!): Attempt
+    dashboardOverview: DashboardOverview!
   }
 
   type Mutation {
@@ -45,6 +46,7 @@ export const schemaRootTypes = /* GraphQL */ `
       description: String
       mode: ExamMode = SCHEDULED
       durationMinutes: Int!
+      scheduledFor: String
     ): Exam!
     addQuestionToExam(examId: ID!, questionId: ID!, points: Int!): Exam!
     publishExam(examId: ID!): Exam!

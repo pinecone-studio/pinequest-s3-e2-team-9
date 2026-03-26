@@ -79,6 +79,23 @@ export function CreateExamDetailsCard({
         </div>
 
         <div className="grid gap-1.5">
+          <label className="text-[13px] font-medium text-[#0F1216]" htmlFor="exam-scheduled-for">
+            Товлох огноо, цаг (заавал биш)
+          </label>
+          <input
+            id="exam-scheduled-for"
+            className="w-full rounded-md border border-[#DFE1E5] bg-white px-3 py-2 text-[14px] text-[#0F1216] shadow-sm"
+            value={values.scheduledFor}
+            onChange={(event) => onFieldChange("scheduledFor", event.target.value)}
+            disabled={disabled}
+            type="datetime-local"
+          />
+          {errors.scheduledFor ? (
+            <p className="text-[12px] text-[#B42318]">{errors.scheduledFor}</p>
+          ) : null}
+        </div>
+
+        <div className="grid gap-1.5">
           <label className="text-[13px] font-medium text-[#0F1216]" htmlFor="exam-description">
             Сурагчдад өгөх заавар (заавал биш)
           </label>

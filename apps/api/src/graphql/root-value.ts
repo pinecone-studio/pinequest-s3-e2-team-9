@@ -1,6 +1,7 @@
 import { all, first, type D1DatabaseLike } from "../lib/d1";
 import { getClassSelectFields, insertClassRow } from "./class-schema";
 import { createAttemptMutations } from "./modules/attempts";
+import { createDashboardOverviewQuery } from "./modules/dashboard";
 import { createExamQueriesAndMutations, findExamById } from "./modules/exams";
 import {
   createQuestionQueriesAndMutations,
@@ -72,6 +73,7 @@ export const createRootValue = (db: D1DatabaseLike) => {
       );
       return attempt ? toAttempt(attempt) : null;
     },
+    ...createDashboardOverviewQuery(db),
     createClass: async ({ name, description }: CreateClassArgs) => {
       const actor = await requireActor(db, ["ADMIN", "TEACHER"]);
       const id = makeId("class");

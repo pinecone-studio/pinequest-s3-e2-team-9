@@ -67,4 +67,35 @@ export const schemaDomainTypes = /* GraphQL */ `
     createdBy: User!
     createdAt: String!
   }
+
+  type DashboardMetricSummary {
+    pendingReviewCount: Int!
+    draftExamCount: Int!
+    ongoingExamCount: Int!
+    scheduledExamCount: Int!
+  }
+
+  type DashboardUpcomingExam {
+    id: ID!
+    title: String!
+    scheduledFor: String!
+    questionCount: Int!
+    status: ExamStatus!
+  }
+
+  type DashboardRecentResult {
+    id: ID!
+    title: String!
+    passCount: Int!
+    failCount: Int!
+    progressPercent: Int!
+    averageScorePercent: Int!
+  }
+
+  type DashboardOverview {
+    teacherName: String!
+    summary: DashboardMetricSummary!
+    upcomingExams: [DashboardUpcomingExam!]!
+    recentResults: [DashboardRecentResult!]!
+  }
 `;

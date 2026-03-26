@@ -58,7 +58,7 @@ export const createEntityMappers = ({
       (
         await all<ExamRow>(
           db,
-          `SELECT id, class_id, title, description, mode, status, duration_minutes, created_by_id, created_at
+          `SELECT id, class_id, title, description, mode, status, duration_minutes, created_by_id, scheduled_for, created_at
            FROM exams WHERE class_id = ? ORDER BY created_at DESC`,
           [classroom.id],
         )
@@ -144,6 +144,7 @@ export const createEntityMappers = ({
     mode: exam.mode,
     status: exam.status,
     durationMinutes: exam.duration_minutes,
+    scheduledFor: exam.scheduled_for,
     createdAt: exam.created_at,
     class: async () => toClass(await findClass(db, exam.class_id)),
     questions: async () =>

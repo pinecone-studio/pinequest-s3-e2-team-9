@@ -61,6 +61,7 @@ export type ExamRow = {
   status: ExamStatus;
   duration_minutes: number;
   created_by_id: string;
+  scheduled_for: string | null;
   created_at: string;
 };
 
