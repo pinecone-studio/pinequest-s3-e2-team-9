@@ -26,9 +26,17 @@ export type CreateExamClassOption = {
 export type CreateExamQuestionOption = {
   id: string;
   title: string;
+  prompt: string;
   type: string;
   difficulty: string;
   bankTitle: string;
+  bankSubject: string;
+};
+
+export type CreateExamQuestionBankOption = {
+  id: string;
+  title: string;
+  subject: string;
 };
 
 export type CreateExamSubmitState =

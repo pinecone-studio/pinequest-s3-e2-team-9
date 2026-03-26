@@ -7,7 +7,7 @@ import {
   EyeIcon,
   UsersIcon,
 } from "../icons";
-import type { ExamCard } from "./my-exams-data";
+import type { MyExamView } from "./my-exams-types";
 
 const baseCard =
   "rounded-xl border border-[#DFE1E5] bg-white p-6 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]";
@@ -20,7 +20,7 @@ export function MyExamCard({
   onView,
   onResults,
 }: {
-  exam: ExamCard;
+  exam: MyExamView;
   onView: () => void;
   onResults: () => void;
 }) {
@@ -56,19 +56,19 @@ export function MyExamCard({
         </div>
         <div className="flex items-center gap-2">
           {exam.actions.view ? (
-            <button className={actionButton} onClick={onView} type="button">
+            <button className={`${actionButton} cursor-pointer`} onClick={onView} type="button">
               <EyeIcon className="h-4 w-4" />
               Харах
             </button>
           ) : null}
           {exam.actions.results ? (
-            <button className={actionButton} onClick={onResults} type="button">
+            <button className={`${actionButton} cursor-pointer`} onClick={onResults} type="button">
               <ChartIcon className="h-4 w-4" />
               Үр дүн
             </button>
           ) : null}
           <button
-            className="flex h-8 w-8 items-center justify-center rounded-md text-[#0F1216] hover:bg-[#F0F2F5]"
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-[#0F1216] hover:bg-[#F0F2F5]"
             type="button"
           >
             <DotsIcon className="h-4 w-4" />

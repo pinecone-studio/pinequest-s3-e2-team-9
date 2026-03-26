@@ -1,0 +1,46 @@
+query MyExamsQuery {
+  me {
+    id
+  }
+  exams {
+    id
+    title
+    status
+    durationMinutes
+    createdAt
+    createdBy {
+      id
+    }
+    class {
+      id
+      name
+      students {
+        id
+        fullName
+      }
+    }
+    questions {
+      id
+      points
+      order
+      question {
+        id
+        title
+        prompt
+        type
+        options
+      }
+    }
+    attempts {
+      id
+      status
+      totalScore
+      startedAt
+      submittedAt
+      student {
+        id
+        fullName
+      }
+    }
+  }
+}

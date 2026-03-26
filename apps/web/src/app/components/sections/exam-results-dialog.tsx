@@ -4,18 +4,24 @@ import { useState } from "react";
 import { CloseIcon } from "../icons";
 import { ExamResultsStudents } from "./exam-results-students";
 import { ExamResultsSummary } from "./exam-results-summary";
+import type { MyExamView } from "./my-exams-types";
 
 type ExamResultsDialogProps = {
+  exam: MyExamView | null;
   open: boolean;
   onClose: () => void;
 };
 
-export function ExamResultsDialog({ open, onClose }: ExamResultsDialogProps) {
+export function ExamResultsDialog({
+  exam,
+  open,
+  onClose,
+}: ExamResultsDialogProps) {
   const [activeTab, setActiveTab] = useState<"summary" | "students">(
     "summary",
   );
 
-  if (!open) {
+  if (!open || !exam) {
     return null;
   }
 
@@ -47,7 +53,7 @@ export function ExamResultsDialog({ open, onClose }: ExamResultsDialogProps) {
         <div className="space-y-6">
           <div className="space-y-2">
             <h2 className="text-[18px] font-semibold text-[#0F1216]">
-              Үр дүн: Физикийн улирлын шалгалт
+              Үр дүн: {exam.title}
             </h2>
             <p className="text-[14px] text-[#52555B]">
               Сурагчдын гүйцэтгэлийн дэлгэрэнгүй мэдээлэл
@@ -80,9 +86,9 @@ export function ExamResultsDialog({ open, onClose }: ExamResultsDialogProps) {
           </div>
 
           {activeTab === "summary" ? (
-            <ExamResultsSummary />
+            <ExamResultsSummary footer={exam.footer} />
           ) : (
-            <ExamResultsStudents />
+            <ExamResultsStudents rows={exam.students} />
           )}
         </div>
       </div>

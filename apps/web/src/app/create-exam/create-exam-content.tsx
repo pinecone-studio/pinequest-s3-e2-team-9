@@ -15,7 +15,7 @@ export function CreateExamContent() {
     flow.isSubmitting ||
     flow.isOptionsLoading ||
     !flow.classOptions.length ||
-    !flow.questionOptions.length;
+    !flow.questionBankOptions.length;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -43,9 +43,9 @@ export function CreateExamContent() {
           </p>
         ) : null}
 
-        {!flow.questionOptions.length && !flow.isOptionsLoading ? (
+        {!flow.questionBankOptions.length && !flow.isOptionsLoading ? (
           <p className="mt-2 text-[13px] text-[#B42318]">
-            Асуулт олдсонгүй. Question bank-д асуулт нэмээд дахин оролдоно уу.
+            Асуултын сан олдсонгүй. Backend-ийн seed өгөгдлийг шалгана уу.
           </p>
         ) : null}
 
@@ -64,12 +64,15 @@ export function CreateExamContent() {
             onModeChange={(value) => flow.setFieldValue("mode", value)}
           />
           <CreateExamQuestionCard
+            questionBankOptions={flow.questionBankOptions}
             questionOptions={flow.questionOptions}
             selectedQuestionPoints={flow.selectedQuestionPoints}
             errors={flow.errors}
             disabled={isDisabled}
             onToggleQuestion={flow.toggleQuestion}
+            onAddQuestion={flow.addQuestion}
             onPointsChange={flow.setQuestionPoints}
+            onQuestionsRefresh={flow.refetchOptions}
           />
         </div>
       </form>

@@ -24,7 +24,7 @@ export function useQuestionBankDialogState(
   const [saveToBank, setSaveToBank] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const closeAndReset = () => {
+  const resetState = () => {
     const nextState = getInitialQuestionState(null);
     setPrompt(nextState.prompt);
     setQuestionType(nextState.questionType);
@@ -37,6 +37,10 @@ export function useQuestionBankDialogState(
     setReferenceAnswer(nextState.referenceAnswer);
     setSaveToBank(true);
     setErrorMessage(null);
+  };
+
+  const closeAndReset = () => {
+    resetState();
     onClose();
   };
 
@@ -85,6 +89,6 @@ export function useQuestionBankDialogState(
     referenceAnswer, setReferenceAnswer,
     saveToBank, setSaveToBank,
     errorMessage, setErrorMessage,
-    closeAndReset, updateOption, addOption, removeOption,
+    resetState, closeAndReset, updateOption, addOption, removeOption,
   };
 }

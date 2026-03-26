@@ -3,14 +3,21 @@ query CreateExamOptions {
     id
     name
   }
+  questionBanks {
+    id
+    title
+    subject
+  }
   questions {
     id
     title
+    prompt
     type
     difficulty
     bank {
       id
       title
+      subject
     }
   }
 }

@@ -1,13 +1,25 @@
 import { CheckCircleIcon, CloseIcon } from "../icons";
+import type { ExamFooterData } from "./my-exams-types";
 
-const summaryStats = [
-  { value: "24", label: "Нийт сурагч", tone: "#0F1216" },
-  { value: "24", label: "Илгээсэн", tone: "#0F1216" },
-  { value: "85%", label: "Тэнцсэн хувь", tone: "#31AA40" },
-  { value: "78%", label: "Дундаж оноо", tone: "#0F1216" },
-];
-
-export function ExamResultsSummary() {
+export function ExamResultsSummary({
+  footer,
+}: {
+  footer: ExamFooterData | undefined;
+}) {
+  const summaryStats = [
+    { value: footer?.students ?? 0, label: "Нийт сурагч", tone: "#0F1216" },
+    { value: footer?.submitted ?? 0, label: "Илгээсэн", tone: "#0F1216" },
+    {
+      value: footer?.type === "summary" ? `${footer.passRate}%` : "-",
+      label: "Тэнцсэн хувь",
+      tone: "#31AA40",
+    },
+    {
+      value: footer?.type === "summary" ? `${footer.average}%` : "-",
+      label: "Дундаж оноо",
+      tone: "#0F1216",
+    },
+  ];
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -34,7 +46,9 @@ export function ExamResultsSummary() {
               <CheckCircleIcon className="h-4 w-4 text-[#31AA40]" />
               Тэнцсэн
             </span>
-            <span className="font-medium text-[#31AA40]">20</span>
+            <span className="font-medium text-[#31AA40]">
+              {footer?.type === "summary" ? footer.passed : 0}
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-2">
@@ -43,17 +57,27 @@ export function ExamResultsSummary() {
               </span>
               Унасан
             </span>
-            <span className="font-medium text-[#D40924]">4</span>
+            <span className="font-medium text-[#D40924]">
+              {footer?.type === "summary" ? footer.failed : 0}
+            </span>
           </div>
         </div>
 
         <div className="mt-4 space-y-2 text-[14px]">
           <div className="flex items-center justify-between text-[#52555B]">
             <span>Тэнцсэн хувь</span>
-            <span className="font-medium text-[#0F1216]">85%</span>
+            <span className="font-medium text-[#0F1216]">
+              {footer?.type === "summary" ? `${footer.passRate}%` : "-"}
+            </span>
           </div>
           <div className="h-2 w-full rounded-full bg-[#19223033]">
-            <div className="h-2 w-[85%] rounded-full bg-[#192230]" />
+            <div
+              className="h-2 rounded-full bg-[#192230]"
+              style={{
+                width:
+                  footer?.type === "summary" ? `${footer.passRate}%` : "0%",
+              }}
+            />
           </div>
         </div>
       </div>

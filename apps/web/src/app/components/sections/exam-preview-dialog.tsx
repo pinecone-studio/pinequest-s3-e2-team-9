@@ -1,6 +1,8 @@
 import { ClipboardIcon, ClockIcon, CloseIcon } from "../icons";
+import type { MyExamView } from "./my-exams-types";
 
 type ExamPreviewDialogProps = {
+  exam: MyExamView | null;
   open: boolean;
   onClose: () => void;
 };
@@ -8,8 +10,12 @@ type ExamPreviewDialogProps = {
 const optionRow =
   "flex items-center gap-2 rounded-md border border-[#DFE1E5] bg-white px-3 py-2 text-[14px] text-[#0F1216]";
 
-export function ExamPreviewDialog({ open, onClose }: ExamPreviewDialogProps) {
-  if (!open) {
+export function ExamPreviewDialog({
+  exam,
+  open,
+  onClose,
+}: ExamPreviewDialogProps) {
+  if (!open || !exam) {
     return null;
   }
 
@@ -41,7 +47,7 @@ export function ExamPreviewDialog({ open, onClose }: ExamPreviewDialogProps) {
         <div className="space-y-6 p-6">
           <div className="space-y-2">
             <h2 className="text-[18px] font-semibold text-[#0F1216]">
-              Урьдчилан харах: Математикийн эцсийн шалгалт
+              Урьдчилан харах: {exam.title}
             </h2>
             <p className="text-[14px] text-[#52555B]">
               Сурагчид шалгалтыг ингэж харах болно
@@ -52,119 +58,46 @@ export function ExamPreviewDialog({ open, onClose }: ExamPreviewDialogProps) {
             <div className="flex flex-wrap items-center gap-4 text-[#0F1216]">
               <span className="flex items-center gap-2 text-[#0F1216]">
                 <ClockIcon className="h-4 w-4 text-[#52555B]" />
-                120 минут
+                {exam.meta.find((item) => item.icon === ClockIcon)?.text ?? "-"}
               </span>
               <span className="flex items-center gap-2 text-[#0F1216]">
                 <ClipboardIcon className="h-4 w-4 text-[#52555B]" />
-                4 асуулт
+                {exam.meta.find((item) => item.icon === ClipboardIcon)?.text ?? "-"}
               </span>
-              <span className="text-[#52555B]">Математик</span>
+              <span className="text-[#52555B]">{exam.subject}</span>
             </div>
-            <p>
-              Бүх асуултад хариулна уу. Дунд оноо авахын тулд бодолтоо харуулна
-              уу.
-            </p>
+            <p>Бүх асуултад хариулна уу. Сурагчид харах урьдчилсан бүтэц энд байна.</p>
           </div>
 
           <div className="space-y-4">
-            <article className="rounded-lg border border-[#DFE1E5] bg-white p-4">
+            {exam.previewQuestions.map((question, index) => (
+              <article key={question.id} className="rounded-lg border border-[#DFE1E5] bg-white p-4">
               <div className="flex items-start gap-3">
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#F0F2F5] text-[12px] font-medium text-[#0F1216]">
-                  1
+                    {index + 1}
                 </span>
                 <div className="flex-1 space-y-3">
-                  <p className="text-[14px] text-[#0F1216]">
-                    x^2 функцийн уламжлал аль нь вэ?
-                  </p>
-                  <div className="space-y-2">
-                    <div className={optionRow}>
-                      <span className="h-4 w-4 rounded-full border border-[#DFE1E5]" />
-                      x
-                    </div>
-                    <div className={optionRow}>
-                      <span className="h-4 w-4 rounded-full border border-[#DFE1E5]" />
-                      2x
-                    </div>
-                    <div className={optionRow}>
-                      <span className="h-4 w-4 rounded-full border border-[#DFE1E5]" />
-                      x^2
-                    </div>
-                    <div className={optionRow}>
-                      <span className="h-4 w-4 rounded-full border border-[#DFE1E5]" />
-                      2
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article className="rounded-lg border border-[#DFE1E5] bg-white p-4">
-              <div className="flex items-start gap-3">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#F0F2F5] text-[12px] font-medium text-[#0F1216]">
-                  2
-                </span>
-                <div className="flex-1 space-y-3">
-                  <p className="text-[14px] text-[#0F1216]">
-                    sin(x)-ийн интегралыг олно уу.
-                  </p>
-                  <div className="space-y-2">
-                    <div className={optionRow}>
-                      <span className="h-4 w-4 rounded-full border border-[#DFE1E5]" />
-                      -cos(x) + C
-                    </div>
-                    <div className={optionRow}>
-                      <span className="h-4 w-4 rounded-full border border-[#DFE1E5]" />
-                      cos(x) + C
-                    </div>
-                    <div className={optionRow}>
-                      <span className="h-4 w-4 rounded-full border border-[#DFE1E5]" />
-                      -sin(x) + C
-                    </div>
-                    <div className={optionRow}>
-                      <span className="h-4 w-4 rounded-full border border-[#DFE1E5]" />
-                      sin(x) + C
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article className="rounded-lg border border-[#DFE1E5] bg-white p-4">
-              <div className="flex items-start gap-3">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#F0F2F5] text-[12px] font-medium text-[#0F1216]">
-                  3
-                </span>
-                <div className="flex-1 space-y-3">
-                  <p className="text-[14px] text-[#0F1216]">
-                    x-ийг ол: 2x + 5 = 15
-                  </p>
-                  <div className="rounded-md border border-[#DFE1E5] px-3 py-2 text-[14px] text-[#52555B]">
-                    Хариултаа оруулна уу...
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article className="rounded-lg border border-[#DFE1E5] bg-white p-4">
-              <div className="flex items-start gap-3">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#F0F2F5] text-[12px] font-medium text-[#0F1216]">
-                  4
-                </span>
-                <div className="flex-1 space-y-3">
-                  <p className="text-[14px] text-[#0F1216]">
-                    Дараах тоонуудын аль нь анхны тоо вэ?
-                  </p>
-                  <div className="space-y-2">
-                    {["2", "4", "7", "9", "11"].map((value) => (
+                    <p className="text-[14px] text-[#0F1216]">{question.prompt}</p>
+                    {question.kind === "options" ? (
+                      <div className="space-y-2">
+                        {question.options.map((value) => (
                       <div key={value} className={optionRow}>
                         <span className="h-4 w-4 rounded border border-[#DFE1E5]" />
                         {value}
                       </div>
-                    ))}
-                  </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-md border border-[#DFE1E5] px-3 py-2 text-[14px] text-[#52555B]">
+                        {question.kind === "upload"
+                          ? "Зургаа оруулна уу..."
+                          : "Хариултаа оруулна уу..."}
+                      </div>
+                    )}
                 </div>
               </div>
             </article>
+            ))}
           </div>
         </div>
       </div>
