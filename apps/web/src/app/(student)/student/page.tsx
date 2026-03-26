@@ -1,15 +1,14 @@
 import { RoleGuard } from "@/components/role-guard";
 import { StudentHomeContent } from "../components/student-home-content";
 import { StudentShell } from "../components/student-shell";
-
+import { AuthSignOutButton } from "@/components/auth-sign-out-button";
+import Link from "next/link";
 export default function StudentPage() {
   return (
     <RoleGuard allowedRoles={["STUDENT"]}>
-<<<<<<< HEAD
       <StudentShell>
         <StudentHomeContent />
       </StudentShell>
-=======
       <main className="min-h-screen bg-[#FCF8F3] px-6 py-10 sm:px-10 lg:px-16">
         <section className="max-w-4xl rounded-[32px] border border-[#E4D8C8] bg-white p-8 shadow-[0_20px_60px_rgba(16,24,40,0.08)]">
           <span className="inline-flex rounded-full bg-[#FFF1E6] px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#C4320A]">
@@ -40,7 +39,6 @@ export default function StudentPage() {
           </div>
         </section>
       </main>
->>>>>>> 10cb4c8 (add)
     </RoleGuard>
   );
 }
