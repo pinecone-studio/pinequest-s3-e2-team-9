@@ -1,4 +1,5 @@
 import { first, invariant, type D1DatabaseLike } from "../lib/d1";
+import { getClassSelectFields } from "./class-schema";
 import type { ClassRow, Role, UserRow } from "./types";
 
 export const findUser = async (
@@ -18,9 +19,10 @@ export const findClass = async (
   db: D1DatabaseLike,
   id: string,
 ): Promise<ClassRow> => {
+  const selectFields = await getClassSelectFields(db);
   const classroom = await first<ClassRow>(
     db,
-    "SELECT id, name, description, subject, grade, teacher_id, created_at FROM classes WHERE id = ?",
+    `SELECT ${selectFields} FROM classes WHERE id = ?`,
     [id],
   );
   invariant(classroom, `Class ${id} not found`);

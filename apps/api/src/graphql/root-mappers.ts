@@ -1,4 +1,5 @@
 import { all, first, type D1DatabaseLike } from "../lib/d1";
+import { getClassSelectFields } from "./class-schema";
 import { createClassAnalytics } from "./modules/classes";
 import type { AnswerRow, AttemptRow, ClassRow, ExamQuestionRow, ExamRow, QuestionBankRow, QuestionRow, UserRow } from "./types";
 import { parseJsonArray } from "./types";
@@ -21,18 +22,20 @@ export const createEntityMappers = ({
     email: user.email,
     role: user.role,
     createdAt: user.created_at,
-    classes: async () =>
-      (
+    classes: async () => {
+      const classSelectFields = await getClassSelectFields(db, "c.");
+      return (
         await all<ClassRow>(
           db,
-          `SELECT DISTINCT c.id, c.name, c.description, c.subject, c.grade, c.teacher_id, c.created_at
+          `SELECT DISTINCT ${classSelectFields}
            FROM classes c
            LEFT JOIN class_students cs ON cs.class_id = c.id
            WHERE c.teacher_id = ? OR cs.student_id = ?
            ORDER BY c.created_at DESC`,
           [user.id, user.id],
         )
-      ).map(toClass),
+      ).map(toClass);
+    },
   });
 
   const toClass = (classroom: ClassRow) => ({

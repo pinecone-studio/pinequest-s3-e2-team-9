@@ -1,4 +1,5 @@
-import { all, first, run, type D1DatabaseLike } from "../lib/d1";
+import { all, first, type D1DatabaseLike } from "../lib/d1";
+import { getClassSelectFields, insertClassRow } from "./class-schema";
 import { createAttemptMutations } from "./modules/attempts";
 import { createExamQueriesAndMutations, findExamById } from "./modules/exams";
 import {
@@ -35,18 +36,21 @@ export const createRootValue = (db: D1DatabaseLike) => {
           "SELECT id, full_name, email, role, created_at FROM users ORDER BY created_at ASC",
         )
       ).map(toUser),
-    classes: async () =>
-      (
+    classes: async () => {
+      const classSelectFields = await getClassSelectFields(db);
+      return (
         await all<ClassRow>(
           db,
-          `SELECT id, name, description, subject, grade, teacher_id, created_at
+          `SELECT ${classSelectFields}
            FROM classes ORDER BY created_at DESC`,
         )
-      ).map(toClass),
+      ).map(toClass);
+    },
     class: async ({ id }: ByIdArgs) => {
+      const classSelectFields = await getClassSelectFields(db);
       const classroom = await first<ClassRow>(
         db,
-        "SELECT id, name, description, subject, grade, teacher_id, created_at FROM classes WHERE id = ?",
+        `SELECT ${classSelectFields} FROM classes WHERE id = ?`,
         [id],
       );
       return classroom ? toClass(classroom) : null;
@@ -71,12 +75,15 @@ export const createRootValue = (db: D1DatabaseLike) => {
     createClass: async ({ name, description }: CreateClassArgs) => {
       const actor = await requireActor(db, ["ADMIN", "TEACHER"]);
       const id = makeId("class");
-      await run(
-        db,
-        `INSERT INTO classes (id, name, description, subject, grade, teacher_id, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [id, name, description ?? null, "Ерөнхий", 0, actor.id, now()],
-      );
+      await insertClassRow(db, {
+        id,
+        name,
+        description: description ?? null,
+        subject: "Ерөнхий",
+        grade: 0,
+        teacherId: actor.id,
+        createdAt: now(),
+      });
       return toClass(await findClass(db, id));
     },
     ...createAttemptMutations({ db, findExam: findExamById, findUser, findQuestion: findQuestionById, toAttempt: (_, attempt) => toAttempt(attempt) }),

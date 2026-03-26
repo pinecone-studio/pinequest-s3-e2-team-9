@@ -1,7 +1,8 @@
-const DEFAULT_GRAPHQL_ENDPOINT = "http://127.0.0.1:8787/graphql";
+const DEFAULT_GRAPHQL_ENDPOINT =
+  "https://pinequest-api.b94889340.workers.dev/graphql";
 
 export const getGraphqlEndpoint = (): string => {
-  const endpoint = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT;
+  const endpoint = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT?.trim();
 
   return endpoint && endpoint.length > 0
     ? endpoint
