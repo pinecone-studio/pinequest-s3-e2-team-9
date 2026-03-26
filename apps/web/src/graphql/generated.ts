@@ -513,6 +513,11 @@ export type QuestionBanksQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type QuestionBanksQueryQuery = { __typename?: 'Query', questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, description?: string | null, subject: string, questionCount: number, createdAt: string }> };
 
+export type StudentHomeQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type StudentHomeQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string, classes: Array<{ __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }> } | null, exams: Array<{ __typename?: 'Exam', id: string, title: string, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, points: number }> }>, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, startedAt: string, submittedAt?: string | null, exam: { __typename?: 'Exam', id: string, title: string, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, points: number }> } }> };
+
 
 export const AddQuestionToExamDocument = gql`
     mutation AddQuestionToExam($examId: ID!, $questionId: ID!, $points: Int!) {
@@ -1332,3 +1337,111 @@ export type QuestionBanksQueryQueryHookResult = ReturnType<typeof useQuestionBan
 export type QuestionBanksQueryLazyQueryHookResult = ReturnType<typeof useQuestionBanksQueryLazyQuery>;
 export type QuestionBanksQuerySuspenseQueryHookResult = ReturnType<typeof useQuestionBanksQuerySuspenseQuery>;
 export type QuestionBanksQueryQueryResult = ApolloReactCommon.QueryResult<QuestionBanksQueryQuery, QuestionBanksQueryQueryVariables>;
+export const StudentHomeDocument = gql`
+    query StudentHome {
+  me {
+    id
+    fullName
+    classes {
+      id
+      name
+      subject
+      grade
+      teacher {
+        id
+        fullName
+      }
+    }
+  }
+  exams {
+    id
+    title
+    status
+    durationMinutes
+    startedAt
+    endsAt
+    scheduledFor
+    createdAt
+    class {
+      id
+      name
+      subject
+      grade
+      teacher {
+        id
+        fullName
+      }
+    }
+    questions {
+      id
+      points
+    }
+  }
+  attempts {
+    id
+    status
+    totalScore
+    startedAt
+    submittedAt
+    exam {
+      id
+      title
+      status
+      durationMinutes
+      startedAt
+      endsAt
+      scheduledFor
+      createdAt
+      class {
+        id
+        name
+        subject
+        grade
+        teacher {
+          id
+          fullName
+        }
+      }
+      questions {
+        id
+        points
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useStudentHomeQuery__
+ *
+ * To run a query within a React component, call `useStudentHomeQuery` and pass it any options that fit your needs.
+ * When your component renders, `useStudentHomeQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useStudentHomeQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useStudentHomeQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<StudentHomeQuery, StudentHomeQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<StudentHomeQuery, StudentHomeQueryVariables>(StudentHomeDocument, options);
+      }
+export function useStudentHomeLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<StudentHomeQuery, StudentHomeQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<StudentHomeQuery, StudentHomeQueryVariables>(StudentHomeDocument, options);
+        }
+// @ts-ignore
+export function useStudentHomeSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<StudentHomeQuery, StudentHomeQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<StudentHomeQuery, StudentHomeQueryVariables>;
+export function useStudentHomeSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<StudentHomeQuery, StudentHomeQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<StudentHomeQuery | undefined, StudentHomeQueryVariables>;
+export function useStudentHomeSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<StudentHomeQuery, StudentHomeQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<StudentHomeQuery, StudentHomeQueryVariables>(StudentHomeDocument, options);
+        }
+export type StudentHomeQueryHookResult = ReturnType<typeof useStudentHomeQuery>;
+export type StudentHomeLazyQueryHookResult = ReturnType<typeof useStudentHomeLazyQuery>;
+export type StudentHomeSuspenseQueryHookResult = ReturnType<typeof useStudentHomeSuspenseQuery>;
+export type StudentHomeQueryResult = ApolloReactCommon.QueryResult<StudentHomeQuery, StudentHomeQueryVariables>;
