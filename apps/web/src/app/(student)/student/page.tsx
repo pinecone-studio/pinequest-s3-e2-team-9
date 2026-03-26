@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthSignOutButton } from "@/components/auth-sign-out-button";
 import { RoleGuard } from "@/components/role-guard";
 
 export default function StudentPage() {
@@ -29,6 +30,7 @@ export default function StudentPage() {
             >
               Admin хэсгийг харах
             </Link>
+            <AuthSignOutButton className="inline-flex items-center justify-center rounded-2xl bg-[#0F172A] px-5 py-3 text-[14px] font-semibold text-white shadow-[0_14px_32px_rgba(15,23,42,0.20)] transition hover:bg-[#1D2939] disabled:cursor-not-allowed disabled:opacity-70" />
           </div>
         </section>
       </main>

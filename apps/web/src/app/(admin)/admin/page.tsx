@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthSignOutButton } from "@/components/auth-sign-out-button";
 import { RoleGuard } from "@/components/role-guard";
 
 export default function AdminPage() {
@@ -29,6 +30,7 @@ export default function AdminPage() {
             >
               Student хэсгийг харах
             </Link>
+            <AuthSignOutButton />
           </div>
         </section>
       </main>

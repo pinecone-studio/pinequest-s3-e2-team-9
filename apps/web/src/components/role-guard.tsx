@@ -3,7 +3,7 @@
 import { useAuth, useClerk } from "@clerk/nextjs";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { PropsWithChildren } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   AuthApiError,
   fetchSession,
@@ -15,7 +15,15 @@ type RoleGuardProps = PropsWithChildren<{
   allowedRoles: AppRole[];
 }>;
 
-export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
+export function RoleGuard(props: RoleGuardProps) {
+  return (
+    <Suspense fallback={null}>
+      <RoleGuardContent {...props} />
+    </Suspense>
+  );
+}
+
+function RoleGuardContent({ allowedRoles, children }: RoleGuardProps) {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const clerk = useClerk();
   const pathname = usePathname();
@@ -30,8 +38,6 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
     return `${pathname || "/"}${query ? `?${query}` : ""}`;
   }, [pathname, searchParams]);
 
-  const allowedRolesKey = allowedRoles.join(",");
-
   useEffect(() => {
     if (!isLoaded) {
       return;
@@ -44,9 +50,6 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
       return;
     }
 
-    setIsAuthorized(false);
-    setErrorMessage(null);
-
     void (async () => {
       try {
         const session = await fetchSession(getToken);
@@ -56,9 +59,11 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
 
         if (allowedRoles.includes(session.user.role)) {
           setIsAuthorized(true);
+          setErrorMessage(null);
           return;
         }
 
+        setIsAuthorized(false);
         router.replace(resolveRoleRedirectPath(session.user.role, requestedPath));
       } catch (error) {
         if (cancelled) {
@@ -73,6 +78,7 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
           return;
         }
 
+        setIsAuthorized(false);
         setErrorMessage(
           error instanceof Error
             ? error.message
@@ -84,7 +90,11 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
     return () => {
       cancelled = true;
     };
-  }, [allowedRoles, allowedRolesKey, clerk, getToken, isLoaded, isSignedIn, requestedPath, router]);
+  }, [allowedRoles, clerk, getToken, isLoaded, isSignedIn, requestedPath, router]);
+
+  if (!isLoaded || !isSignedIn) {
+    return null;
+  }
 
   if (isAuthorized) {
     return <>{children}</>;

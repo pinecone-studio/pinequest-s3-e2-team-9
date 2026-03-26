@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable max-lines */
 
 import { useAuth, useClerk, useSignIn } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
