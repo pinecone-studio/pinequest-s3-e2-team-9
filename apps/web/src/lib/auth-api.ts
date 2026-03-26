@@ -60,6 +60,33 @@ const parseResponse = async (response: Response): Promise<AuthApiSession> => {
   return payload as AuthApiSession;
 };
 
+const requestAuthJson = async (
+  path: string,
+  init?: RequestInit,
+): Promise<AuthApiSession> => {
+  try {
+    return await parseResponse(
+      await fetch(`${getApiBaseUrl()}${path}`, {
+        cache: "no-store",
+        ...init,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof AuthApiError) {
+      throw error;
+    }
+
+    if (error instanceof TypeError) {
+      throw new AuthApiError(
+        503,
+        "Authentication service is unreachable. Check the API deployment or endpoint configuration.",
+      );
+    }
+
+    throw error;
+  }
+};
+
 export const getDefaultRedirectPathForRole = (role: AppRole): string => {
   switch (role) {
     case "ADMIN":
@@ -100,16 +127,13 @@ export const resolveRoleRedirectPath = (
 export const fetchLoginEligibility = async (
   email: string,
 ): Promise<AuthApiSession> =>
-  parseResponse(
-    await fetch(`${getApiBaseUrl()}/auth/login-eligibility`, {
+  requestAuthJson("/auth/login-eligibility", {
       method: "POST",
       headers: {
         "content-type": "application/json",
       },
       body: JSON.stringify({ email }),
-      cache: "no-store",
-    }),
-  );
+    });
 
 export const fetchSession = async (
   getToken: () => Promise<string | null>,
@@ -119,12 +143,9 @@ export const fetchSession = async (
     throw new AuthApiError(401, "Authentication required.");
   }
 
-  return parseResponse(
-    await fetch(`${getApiBaseUrl()}/auth/session`, {
+  return requestAuthJson("/auth/session", {
       headers: {
         authorization: `Bearer ${token}`,
       },
-      cache: "no-store",
-    }),
-  );
+    });
 };
