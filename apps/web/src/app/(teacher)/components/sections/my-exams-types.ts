@@ -22,7 +22,11 @@ export type MyExamQuestionPreview = {
   id: string;
   prompt: string;
   kind: "options" | "text" | "upload";
+  points: number;
+  typeLabel: string;
   options: string[];
+  correctAnswer: string | null;
+  answerText: string | null;
 };
 
 export type MyExamStudentRow = {
@@ -41,6 +45,14 @@ export type MyExamView = {
   id: string;
   title: string;
   subject: string;
+  subjectName: string;
+  createdDateLabel: string;
+  questionCount: number;
+  totalPoints: number;
+  secondaryLabel: string;
+  questionCountLabel: string;
+  durationLabel: string;
+  totalPointsLabel: string;
   status: { label: string; tone: string };
   meta: ExamMetaItem[];
   actions: { view: boolean; results: boolean };

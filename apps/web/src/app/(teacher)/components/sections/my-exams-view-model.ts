@@ -1,79 +1,18 @@
-import {
-  AttemptStatus,
-  ExamStatus,
-  QuestionType,
-} from "@/graphql/generated";
+import { AttemptStatus, ExamStatus } from "@/graphql/generated";
 import { CalendarIcon, ClipboardIcon, ClockIcon } from "../icons";
 import type {
-  MyExamQuestionPreview,
   MyExamStudentRow,
   MyExamView,
   QueryExam,
 } from "./my-exams-types";
-
-const formatDate = (value: string | null | undefined) => {
-  if (!value) return "Хугацаа байхгүй";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("mn-MN", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
-};
-
-const getExamStatus = (status: ExamStatus) => {
-  if (status === ExamStatus.Published) {
-    return {
-      label: "Явагдаж буй",
-      tone: "border-[#EAB53233] bg-[#EAB5321A] text-[#946200]",
-    };
-  }
-  if (status === ExamStatus.Closed) {
-    return {
-      label: "Дууссан",
-      tone: "border-[#31AA4033] bg-[#31AA401A] text-[#0F7A4F]",
-    };
-  }
-  return {
-    label: "Ноорог",
-    tone: "border-[#DFE1E5] bg-[#F2F4F7] text-[#52555B]",
-  };
-};
-
-const getAttemptStatus = (status: AttemptStatus) => {
-  if (status === AttemptStatus.Graded) {
-    return "border-[#31AA4033] bg-[#31AA401A] text-[#31AA40]";
-  }
-  if (status === AttemptStatus.Submitted) {
-    return "border-[#F63D6B33] bg-[#F63D6B1A] text-[#F63D6B]";
-  }
-  return "border-[#DFE1E5] bg-[#F0F2F5] text-[#52555B]";
-};
-
-const getAttemptLabel = (status: AttemptStatus) =>
-  status === AttemptStatus.Graded
-    ? "Шалгасан"
-    : status === AttemptStatus.Submitted
-      ? "Илгээсэн"
-      : "Явагдаж буй";
-
-const buildPreviewQuestions = (exam: QueryExam): MyExamQuestionPreview[] =>
-  [...exam.questions]
-    .sort((first, second) => first.order - second.order)
-    .map((item) => ({
-      id: item.id,
-      prompt: item.question.prompt || item.question.title,
-      kind:
-        item.question.type === QuestionType.Mcq ||
-        item.question.type === QuestionType.TrueFalse
-          ? "options"
-          : item.question.type === QuestionType.ImageUpload
-            ? "upload"
-            : "text",
-      options: item.question.options,
-    }));
+import {
+  buildPreviewQuestions,
+  formatDate,
+  formatDateOnly,
+  getAttemptLabel,
+  getAttemptStatus,
+  getExamStatus,
+} from "./my-exams-view-model-helpers";
 
 export const buildMyExamViews = (exams: QueryExam[]): MyExamView[] =>
   [...exams]
@@ -84,6 +23,9 @@ export const buildMyExamViews = (exams: QueryExam[]): MyExamView[] =>
     .map((exam) => {
       const totalStudents = exam.class.students.length;
       const totalPoints = exam.questions.reduce((sum, question) => sum + question.points, 0);
+      const questionCountLabel = `${exam.questions.length} асуулт`;
+      const durationLabel = `${exam.durationMinutes} минут`;
+      const totalPointsLabel = `${totalPoints} оноо`;
       const submittedAttempts = exam.attempts.filter(
         (attempt) => attempt.status !== AttemptStatus.InProgress,
       );
@@ -137,10 +79,21 @@ export const buildMyExamViews = (exams: QueryExam[]): MyExamView[] =>
         id: exam.id,
         title: exam.title,
         subject: exam.class.name,
+        subjectName: exam.class.subject,
+        createdDateLabel: formatDateOnly(exam.createdAt),
+        questionCount: exam.questions.length,
+        totalPoints,
+        secondaryLabel:
+          exam.status === ExamStatus.Draft
+            ? "Хувийн сан"
+            : `${getExamStatus(exam.status).label} • ${submittedAttempts.length}/${totalStudents} илгээсэн`,
+        questionCountLabel,
+        durationLabel,
+        totalPointsLabel,
         status: getExamStatus(exam.status),
         meta: [
-          { icon: ClipboardIcon, text: `${exam.questions.length} асуулт` },
-          { icon: ClockIcon, text: `${exam.durationMinutes} минут` },
+          { icon: ClipboardIcon, text: questionCountLabel },
+          { icon: ClockIcon, text: durationLabel },
           { text: exam.class.name },
           { icon: CalendarIcon, text: formatDate(exam.createdAt), tone: "text-[#52555B]" },
         ],
