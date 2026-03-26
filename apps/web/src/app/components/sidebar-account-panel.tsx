@@ -1,6 +1,6 @@
 "use client";
 
-import { useClerk, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 
 const getDisplayName = ({
   firstName,
@@ -38,19 +38,15 @@ const getInitials = ({
 };
 
 export function SidebarAccountPanel() {
-  const clerk = useClerk();
   const { isLoaded, user } = useUser();
 
   if (!isLoaded || !user) {
     return (
-      <div className="rounded-[24px] border border-[#D5E3F4] bg-white/80 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-        <div className="h-4 w-24 animate-pulse rounded-full bg-[#E5EDF8]" />
-        <div className="mt-4 flex items-center gap-3">
-          <div className="h-11 w-11 animate-pulse rounded-2xl bg-[#E5EDF8]" />
-          <div className="flex-1 space-y-2">
-            <div className="h-4 w-28 animate-pulse rounded-full bg-[#E5EDF8]" />
-            <div className="h-3 w-full animate-pulse rounded-full bg-[#E5EDF8]" />
-          </div>
+      <div className="flex items-center gap-3 rounded-xl px-3 py-2">
+        <div className="h-9 w-9 animate-pulse rounded-full bg-[#E5E7EB]" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3 w-24 animate-pulse rounded-full bg-[#E5E7EB]" />
+          <div className="h-3 w-32 animate-pulse rounded-full bg-[#E5E7EB]" />
         </div>
       </div>
     );
@@ -74,44 +70,17 @@ export function SidebarAccountPanel() {
   });
 
   return (
-    <div className="rounded-[24px] border border-[#D5E3F4] bg-[linear-gradient(180deg,#FFFFFF_0%,#F7FAFF_100%)] p-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#0B5FFF]">
-        Teacher Profile
-      </p>
-
-      <div className="mt-4 flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#0B5FFF_0%,#69A4FF_100%)] text-[14px] font-semibold text-white shadow-[0_10px_22px_rgba(11,95,255,0.28)]">
-          {initials}
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-semibold text-[#101828]">
-            {displayName}
-          </p>
-          <p className="truncate text-[12px] text-[#667085]">{primaryEmail}</p>
-        </div>
+    <div className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/70">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E5E7EB] text-[12px] font-semibold text-[#0F1216]">
+        {initials}
       </div>
-
-      <div className="mt-4 rounded-[20px] border border-[#E6EEF8] bg-[#F8FBFF] px-3 py-3 text-[12px] leading-5 text-[#526581]">
-        Имэйл OTP-ээр хамгаалагдсан session идэвхтэй байна.
-      </div>
-
-      <div className="mt-4 grid gap-2">
-        <button
-          className="flex items-center justify-center rounded-2xl border border-[#D5E3F4] bg-white px-4 py-3 text-[13px] font-medium text-[#344054] transition hover:bg-[#F8FBFF]"
-          type="button"
-        >
-          Бүртгэл идэвхтэй
-        </button>
-        <button
-          className="flex items-center justify-center rounded-2xl bg-[#0F172A] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_14px_32px_rgba(15,23,42,0.20)] transition hover:bg-[#1D2939]"
-          onClick={() => {
-            void clerk.signOut({ redirectUrl: "/sign-in" });
-          }}
-          type="button"
-        >
-          Гарах
-        </button>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[14px] font-medium text-[#0F1216]">
+          {displayName}
+        </p>
+        <p className="truncate text-[12px] text-[#0F121680]">
+          Математикийн багш
+        </p>
       </div>
     </div>
   );

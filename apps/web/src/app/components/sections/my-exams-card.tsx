@@ -1,137 +1,79 @@
-import {
-  ChartIcon,
-  CheckCircleIcon,
-  CheckIcon,
-  CloseIcon,
-  DotsIcon,
-  EyeIcon,
-  UsersIcon,
-} from "../icons";
+import Image from "next/image";
 import type { ExamCard } from "./my-exams-data";
+import { ChartIcon } from "../icons";
 
-const baseCard =
-  "rounded-xl border border-[#DFE1E5] bg-white p-6 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]";
-
-const actionButton =
-  "inline-flex items-center gap-2 rounded-md border border-[#DFE1E5] bg-[#FAFAFA] px-3 py-1.5 text-[14px] font-medium text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)]";
-
-export function MyExamCard({
-  exam,
-  onView,
-  onResults,
-}: {
-  exam: ExamCard;
-  onView: () => void;
-  onResults: () => void;
-}) {
-  const cardClass = exam.highlight
-    ? `${baseCard} ring-2 ring-[#3B82F6]`
-    : baseCard;
-
+export function MyExamCard({ exam }: { exam: ExamCard }) {
   return (
-    <article className={cardClass}>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-[16px] font-medium text-[#0F1216]">
-              {exam.title}
-            </h3>
-            <span
-              className={`rounded-md border px-2 py-[2px] text-[12px] font-medium ${exam.status.tone}`}
-            >
-              {exam.status.label}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-4 text-[12px] text-[#52555B]">
-            {exam.meta.map((item) => (
-              <span
-                key={`${exam.id}-${item.text}`}
-                className={`flex items-center gap-2 ${item.tone ?? ""}`}
-              >
-                {item.icon ? <item.icon className="h-3.5 w-3.5" /> : null}
-                {item.text}
-              </span>
-            ))}
-          </div>
+    <article className="flex h-full min-h-[228px] flex-col rounded-2xl border border-[#F1F2F3] bg-white p-2.5 shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)]">
+      <div className="rounded-2xl bg-[#6F90FF] px-4 py-4 text-white">
+        <h3 className="text-[18px] font-semibold leading-5">{exam.title}</h3>
+        <div className="mt-2 flex items-center gap-2 text-[14px] text-white/90">
+          <Image
+            src="/icons/people_alt.svg"
+            alt=""
+            aria-hidden="true"
+            width={16}
+            height={16}
+            className="h-4 w-4 brightness-0 invert"
+          />
+          <span>{exam.classLabel}</span>
         </div>
-        <div className="flex items-center gap-2">
-          {exam.actions.view ? (
-            <button className={actionButton} onClick={onView} type="button">
-              <EyeIcon className="h-4 w-4" />
-              Харах
-            </button>
-          ) : null}
-          {exam.actions.results ? (
-            <button className={actionButton} onClick={onResults} type="button">
-              <ChartIcon className="h-4 w-4" />
-              Үр дүн
-            </button>
-          ) : null}
-          <button
-            className="flex h-8 w-8 items-center justify-center rounded-md text-[#0F1216] hover:bg-[#F0F2F5]"
-            type="button"
-          >
-            <DotsIcon className="h-4 w-4" />
-          </button>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {exam.tags.map((tag) => (
+            <span
+              key={`${exam.id}-${tag}`}
+              className="rounded-full bg-white px-3 py-1 text-[12px] font-medium text-[#0F1216]"
+            >
+              {tag}
+            </span>
+          ))}
         </div>
       </div>
 
-      {exam.footer ? (
-        <div className="mt-4 border-t border-[#DFE1E5] pt-4">
-          <div className="flex flex-wrap items-center gap-6 text-[14px] text-[#52555B]">
-            <span className="flex items-center gap-2">
-              <UsersIcon className="h-4 w-4" />
-              <span className="font-medium text-[#0F1216]">
-                {exam.footer.students}
-              </span>
-              сурагч
-            </span>
-            <span className="flex items-center gap-2">
-              <CheckCircleIcon className="h-4 w-4" />
-              <span className="font-medium text-[#0F1216]">
-                {exam.footer.submitted}
-              </span>
-              илгээсэн
-            </span>
-
-            {exam.footer.type === "summary" ? (
-              <>
-                <div className="min-w-[220px] flex-1 space-y-2">
-                  <div className="flex items-center justify-between text-[14px]">
-                    <span className="text-[#52555B]">Тэнцсэн хувь</span>
-                    <span className="font-medium text-[#0F1216]">
-                      {exam.footer.passRate}%
-                    </span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-[#19223033]">
-                    <div
-                      className="h-2 rounded-full bg-[#192230]"
-                      style={{ width: `${exam.footer.passRate}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-4">
-                  <span className="flex items-center gap-2 text-[#31AA40]">
-                    <CheckIcon className="h-4 w-4" />
-                    {exam.footer.passed} тэнцсэн
-                  </span>
-                  <span className="flex items-center gap-2 text-[#D40924]">
-                    <CloseIcon className="h-4 w-4" />
-                    {exam.footer.failed} унасан
-                  </span>
-                </div>
-                <span className="flex items-center gap-2 text-[#52555B]">
-                  <ChartIcon className="h-4 w-4" />
-                  Дундаж
-                  <span className="font-medium text-[#0F1216]">
-                    {exam.footer.average}%
-                  </span>
-                </span>
-              </>
-            ) : null}
-          </div>
+      <div className="flex flex-1 flex-col gap-3 px-2 pb-2 pt-3">
+        <div className="flex items-center justify-between text-[12px] text-[#52555B]">
+          <span>Тэнцсэн хувь</span>
+          <span className="font-semibold text-[#0F1216]">
+            {exam.passRate}%
+          </span>
         </div>
-      ) : null}
+        <div className="h-1.5 w-full rounded-full bg-[#F1F2F3]">
+          <div
+            className="h-1.5 rounded-full bg-[#6F90FF]"
+            style={{ width: `${exam.passRate}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between text-[12px] text-[#52555B]">
+          <div className="flex items-center gap-3 text-[#0F1216]">
+            <span className="flex items-center gap-1">
+              <Image
+                src="/icons/check_circle_outline.svg"
+                alt=""
+                aria-hidden="true"
+                width={12}
+                height={12}
+                className="h-3 w-3"
+              />
+              {exam.passed}
+            </span>
+            <span className="flex items-center gap-1">
+              <Image
+                src="/icons/cancel.svg"
+                alt=""
+                aria-hidden="true"
+                width={12}
+                height={12}
+                className="h-3 w-3"
+              />
+              {exam.failed}
+            </span>
+          </div>
+          <span className="flex items-center gap-1">
+            <ChartIcon className="h-3 w-3 text-[#52555B]" />
+            Дундаж: {exam.average}%
+          </span>
+        </div>
+      </div>
     </article>
   );
 }
