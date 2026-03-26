@@ -1,0 +1,19 @@
+mutation StartAttempt($examId: ID!, $studentId: ID!) {
+  startAttempt(examId: $examId, studentId: $studentId) {
+    id
+    status
+    totalScore
+    startedAt
+    submittedAt
+    exam {
+      id
+    }
+    answers {
+      id
+      value
+      question {
+        id
+      }
+    }
+  }
+}

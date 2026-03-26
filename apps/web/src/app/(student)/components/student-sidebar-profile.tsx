@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
+import { AuthSignOutButton } from "@/components/auth-sign-out-button";
 
 const getDisplayName = ({
   firstName,
@@ -61,21 +62,25 @@ export function StudentSidebarProfile() {
   );
 
   return (
-    <div className="flex items-center gap-3 rounded-[12px] px-3 py-2 transition hover:bg-white/70">
-      <Image
-        alt={displayName}
-        className="h-9 w-9 rounded-full object-cover"
-        height={36}
-        src="/avatar.png"
-        width={36}
-      />
+    <div className="space-y-3 rounded-[16px] px-3 py-2 transition hover:bg-white/70">
+      <div className="flex items-center gap-3">
+        <Image
+          alt={displayName}
+          className="h-9 w-9 rounded-full object-cover"
+          height={36}
+          src="/avatar.png"
+          width={36}
+        />
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[14px] font-medium leading-5 text-[#0F1216]">
-          {displayName}
-        </p>
-        <p className="truncate text-[12px] leading-4 text-black/50">{secondaryLabel}</p>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14px] font-medium leading-5 text-[#0F1216]">
+            {displayName}
+          </p>
+          <p className="truncate text-[12px] leading-4 text-black/50">{secondaryLabel}</p>
+        </div>
       </div>
+
+      <AuthSignOutButton className="inline-flex h-10 w-full items-center justify-center rounded-[12px] border border-[#DFE1E5] bg-white px-4 text-[14px] font-semibold text-[#0F1216] shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition hover:bg-[#F8FAFF]" />
     </div>
   );
 }

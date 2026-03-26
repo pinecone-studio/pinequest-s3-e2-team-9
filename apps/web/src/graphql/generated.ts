@@ -455,6 +455,30 @@ export type PublishExamMutationVariables = Exact<{
 
 export type PublishExamMutation = { __typename?: 'Mutation', publishExam: { __typename?: 'Exam', id: string, status: ExamStatus, startedAt?: string | null, endsAt?: string | null } };
 
+export type SaveAnswerMutationVariables = Exact<{
+  attemptId: Scalars['ID']['input'];
+  questionId: Scalars['ID']['input'];
+  value: Scalars['String']['input'];
+}>;
+
+
+export type SaveAnswerMutation = { __typename?: 'Mutation', saveAnswer: { __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, startedAt: string, submittedAt?: string | null, answers: Array<{ __typename?: 'Answer', id: string, value: string, question: { __typename?: 'Question', id: string } }> } };
+
+export type StartAttemptMutationVariables = Exact<{
+  examId: Scalars['ID']['input'];
+  studentId: Scalars['ID']['input'];
+}>;
+
+
+export type StartAttemptMutation = { __typename?: 'Mutation', startAttempt: { __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, startedAt: string, submittedAt?: string | null, exam: { __typename?: 'Exam', id: string }, answers: Array<{ __typename?: 'Answer', id: string, value: string, question: { __typename?: 'Question', id: string } }> } };
+
+export type SubmitAttemptMutationVariables = Exact<{
+  attemptId: Scalars['ID']['input'];
+}>;
+
+
+export type SubmitAttemptMutation = { __typename?: 'Mutation', submitAttempt: { __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, startedAt: string, submittedAt?: string | null } };
+
 export type UpdateQuestionMutationMutationVariables = Exact<{
   id: Scalars['ID']['input'];
   type: QuestionType;
@@ -512,6 +536,13 @@ export type QuestionBanksQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type QuestionBanksQueryQuery = { __typename?: 'Query', questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, description?: string | null, subject: string, questionCount: number, createdAt: string }> };
+
+export type StudentExamRoomQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type StudentExamRoomQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string } | null, exam?: { __typename?: 'Exam', id: string, title: string, description?: string | null, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, order: number, points: number, question: { __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, options: Array<string> } }> } | null, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, startedAt: string, submittedAt?: string | null, exam: { __typename?: 'Exam', id: string }, answers: Array<{ __typename?: 'Answer', id: string, value: string, question: { __typename?: 'Question', id: string } }> }> };
 
 export type StudentHomeQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -807,6 +838,137 @@ export function usePublishExamMutation(baseOptions?: ApolloReactHooks.MutationHo
 export type PublishExamMutationHookResult = ReturnType<typeof usePublishExamMutation>;
 export type PublishExamMutationResult = ApolloReactCommon.MutationResult<PublishExamMutation>;
 export type PublishExamMutationOptions = ApolloReactCommon.BaseMutationOptions<PublishExamMutation, PublishExamMutationVariables>;
+export const SaveAnswerDocument = gql`
+    mutation SaveAnswer($attemptId: ID!, $questionId: ID!, $value: String!) {
+  saveAnswer(attemptId: $attemptId, questionId: $questionId, value: $value) {
+    id
+    status
+    totalScore
+    startedAt
+    submittedAt
+    answers {
+      id
+      value
+      question {
+        id
+      }
+    }
+  }
+}
+    `;
+export type SaveAnswerMutationFn = ApolloReactCommon.MutationFunction<SaveAnswerMutation, SaveAnswerMutationVariables>;
+
+/**
+ * __useSaveAnswerMutation__
+ *
+ * To run a mutation, you first call `useSaveAnswerMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSaveAnswerMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [saveAnswerMutation, { data, loading, error }] = useSaveAnswerMutation({
+ *   variables: {
+ *      attemptId: // value for 'attemptId'
+ *      questionId: // value for 'questionId'
+ *      value: // value for 'value'
+ *   },
+ * });
+ */
+export function useSaveAnswerMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<SaveAnswerMutation, SaveAnswerMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<SaveAnswerMutation, SaveAnswerMutationVariables>(SaveAnswerDocument, options);
+      }
+export type SaveAnswerMutationHookResult = ReturnType<typeof useSaveAnswerMutation>;
+export type SaveAnswerMutationResult = ApolloReactCommon.MutationResult<SaveAnswerMutation>;
+export type SaveAnswerMutationOptions = ApolloReactCommon.BaseMutationOptions<SaveAnswerMutation, SaveAnswerMutationVariables>;
+export const StartAttemptDocument = gql`
+    mutation StartAttempt($examId: ID!, $studentId: ID!) {
+  startAttempt(examId: $examId, studentId: $studentId) {
+    id
+    status
+    totalScore
+    startedAt
+    submittedAt
+    exam {
+      id
+    }
+    answers {
+      id
+      value
+      question {
+        id
+      }
+    }
+  }
+}
+    `;
+export type StartAttemptMutationFn = ApolloReactCommon.MutationFunction<StartAttemptMutation, StartAttemptMutationVariables>;
+
+/**
+ * __useStartAttemptMutation__
+ *
+ * To run a mutation, you first call `useStartAttemptMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useStartAttemptMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [startAttemptMutation, { data, loading, error }] = useStartAttemptMutation({
+ *   variables: {
+ *      examId: // value for 'examId'
+ *      studentId: // value for 'studentId'
+ *   },
+ * });
+ */
+export function useStartAttemptMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<StartAttemptMutation, StartAttemptMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<StartAttemptMutation, StartAttemptMutationVariables>(StartAttemptDocument, options);
+      }
+export type StartAttemptMutationHookResult = ReturnType<typeof useStartAttemptMutation>;
+export type StartAttemptMutationResult = ApolloReactCommon.MutationResult<StartAttemptMutation>;
+export type StartAttemptMutationOptions = ApolloReactCommon.BaseMutationOptions<StartAttemptMutation, StartAttemptMutationVariables>;
+export const SubmitAttemptDocument = gql`
+    mutation SubmitAttempt($attemptId: ID!) {
+  submitAttempt(attemptId: $attemptId) {
+    id
+    status
+    totalScore
+    startedAt
+    submittedAt
+  }
+}
+    `;
+export type SubmitAttemptMutationFn = ApolloReactCommon.MutationFunction<SubmitAttemptMutation, SubmitAttemptMutationVariables>;
+
+/**
+ * __useSubmitAttemptMutation__
+ *
+ * To run a mutation, you first call `useSubmitAttemptMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSubmitAttemptMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [submitAttemptMutation, { data, loading, error }] = useSubmitAttemptMutation({
+ *   variables: {
+ *      attemptId: // value for 'attemptId'
+ *   },
+ * });
+ */
+export function useSubmitAttemptMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<SubmitAttemptMutation, SubmitAttemptMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<SubmitAttemptMutation, SubmitAttemptMutationVariables>(SubmitAttemptDocument, options);
+      }
+export type SubmitAttemptMutationHookResult = ReturnType<typeof useSubmitAttemptMutation>;
+export type SubmitAttemptMutationResult = ApolloReactCommon.MutationResult<SubmitAttemptMutation>;
+export type SubmitAttemptMutationOptions = ApolloReactCommon.BaseMutationOptions<SubmitAttemptMutation, SubmitAttemptMutationVariables>;
 export const UpdateQuestionMutationDocument = gql`
     mutation UpdateQuestionMutation($id: ID!, $type: QuestionType!, $title: String!, $prompt: String!, $options: [String!], $correctAnswer: String, $difficulty: Difficulty!, $tags: [String!]) {
   updateQuestion(
@@ -1337,6 +1499,100 @@ export type QuestionBanksQueryQueryHookResult = ReturnType<typeof useQuestionBan
 export type QuestionBanksQueryLazyQueryHookResult = ReturnType<typeof useQuestionBanksQueryLazyQuery>;
 export type QuestionBanksQuerySuspenseQueryHookResult = ReturnType<typeof useQuestionBanksQuerySuspenseQuery>;
 export type QuestionBanksQueryQueryResult = ApolloReactCommon.QueryResult<QuestionBanksQueryQuery, QuestionBanksQueryQueryVariables>;
+export const StudentExamRoomDocument = gql`
+    query StudentExamRoom($id: ID!) {
+  me {
+    id
+    fullName
+  }
+  exam(id: $id) {
+    id
+    title
+    description
+    status
+    durationMinutes
+    startedAt
+    endsAt
+    scheduledFor
+    createdAt
+    class {
+      id
+      name
+      subject
+      grade
+      teacher {
+        id
+        fullName
+      }
+    }
+    questions {
+      id
+      order
+      points
+      question {
+        id
+        title
+        prompt
+        type
+        options
+      }
+    }
+  }
+  attempts {
+    id
+    status
+    totalScore
+    startedAt
+    submittedAt
+    exam {
+      id
+    }
+    answers {
+      id
+      value
+      question {
+        id
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useStudentExamRoomQuery__
+ *
+ * To run a query within a React component, call `useStudentExamRoomQuery` and pass it any options that fit your needs.
+ * When your component renders, `useStudentExamRoomQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useStudentExamRoomQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useStudentExamRoomQuery(baseOptions: ApolloReactHooks.QueryHookOptions<StudentExamRoomQuery, StudentExamRoomQueryVariables> & ({ variables: StudentExamRoomQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<StudentExamRoomQuery, StudentExamRoomQueryVariables>(StudentExamRoomDocument, options);
+      }
+export function useStudentExamRoomLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<StudentExamRoomQuery, StudentExamRoomQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<StudentExamRoomQuery, StudentExamRoomQueryVariables>(StudentExamRoomDocument, options);
+        }
+// @ts-ignore
+export function useStudentExamRoomSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<StudentExamRoomQuery, StudentExamRoomQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<StudentExamRoomQuery, StudentExamRoomQueryVariables>;
+export function useStudentExamRoomSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<StudentExamRoomQuery, StudentExamRoomQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<StudentExamRoomQuery | undefined, StudentExamRoomQueryVariables>;
+export function useStudentExamRoomSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<StudentExamRoomQuery, StudentExamRoomQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<StudentExamRoomQuery, StudentExamRoomQueryVariables>(StudentExamRoomDocument, options);
+        }
+export type StudentExamRoomQueryHookResult = ReturnType<typeof useStudentExamRoomQuery>;
+export type StudentExamRoomLazyQueryHookResult = ReturnType<typeof useStudentExamRoomLazyQuery>;
+export type StudentExamRoomSuspenseQueryHookResult = ReturnType<typeof useStudentExamRoomSuspenseQuery>;
+export type StudentExamRoomQueryResult = ApolloReactCommon.QueryResult<StudentExamRoomQuery, StudentExamRoomQueryVariables>;
 export const StudentHomeDocument = gql`
     query StudentHome {
   me {

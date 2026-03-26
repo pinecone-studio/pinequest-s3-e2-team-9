@@ -7,3 +7,11 @@ binding = "DB"
 database_name = "pinequest-db"
 database_id = "182994a1-0ed4-4db3-ae94-b192d71d50d0"
 migrations_dir = "migrations"
+
+[[durable_objects.bindings]]
+name = "LIVE_EXAM_EVENTS"
+class_name = "LiveExamEvents"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["LiveExamEvents"]

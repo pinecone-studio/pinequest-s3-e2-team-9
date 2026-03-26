@@ -7,9 +7,11 @@ import {
   findUserByEmail,
   toAuthResponse,
 } from "./auth";
-import type { D1DatabaseLike } from "./lib/d1";
+import { first, type D1DatabaseLike } from "./lib/d1";
 import { createRootValue } from "./graphql/root-value";
 import { schemaSource } from "./graphql/schema";
+import type { Role } from "./graphql/types";
+import { connectLiveExamEvents, type LiveExamEventsEnv } from "./live-exam-events";
 
 const corsHeaders = {
   "access-control-allow-origin": "*",
@@ -48,11 +50,12 @@ const empty = (init?: ResponseInit): Response =>
   });
 
 const schema = buildSchema(schemaSource);
+const classExamEventsPathPattern = /^\/events\/classes\/([^/]+)\/exams$/;
 
 type Env = {
   DB: D1DatabaseLike;
   CLERK_SECRET_KEY?: string;
-};
+} & LiveExamEventsEnv;
 
 type GraphQLRequestBody = {
   query?: string;
@@ -237,7 +240,10 @@ const handleGraphQL = async (request: Request, env: Env): Promise<Response> => {
     const result = await graphql({
       schema,
       source: parsed.query,
-      rootValue: createRootValue(env.DB),
+      rootValue: createRootValue({
+        db: env.DB,
+        env,
+      }),
       contextValue,
       variableValues: parsed.variables ?? undefined,
       operationName: parsed.operationName ?? undefined,
@@ -257,6 +263,89 @@ const handleGraphQL = async (request: Request, env: Env): Promise<Response> => {
         ],
       },
       { status: 500 },
+    );
+  }
+};
+
+const canActorAccessClassEvents = async (
+  db: D1DatabaseLike,
+  actorId: string,
+  role: Role,
+  classId: string,
+): Promise<boolean> => {
+  if (role === "ADMIN") {
+    return true;
+  }
+
+  if (role === "TEACHER") {
+    return Boolean(
+      await first<{ id: string }>(
+        db,
+        `SELECT id
+         FROM classes
+         WHERE id = ? AND teacher_id = ?`,
+        [classId, actorId],
+      ),
+    );
+  }
+
+  return Boolean(
+    await first<{ id: string }>(
+      db,
+      `SELECT c.id
+       FROM classes c
+       JOIN class_students cs ON cs.class_id = c.id
+       WHERE c.id = ? AND cs.student_id = ?`,
+      [classId, actorId],
+    ),
+  );
+};
+
+const handleClassExamEvents = async (
+  request: Request,
+  env: Env,
+  classId: string,
+): Promise<Response> => {
+  if (request.method !== "GET") {
+    return json(
+      {
+        error: "Method Not Allowed",
+      },
+      { status: 405 },
+    );
+  }
+
+  try {
+    const actor = await authenticateActor(request, env.DB, env);
+
+    if (!actor) {
+      throw new ApiAuthError(401, "Authentication required.");
+    }
+
+    const canAccess = await canActorAccessClassEvents(
+      env.DB,
+      actor.user.id,
+      actor.user.role,
+      classId,
+    );
+
+    if (!canAccess) {
+      throw new ApiAuthError(403, "You do not have access to this class event stream.");
+    }
+
+    return connectLiveExamEvents(env, classId, {
+      actorId: actor.user.id,
+    });
+  } catch (error) {
+    const status = error instanceof ApiAuthError ? error.status : 500;
+    const message =
+      error instanceof Error ? error.message : "Unable to connect to live exam events.";
+
+    return json(
+      {
+        error: message,
+      },
+      { status },
     );
   }
 };
@@ -379,6 +468,7 @@ export default {
           hello: "/api/hello",
           loginEligibility: "/auth/login-eligibility",
           session: "/auth/session",
+          classExamEvents: "/events/classes/:classId/exams",
           graphql: "/graphql",
         },
       });
@@ -410,6 +500,15 @@ export default {
       return handleGraphQL(request, env);
     }
 
+    const classExamEventsMatch = pathname.match(classExamEventsPathPattern);
+    if (classExamEventsMatch) {
+      return handleClassExamEvents(
+        request,
+        env,
+        decodeURIComponent(classExamEventsMatch[1]),
+      );
+    }
+
     return json(
       {
         error: "Not Found",
@@ -418,3 +517,5 @@ export default {
     );
   },
 };
+
+export { LiveExamEvents } from "./live-exam-events";

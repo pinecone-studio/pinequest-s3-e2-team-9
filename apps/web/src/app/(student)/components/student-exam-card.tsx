@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { PersonIcon, EducationIcon, PendingIcon, ResultIcon } from "./student-home-icons";
 
@@ -82,6 +83,7 @@ export function ExamCard({
       : "bg-[#6F90FF]";
   const progressTone = tone === "live" ? "bg-[#31AA40]" : "bg-[#6F90FF]";
   const buttonTone = tone === "live" ? "bg-[#31AA40] text-[#F6F9FC]" : "bg-[#6F90FF] text-[#F6F9FC]";
+  const buttonLabel = tone === "live" ? "Шалгалтаа үргэлжлүүлэх" : "Шалгалтруу орох";
 
   return (
     <article className="flex flex-col rounded-[16px] border border-[#F1F2F3] bg-white p-[10px] shadow-[0_4px_8px_-2px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.06)]">
@@ -127,12 +129,12 @@ export function ExamCard({
         </div>
       </div>
 
-      <button
+      <Link
         className={`mt-3 inline-flex h-9 w-full items-center justify-center rounded-[8px] text-[14px] font-bold leading-5 ${buttonTone}`}
-        type="button"
+        href={`/student/exams/${card.id}`}
       >
-        Шалгалтруу орох
-      </button>
+        {buttonLabel}
+      </Link>
     </article>
   );
 }

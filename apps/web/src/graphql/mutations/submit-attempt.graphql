@@ -1,0 +1,9 @@
+mutation SubmitAttempt($attemptId: ID!) {
+  submitAttempt(attemptId: $attemptId) {
+    id
+    status
+    totalScore
+    startedAt
+    submittedAt
+  }
+}

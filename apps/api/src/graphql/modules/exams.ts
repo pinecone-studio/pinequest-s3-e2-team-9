@@ -1,5 +1,6 @@
 import { all, first, invariant, run, type D1DatabaseLike } from "../../lib/d1";
 import type { RequestContext } from "../../auth";
+import type { LiveExamMutationEvent } from "../../live-exam-events";
 import {
   type AssignExamToClassArgs,
   makeId,
@@ -65,6 +66,7 @@ type ExamModuleDependencies = {
   requireActor: (context: RequestContext, roles: Role[]) => Promise<UserRow>;
   findClass: (db: D1DatabaseLike, id: string) => Promise<{ id: string; teacher_id: string }>;
   findQuestion: (db: D1DatabaseLike, id: string) => Promise<QuestionRow>;
+  publishLiveEvent?: (event: LiveExamMutationEvent) => Promise<void>;
   toExam: (db: D1DatabaseLike, exam: ExamRow) => unknown;
 };
 
@@ -73,6 +75,7 @@ export const createExamQueriesAndMutations = ({
   requireActor,
   findClass,
   findQuestion,
+  publishLiveEvent,
   toExam,
 }: ExamModuleDependencies) => ({
   exams: async (_args: unknown, context: RequestContext) => {
@@ -415,7 +418,18 @@ export const createExamQueriesAndMutations = ({
       "UPDATE exams SET status = 'PUBLISHED', started_at = ?, ends_at = ? WHERE id = ?",
       [startedAt, endsAt, examId],
     );
-    return toExam(db, await findExamById(db, examId));
+    const publishedExam = await findExamById(db, examId);
+    await publishLiveEvent?.({
+      type: "exam_published",
+      classId: publishedExam.class_id,
+      endsAt: publishedExam.ends_at,
+      emittedAt: now(),
+      examId: publishedExam.id,
+      startedAt: publishedExam.started_at,
+      status: "PUBLISHED",
+      title: publishedExam.title,
+    });
+    return toExam(db, publishedExam);
   },
   closeExam: async ({ examId }: CloseExamArgs, context: RequestContext) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
@@ -441,6 +455,17 @@ export const createExamQueriesAndMutations = ({
        WHERE exam_id = ? AND status = 'IN_PROGRESS'`,
       [now(), examId],
     );
-    return toExam(db, await findExamById(db, examId));
+    const closedExam = await findExamById(db, examId);
+    await publishLiveEvent?.({
+      type: "exam_closed",
+      classId: closedExam.class_id,
+      endsAt: closedExam.ends_at,
+      emittedAt: now(),
+      examId: closedExam.id,
+      startedAt: closedExam.started_at,
+      status: "CLOSED",
+      title: closedExam.title,
+    });
+    return toExam(db, closedExam);
   },
 });

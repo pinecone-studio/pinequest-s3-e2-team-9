@@ -1,0 +1,31 @@
+import type { StudentExamRoomQuery } from "@/graphql/generated";
+
+export type StudentExamData = NonNullable<StudentExamRoomQuery["exam"]>;
+export type StudentExamAttempt = StudentExamRoomQuery["attempts"][number];
+export type StudentExamQuestion = StudentExamData["questions"][number];
+export type StudentExamRoomState = {
+  activeQuestionId: string | null;
+  answeredCount: number;
+  attemptAnswers: Map<string, string>;
+  canStart: boolean;
+  currentAttempt: StudentExamAttempt | null;
+  draftAnswers: Record<string, string>;
+  errorMessage: string | null;
+  exam: StudentExamData | null;
+  examStart: string | null;
+  feedbackMessage: string | null;
+  handleSaveAnswer: (questionId: string) => Promise<void>;
+  handleStartAttempt: () => Promise<void>;
+  handleSubmitAttempt: () => Promise<void>;
+  isCompleted: boolean;
+  isInProgress: boolean;
+  isSaving: boolean;
+  isStarting: boolean;
+  isSubmitting: boolean;
+  loading: boolean;
+  queryError: Error | null;
+  refetching: boolean;
+  remainingLabel: string;
+  setDraftAnswer: (questionId: string, value: string) => void;
+  totalPoints: number;
+};

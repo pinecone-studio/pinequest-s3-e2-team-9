@@ -1,0 +1,56 @@
+query StudentExamRoom($id: ID!) {
+  me {
+    id
+    fullName
+  }
+  exam(id: $id) {
+    id
+    title
+    description
+    status
+    durationMinutes
+    startedAt
+    endsAt
+    scheduledFor
+    createdAt
+    class {
+      id
+      name
+      subject
+      grade
+      teacher {
+        id
+        fullName
+      }
+    }
+    questions {
+      id
+      order
+      points
+      question {
+        id
+        title
+        prompt
+        type
+        options
+      }
+    }
+  }
+  attempts {
+    id
+    status
+    totalScore
+    startedAt
+    submittedAt
+    exam {
+      id
+    }
+    answers {
+      id
+      value
+      question {
+        id
+      }
+    }
+  }
+}

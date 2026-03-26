@@ -4,6 +4,7 @@ import { getClassSelectFields, insertClassRow } from "./class-schema";
 import { createAttemptMutations } from "./modules/attempts";
 import { closeExpiredExams, createExamQueriesAndMutations, findExamById } from "./modules/exams";
 import { createDashboardOverviewQuery } from "./modules/dashboard";
+import { publishLiveExamEvent, type LiveExamEventsEnv } from "../live-exam-events";
 import {
   createQuestionQueriesAndMutations,
   findQuestionBankById,
@@ -13,7 +14,12 @@ import { findClass, findUser } from "./root-lookups";
 import { createEntityMappers } from "./root-mappers";
 import { makeId, now, type AttemptRow, type ByIdArgs, type ClassRow, type CreateClassArgs, type HelloArgs, type UserRow } from "./types";
 
-export const createRootValue = (db: D1DatabaseLike) => {
+type CreateRootValueArgs = {
+  db: D1DatabaseLike;
+  env: LiveExamEventsEnv;
+};
+
+export const createRootValue = ({ db, env }: CreateRootValueArgs) => {
   const { toAttempt, toClass, toExam, toQuestion, toQuestionBank, toUser } =
     createEntityMappers({
       db,
@@ -210,6 +216,7 @@ export const createRootValue = (db: D1DatabaseLike) => {
       requireActor,
       findClass,
       findQuestion: findQuestionById,
+      publishLiveEvent: async (event) => publishLiveExamEvent(env, event),
       toExam: (_, exam) => toExam(exam),
     }),
     ...createQuestionQueriesAndMutations({

@@ -1,0 +1,16 @@
+mutation SaveAnswer($attemptId: ID!, $questionId: ID!, $value: String!) {
+  saveAnswer(attemptId: $attemptId, questionId: $questionId, value: $value) {
+    id
+    status
+    totalScore
+    startedAt
+    submittedAt
+    answers {
+      id
+      value
+      question {
+        id
+      }
+    }
+  }
+}

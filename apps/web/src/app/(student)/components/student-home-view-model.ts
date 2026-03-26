@@ -39,6 +39,7 @@ export type StudentCompletedExamView = {
 
 export type StudentHomeViewModel = {
   availableExams: StudentExamCardView[];
+  classIds: string[];
   completedExams: StudentCompletedExamView[];
   liveExam: StudentExamCardView | null;
 };
@@ -131,5 +132,10 @@ export const buildStudentHomeViewModel = (data: StudentHomeQuery): StudentHomeVi
       title: attempt.exam.title,
     }));
 
-  return { availableExams, completedExams, liveExam };
+  return {
+    availableExams,
+    classIds: data.me?.classes.map((classroom) => classroom.id) ?? [],
+    completedExams,
+    liveExam,
+  };
 };

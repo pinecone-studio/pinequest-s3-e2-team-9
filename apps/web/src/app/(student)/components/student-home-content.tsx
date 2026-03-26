@@ -7,12 +7,21 @@ import { BellIcon } from "@/app/(teacher)/components/icons-ui";
 import { CompletedExamCard, ExamCard, SectionTitle } from "./student-exam-card";
 import { SearchIcon } from "./student-home-icons";
 import { OwlIllustration } from "./student-home-owl";
+import { useLiveExamEvents } from "./use-live-exam-events";
 import { useStudentHomeData } from "./use-student-home-data";
 
 export function StudentHomeContent() {
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
-  const { data, error, loading } = useStudentHomeData();
+  const { data, error, loading, refetch } = useStudentHomeData();
+
+  useLiveExamEvents({
+    classIds: data?.classIds ?? [],
+    enabled: Boolean(data),
+    onEvent: () => {
+      void refetch();
+    },
+  });
 
   const filtered = useMemo(() => {
     if (!data) {
