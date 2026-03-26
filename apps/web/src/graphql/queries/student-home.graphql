@@ -1,0 +1,71 @@
+query StudentHome {
+  me {
+    id
+    fullName
+    classes {
+      id
+      name
+      subject
+      grade
+      teacher {
+        id
+        fullName
+      }
+    }
+  }
+  exams {
+    id
+    title
+    status
+    durationMinutes
+    startedAt
+    endsAt
+    scheduledFor
+    createdAt
+    class {
+      id
+      name
+      subject
+      grade
+      teacher {
+        id
+        fullName
+      }
+    }
+    questions {
+      id
+      points
+    }
+  }
+  attempts {
+    id
+    status
+    totalScore
+    startedAt
+    submittedAt
+    exam {
+      id
+      title
+      status
+      durationMinutes
+      startedAt
+      endsAt
+      scheduledFor
+      createdAt
+      class {
+        id
+        name
+        subject
+        grade
+        teacher {
+          id
+          fullName
+        }
+      }
+      questions {
+        id
+        points
+      }
+    }
+  }
+}

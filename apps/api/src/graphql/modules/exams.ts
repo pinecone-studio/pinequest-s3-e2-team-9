@@ -137,7 +137,7 @@ export const createExamQueriesAndMutations = ({
                 e.created_at
               FROM exams e
               JOIN class_students cs ON cs.class_id = e.class_id
-              WHERE cs.student_id = ?
+              WHERE cs.student_id = ? AND e.status != 'DRAFT'
               ORDER BY e.created_at DESC`,
               [actor.id],
             );
@@ -205,7 +205,7 @@ export const createExamQueriesAndMutations = ({
                 e.created_at
               FROM exams e
               JOIN class_students cs ON cs.class_id = e.class_id
-              WHERE e.id = ? AND cs.student_id = ?`,
+              WHERE e.id = ? AND cs.student_id = ? AND e.status != 'DRAFT'`,
               [id, actor.id],
             );
     return exam ? toExam(db, exam) : null;
