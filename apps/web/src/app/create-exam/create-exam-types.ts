@@ -6,6 +6,7 @@ export type CreateExamFormValues = {
   description: string;
   durationMinutes: string;
   mode: ExamMode;
+  scheduledFor: string;
 };
 
 export type SelectedQuestionPoints = Record<string, string>;
@@ -14,6 +15,7 @@ export type CreateExamFieldErrors = {
   classId?: string;
   title?: string;
   durationMinutes?: string;
+  scheduledFor?: string;
   selectedQuestions?: string;
   pointsByQuestionId: Record<string, string>;
 };

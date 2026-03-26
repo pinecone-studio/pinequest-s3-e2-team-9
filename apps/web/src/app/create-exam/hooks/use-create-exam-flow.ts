@@ -2,26 +2,23 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  ExamMode,
   useAddQuestionToExamMutation,
   useCreateExamMutation,
   useCreateExamOptionsQuery,
 } from "@/graphql/generated";
-import { parseDurationMinutes, toSelectedQuestionsPayload, validateCreateExamForm } from "../create-exam-validation";
+import {
+  parseDurationMinutes,
+  toScheduledForIso,
+  toSelectedQuestionsPayload,
+  validateCreateExamForm,
+} from "../create-exam-validation";
+import {
+  EMPTY_ERRORS,
+  hasValidationErrors,
+  INITIAL_FORM_VALUES,
+  toErrorMessage,
+} from "./create-exam-flow-helpers";
 import { type CreateExamFieldErrors, type CreateExamFormValues, type CreateExamSubmitState, type SelectedQuestionPoints } from "../create-exam-types";
-const INITIAL_FORM_VALUES: CreateExamFormValues = {
-  classId: "",
-  title: "",
-  description: "",
-  durationMinutes: "60",
-  mode: ExamMode.Scheduled,
-};
-const EMPTY_ERRORS: CreateExamFieldErrors = { pointsByQuestionId: {} };
-
-const hasValidationErrors = (errors: CreateExamFieldErrors): boolean =>
-  Boolean(errors.classId || errors.title || errors.durationMinutes || errors.selectedQuestions || Object.keys(errors.pointsByQuestionId).length);
-const toErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : "Шалгалт үүсгэх үед алдаа гарлаа. Дахин оролдоно уу.";
 export const useCreateExamFlow = (initialClassId = "") => {
   const optionsQuery = useCreateExamOptionsQuery({
     fetchPolicy: "cache-and-network",
@@ -119,6 +116,11 @@ export const useCreateExamFlow = (initialClassId = "") => {
       setErrors((previous) => ({ ...previous, durationMinutes: "Хугацааны утга буруу байна." }));
       return null;
     }
+    const scheduledFor = toScheduledForIso(formValues.scheduledFor);
+    if (formValues.scheduledFor.trim().length && !scheduledFor) {
+      setErrors((previous) => ({ ...previous, scheduledFor: "Товлох огноо буруу байна." }));
+      return null;
+    }
     const selectedQuestions = toSelectedQuestionsPayload(selectedQuestionPoints);
     setErrors(EMPTY_ERRORS);
     setSubmitState({ status: "idle" });
@@ -130,6 +132,7 @@ export const useCreateExamFlow = (initialClassId = "") => {
           description: formValues.description.trim() || null,
           mode: formValues.mode,
           durationMinutes,
+          scheduledFor,
         },
       });
       const createdExam = createResult.data?.createExam;

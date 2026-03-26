@@ -25,11 +25,11 @@ SELECT
   printf('2026-03-24T01:%02d:00.000Z', (n - 1) % 60)
 FROM seq;
 
-INSERT OR REPLACE INTO classes (id, name, description, subject, grade, teacher_id, created_at) VALUES
-  ('class_001', 'Математик 101 - А бүлэг', 'Алгебр ба функцийн гүнзгийрүүлсэн анги', 'Математик', 10, 'user_teacher_001', '2026-03-24T02:00:00.000Z'),
-  ('class_002', 'Физик (Сонгон)', 'Сонгон хичээлийн анги', 'Физик', 11, 'user_teacher_001', '2026-03-24T02:01:00.000Z'),
-  ('class_003', 'Химийн суурь', 'Лабораторит түшиглэсэн хөтөлбөр', 'Хими', 10, 'user_teacher_002', '2026-03-24T02:02:00.000Z'),
-  ('class_004', 'Биологи 201', 'Ахисан түвшний биологийн анги', 'Биологи', 12, 'user_teacher_002', '2026-03-24T02:03:00.000Z');
+INSERT OR REPLACE INTO classes (id, name, description, teacher_id, created_at) VALUES
+  ('class_001', 'Математик 101 - А бүлэг', 'Алгебр ба функцийн гүнзгийрүүлсэн анги', 'user_teacher_001', '2026-03-24T02:00:00.000Z'),
+  ('class_002', 'Физик (Сонгон)', 'Сонгон хичээлийн анги', 'user_teacher_001', '2026-03-24T02:01:00.000Z'),
+  ('class_003', 'Химийн суурь', 'Лабораторит түшиглэсэн хөтөлбөр', 'user_teacher_002', '2026-03-24T02:02:00.000Z'),
+  ('class_004', 'Биологи 201', 'Ахисан түвшний биологийн анги', 'user_teacher_002', '2026-03-24T02:03:00.000Z');
 
 WITH RECURSIVE seq(n) AS (
   SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < 104
@@ -46,8 +46,8 @@ SELECT
   printf('user_student_%03d', n)
 FROM seq;
 
-INSERT OR REPLACE INTO question_banks (id, title, description, subject, owner_id, created_at) VALUES
-  ('bank_class_math_001', 'Математикийн ангийн шалгалтын сан', 'Ангиудын самбарт ашиглах жишиг асуултууд', 'Математик', 'user_teacher_001', '2026-03-24T03:00:00.000Z');
+INSERT OR REPLACE INTO question_banks (id, title, description, owner_id, created_at) VALUES
+  ('bank_class_math_001', 'Математикийн ангийн шалгалтын сан', 'Ангиудын самбарт ашиглах жишиг асуултууд', 'user_teacher_001', '2026-03-24T03:00:00.000Z');
 
 INSERT OR REPLACE INTO questions (
   id, bank_id, type, title, prompt, options_json, correct_answer, difficulty, tags_json, created_by_id, created_at

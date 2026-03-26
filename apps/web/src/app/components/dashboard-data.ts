@@ -27,12 +27,12 @@ export type QuickAction = {
 
 export const navItems: NavItem[] = [
   { label: "Нүүр", href: "/", icon: HomeIcon },
-  { label: "Шалгалт үүсгэх", href: "/create-exam", icon: GridIcon },
   { label: "Миний шалгалтууд", href: "/my-exams", icon: ClipboardIcon },
   { label: "Ангиуд", href: "/classes", icon: UsersIcon },
   { label: "Асуултын сан", href: "/question-bank", icon: BookIcon },
-  { label: "Үнэлгээ", href: "/assessment", icon: ChartIcon },
-  { label: "Шалгалтын хяналт", href: "/proctoring", icon: MonitorIcon },
+  { label: "Шалгалт үүсгэх", href: "/create-exam", icon: GridIcon },
+  { label: "Үнэлгээ", href: "/my-exams", icon: ChartIcon },
+  { label: "Хяналт", href: "/my-exams", icon: MonitorIcon },
 ];
 
 export const quickActions: QuickAction[] = [

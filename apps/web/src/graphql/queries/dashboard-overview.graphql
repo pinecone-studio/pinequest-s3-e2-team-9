@@ -1,36 +1,26 @@
 query DashboardOverview {
-  me {
-    id
-    fullName
-    role
-  }
-  exams {
-    id
-    title
-    status
-    durationMinutes
-    createdAt
-    class {
-      id
-      name
-      students {
-        id
-      }
+  dashboardOverview {
+    teacherName
+    summary {
+      pendingReviewCount
+      draftExamCount
+      ongoingExamCount
+      scheduledExamCount
     }
-    questions {
+    upcomingExams {
       id
-      points
-    }
-    attempts {
-      id
+      title
+      scheduledFor
+      questionCount
       status
-      totalScore
-      startedAt
-      submittedAt
-      student {
-        id
-        fullName
-      }
+    }
+    recentResults {
+      id
+      title
+      passCount
+      failCount
+      progressPercent
+      averageScorePercent
     }
   }
 }

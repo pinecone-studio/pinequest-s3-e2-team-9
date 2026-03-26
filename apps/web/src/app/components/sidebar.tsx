@@ -8,16 +8,19 @@ import { SidebarAccountPanel } from "./sidebar-account-panel";
 export function Sidebar() {
   const pathname = usePathname();
   return (
-    <aside className="flex w-full flex-col border-b border-[#E4E7EC] bg-[#F6F9FC] lg:w-[224px] lg:border-b-0 lg:border-r">
-      <div className="flex h-14 items-center gap-2 border-b border-[#E4E7EC] px-4">
-        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[conic-gradient(from_120deg,#5B7CFF,#7DD3FC,#5B7CFF)] text-[10px] font-semibold text-white">
-          S+
+    <aside className="flex w-full flex-col border-b border-[#E4E7EC] bg-[#F8FAFF] [background-image:radial-gradient(circle_at_1px_1px,#D8E4FF_1px,transparent_0)] [background-size:20px_20px] lg:w-[300px] lg:border-b-0 lg:border-r">
+      <div className="px-7 pb-6 pt-10">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,#7B97FF_0%,#4F6DFF_100%)] text-[16px] font-bold text-white shadow-[0_14px_30px_rgba(91,124,255,0.28)]">
+            EF
+          </div>
+          <span className="text-[24px] font-bold tracking-[-0.03em] text-[#101828]">
+            ExamFlow
+          </span>
         </div>
-        <span className="text-[16px] font-semibold text-[#0F1216]">
-          Шалгалт+
-        </span>
       </div>
-      <nav className="flex-1 space-y-1 px-3 py-3 text-[14px]">
+
+      <nav className="flex-1 space-y-2 px-6 text-[14px]">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive =
@@ -27,23 +30,24 @@ export function Sidebar() {
             <Link
               key={item.label}
               href={item.href}
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition ${
+              className={`flex min-h-[60px] w-full items-center gap-4 rounded-[20px] px-5 text-left transition ${
                 isActive
-                  ? "bg-[#00267F] text-white shadow-sm"
-                  : "text-[#0F1216B3] hover:bg-white"
+                  ? "bg-[linear-gradient(135deg,#7895FF_0%,#5B7CFF_100%)] text-white shadow-[0_16px_32px_rgba(91,124,255,0.24)]"
+                  : "text-[#667085] hover:bg-white/80 hover:text-[#101828]"
               }`}
             >
               <Icon
-                className={`h-4 w-4 ${
-                  isActive ? "text-white" : "text-[#0F1216B3]"
+                className={`h-5 w-5 ${
+                  isActive ? "text-white" : "text-[#667085]"
                 }`}
               />
-              <span className="font-medium">{item.label}</span>
+              <span className="text-[16px] font-medium">{item.label}</span>
             </Link>
           );
         })}
       </nav>
-      <div className="border-t border-[#E4E7EC] px-3 py-3">
+
+      <div className="px-6 pb-8 pt-6">
         <SidebarAccountPanel />
       </div>
     </aside>

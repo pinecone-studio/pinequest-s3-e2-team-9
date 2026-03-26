@@ -63,6 +63,7 @@ export type ExamRow = {
   started_at: string | null;
   ends_at: string | null;
   created_by_id: string;
+  scheduled_for: string | null;
   created_at: string;
 };
 

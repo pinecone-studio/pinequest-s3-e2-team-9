@@ -49,6 +49,7 @@ export const findExamById = async (
       started_at,
       ends_at,
       created_by_id,
+      scheduled_for,
       created_at
     FROM exams
     WHERE id = ?`,
@@ -88,6 +89,7 @@ export const createExamQueriesAndMutations = ({
         started_at,
         ends_at,
         created_by_id,
+        scheduled_for,
         created_at
       FROM exams
       ORDER BY created_at DESC`,
@@ -109,6 +111,7 @@ export const createExamQueriesAndMutations = ({
         started_at,
         ends_at,
         created_by_id,
+        scheduled_for,
         created_at
       FROM exams
       WHERE id = ?`,
@@ -122,6 +125,7 @@ export const createExamQueriesAndMutations = ({
     description,
     mode,
     durationMinutes,
+    scheduledFor,
   }: CreateExamArgs) => {
     await findClass(db, classId);
     const actor = await requireActor(db, ["ADMIN", "TEACHER"]);
@@ -141,9 +145,10 @@ export const createExamQueriesAndMutations = ({
         started_at,
         ends_at,
         created_by_id,
+        scheduled_for,
         created_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         classId,
@@ -155,6 +160,7 @@ export const createExamQueriesAndMutations = ({
         null,
         null,
         actor.id,
+        scheduledFor ?? createdAt,
         createdAt,
       ],
     );
@@ -185,9 +191,10 @@ export const createExamQueriesAndMutations = ({
         started_at,
         ends_at,
         created_by_id,
+        scheduled_for,
         created_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         nextExamId,
         classId,
@@ -199,6 +206,7 @@ export const createExamQueriesAndMutations = ({
         null,
         null,
         actor.id,
+        sourceExam.scheduled_for,
         createdAt,
       ],
     );

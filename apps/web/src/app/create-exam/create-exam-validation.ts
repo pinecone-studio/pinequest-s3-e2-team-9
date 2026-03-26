@@ -33,6 +33,20 @@ export const parseDurationMinutes = (value: string): number | null => {
   return parsed;
 };
 
+export const toScheduledForIso = (value: string): string | null => {
+  const trimmed = value.trim();
+  if (!trimmed.length) {
+    return null;
+  }
+
+  const parsed = Date.parse(trimmed);
+  if (Number.isNaN(parsed)) {
+    return null;
+  }
+
+  return new Date(parsed).toISOString();
+};
+
 export const toSelectedQuestionsPayload = (
   selectedQuestionPoints: SelectedQuestionPoints,
 ): Array<{ questionId: string; points: number }> =>
@@ -63,6 +77,10 @@ export const validateCreateExamForm = (
   if (!parseDurationMinutes(values.durationMinutes)) {
     errors.durationMinutes =
       `Хугацаа ${MIN_DURATION_MINUTES}-${MAX_DURATION_MINUTES} минутын хооронд байна.`;
+  }
+
+  if (values.scheduledFor.trim().length && !toScheduledForIso(values.scheduledFor)) {
+    errors.scheduledFor = "Огноо, цагаа зөв форматаар оруулна уу.";
   }
 
   const selectedEntries = Object.entries(selectedQuestionPoints);

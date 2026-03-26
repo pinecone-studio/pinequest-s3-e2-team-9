@@ -43,3 +43,47 @@ export type DashboardViewModel = {
   upcomingExams: UpcomingExamView[];
   recentExams: RecentExamView[];
 };
+
+export type DashboardSummaryCardView = {
+  title: string;
+  value: string;
+  subtitle: string;
+  actionLabel: string;
+  href: string;
+  icon: "review" | "draft" | "schedule";
+};
+
+export type DashboardQuickActionView = {
+  label: string;
+  description: string;
+  href: string;
+  icon: "create" | "review" | "classes" | "bank";
+  primary?: boolean;
+};
+
+export type DashboardUpcomingExamItem = {
+  id: string;
+  title: string;
+  scheduledLabel: string;
+  questionCountLabel: string;
+  href: string;
+};
+
+export type DashboardRecentResultItem = {
+  id: string;
+  title: string;
+  passCount: number;
+  failCount: number;
+  progressPercent: number;
+  averageScoreLabel: string;
+  href: string;
+};
+
+export type DashboardPageViewModel = {
+  teacherName: string;
+  stats: DashboardSummaryCardView[];
+  quickActions: DashboardQuickActionView[];
+  upcomingExams: DashboardUpcomingExamItem[];
+  recentResults: DashboardRecentResultItem[];
+  hasAnyData: boolean;
+};

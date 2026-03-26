@@ -43,13 +43,12 @@ export function SidebarAccountPanel() {
 
   if (!isLoaded || !user) {
     return (
-      <div className="rounded-[24px] border border-[#D5E3F4] bg-white/80 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-        <div className="h-4 w-24 animate-pulse rounded-full bg-[#E5EDF8]" />
-        <div className="mt-4 flex items-center gap-3">
-          <div className="h-11 w-11 animate-pulse rounded-2xl bg-[#E5EDF8]" />
+      <div className="rounded-[24px] bg-white/72 p-4 shadow-[0_14px_36px_rgba(15,23,42,0.06)] backdrop-blur">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 animate-pulse rounded-full bg-[#E5EDF8]" />
           <div className="flex-1 space-y-2">
             <div className="h-4 w-28 animate-pulse rounded-full bg-[#E5EDF8]" />
-            <div className="h-3 w-full animate-pulse rounded-full bg-[#E5EDF8]" />
+            <div className="h-3 w-32 animate-pulse rounded-full bg-[#E5EDF8]" />
           </div>
         </div>
       </div>
@@ -74,27 +73,19 @@ export function SidebarAccountPanel() {
   });
 
   return (
-    <div className="rounded-[24px] border border-[#D5E3F4] bg-[linear-gradient(180deg,#FFFFFF_0%,#F7FAFF_100%)] p-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#0B5FFF]">
-        Teacher Profile
-      </p>
-
-      <div className="mt-4 flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#0B5FFF_0%,#69A4FF_100%)] text-[14px] font-semibold text-white shadow-[0_10px_22px_rgba(11,95,255,0.28)]">
+    <div className="rounded-[24px] bg-white/78 p-4 shadow-[0_14px_36px_rgba(15,23,42,0.08)] backdrop-blur">
+      <div className="flex items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[linear-gradient(135deg,#7B97FF_0%,#4F6DFF_100%)] text-[14px] font-semibold text-white shadow-[0_10px_22px_rgba(79,109,255,0.28)]">
           {initials}
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-semibold text-[#101828]">
-            {displayName}
-          </p>
-          <p className="truncate text-[12px] text-[#667085]">{primaryEmail}</p>
+          <p className="truncate text-[15px] font-semibold text-[#101828]">{displayName}</p>
+          <p className="truncate text-[13px] text-[#667085]">Багшийн бүртгэл</p>
         </div>
       </div>
 
-      <div className="mt-4 rounded-[20px] border border-[#E6EEF8] bg-[#F8FBFF] px-3 py-3 text-[12px] leading-5 text-[#526581]">
-        Имэйл OTP-ээр хамгаалагдсан session идэвхтэй байна.
-      </div>
+      <p className="mt-2 truncate pl-[60px] text-[13px] text-[#98A2B3]">{primaryEmail}</p>
 
       <div className="mt-4 grid gap-2">
         <button

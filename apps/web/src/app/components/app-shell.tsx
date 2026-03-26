@@ -7,7 +7,7 @@ type AppShellProps = PropsWithChildren<{
 
 export function AppShell({ children, contentClassName }: AppShellProps) {
   return (
-    <main className="min-h-screen bg-[#FAFAFA]">
+    <main className="min-h-screen bg-[#F8FAFF] [background-image:radial-gradient(circle_at_1px_1px,#D8E4FF_1px,transparent_0)] [background-size:20px_20px]">
       <div className="flex min-h-screen flex-col overflow-hidden lg:h-screen lg:flex-row">
         <Sidebar />
         <section className="flex-1 overflow-y-auto">
