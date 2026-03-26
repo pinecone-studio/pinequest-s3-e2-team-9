@@ -1,10 +1,9 @@
 "use client";
 
-import { useQuery } from "@apollo/client/react";
-import { HealthQueryDocument } from "@/graphql/generated";
+import { useHealthQueryQuery } from "@/graphql/generated";
 
 export const HealthStatus = () => {
-  const { data, error, loading } = useQuery(HealthQueryDocument, {
+  const { data, error, loading } = useHealthQueryQuery({
     ssr: false,
   });
 

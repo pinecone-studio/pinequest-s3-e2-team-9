@@ -1,0 +1,11 @@
+query ClassesList {
+  classes {
+    id
+    name
+    subject
+    grade
+    studentCount
+    upcomingExamCount
+    completedExamCount
+  }
+}

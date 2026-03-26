@@ -1,4 +1,6 @@
-import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
+import { gql } from '@apollo/client';
+import * as ApolloReactCommon from '../lib/apollo-codegen';
+import * as ApolloReactHooks from '../lib/apollo-codegen';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -6,6 +8,7 @@ export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: 
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
 export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
 export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
+const defaultOptions = {} as const;
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: { input: string; output: string; }
@@ -48,14 +51,47 @@ export enum AttemptStatus {
 
 export type Class = {
   __typename?: 'Class';
+  assignedExamCount: Scalars['Int']['output'];
+  averageScore?: Maybe<Scalars['Float']['output']>;
+  completedExamCount: Scalars['Int']['output'];
   createdAt: Scalars['String']['output'];
   description?: Maybe<Scalars['String']['output']>;
+  examInsights: Array<ClassExamInsight>;
   exams: Array<Exam>;
+  grade: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
+  studentCount: Scalars['Int']['output'];
+  studentInsights: Array<ClassStudentInsight>;
   students: Array<User>;
+  subject: Scalars['String']['output'];
   teacher: User;
+  upcomingExamCount: Scalars['Int']['output'];
 };
+
+export type ClassExamInsight = {
+  __typename?: 'ClassExamInsight';
+  averageScore?: Maybe<Scalars['Float']['output']>;
+  exam: Exam;
+  progressPercent: Scalars['Int']['output'];
+  questionCount: Scalars['Int']['output'];
+  submittedCount: Scalars['Int']['output'];
+  totalStudents: Scalars['Int']['output'];
+};
+
+export type ClassStudentInsight = {
+  __typename?: 'ClassStudentInsight';
+  averageScore?: Maybe<Scalars['Float']['output']>;
+  lastActiveAt?: Maybe<Scalars['String']['output']>;
+  status: ClassStudentStatus;
+  student: User;
+};
+
+export enum ClassStudentStatus {
+  Completed = 'COMPLETED',
+  InProgress = 'IN_PROGRESS',
+  NotStarted = 'NOT_STARTED'
+}
 
 export enum Difficulty {
   Easy = 'EASY',
@@ -370,6 +406,18 @@ export type UpdateQuestionMutationMutationVariables = Exact<{
 
 export type UpdateQuestionMutationMutation = { __typename?: 'Mutation', updateQuestion: { __typename?: 'Question', id: string } };
 
+export type ClassDetailQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type ClassDetailQuery = { __typename?: 'Query', class?: { __typename?: 'Class', id: string, name: string, description?: string | null, subject: string, grade: number, studentCount: number, assignedExamCount: number, upcomingExamCount: number, completedExamCount: number, averageScore?: number | null, teacher: { __typename?: 'User', id: string, fullName: string }, studentInsights: Array<{ __typename?: 'ClassStudentInsight', status: ClassStudentStatus, lastActiveAt?: string | null, averageScore?: number | null, student: { __typename?: 'User', id: string, fullName: string, email: string } }>, examInsights: Array<{ __typename?: 'ClassExamInsight', submittedCount: number, totalStudents: number, progressPercent: number, averageScore?: number | null, questionCount: number, exam: { __typename?: 'Exam', id: string, title: string, durationMinutes: number, status: ExamStatus } }> } | null };
+
+export type ClassesListQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ClassesListQuery = { __typename?: 'Query', classes: Array<{ __typename?: 'Class', id: string, name: string, subject: string, grade: number, studentCount: number, upcomingExamCount: number, completedExamCount: number }> };
+
 export type CreateExamOptionsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -398,14 +446,662 @@ export type QuestionBanksQueryQueryVariables = Exact<{ [key: string]: never; }>;
 export type QuestionBanksQueryQuery = { __typename?: 'Query', questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, description?: string | null, subject: string, questionCount: number, createdAt: string }> };
 
 
-export const AddQuestionToExamDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AddQuestionToExam"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"examId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"questionId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"points"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"addQuestionToExam"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"examId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"examId"}}},{"kind":"Argument","name":{"kind":"Name","value":"questionId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"questionId"}}},{"kind":"Argument","name":{"kind":"Name","value":"points"},"value":{"kind":"Variable","name":{"kind":"Name","value":"points"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"questions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"points"}},{"kind":"Field","name":{"kind":"Name","value":"order"}},{"kind":"Field","name":{"kind":"Name","value":"question"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<AddQuestionToExamMutation, AddQuestionToExamMutationVariables>;
-export const CloseExamDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CloseExam"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"examId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"closeExam"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"examId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"examId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<CloseExamMutation, CloseExamMutationVariables>;
-export const CreateExamDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateExam"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"classId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"title"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"description"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"mode"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ExamMode"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"durationMinutes"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createExam"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"classId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"classId"}}},{"kind":"Argument","name":{"kind":"Name","value":"title"},"value":{"kind":"Variable","name":{"kind":"Name","value":"title"}}},{"kind":"Argument","name":{"kind":"Name","value":"description"},"value":{"kind":"Variable","name":{"kind":"Name","value":"description"}}},{"kind":"Argument","name":{"kind":"Name","value":"mode"},"value":{"kind":"Variable","name":{"kind":"Name","value":"mode"}}},{"kind":"Argument","name":{"kind":"Name","value":"durationMinutes"},"value":{"kind":"Variable","name":{"kind":"Name","value":"durationMinutes"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"mode"}},{"kind":"Field","name":{"kind":"Name","value":"durationMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"class"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<CreateExamMutation, CreateExamMutationVariables>;
-export const CreateQuestionMutationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateQuestionMutation"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"bankId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"QuestionType"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"title"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"prompt"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"options"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"correctAnswer"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"difficulty"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Difficulty"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"tags"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createQuestion"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"bankId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"bankId"}}},{"kind":"Argument","name":{"kind":"Name","value":"type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"type"}}},{"kind":"Argument","name":{"kind":"Name","value":"title"},"value":{"kind":"Variable","name":{"kind":"Name","value":"title"}}},{"kind":"Argument","name":{"kind":"Name","value":"prompt"},"value":{"kind":"Variable","name":{"kind":"Name","value":"prompt"}}},{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"Variable","name":{"kind":"Name","value":"options"}}},{"kind":"Argument","name":{"kind":"Name","value":"correctAnswer"},"value":{"kind":"Variable","name":{"kind":"Name","value":"correctAnswer"}}},{"kind":"Argument","name":{"kind":"Name","value":"difficulty"},"value":{"kind":"Variable","name":{"kind":"Name","value":"difficulty"}}},{"kind":"Argument","name":{"kind":"Name","value":"tags"},"value":{"kind":"Variable","name":{"kind":"Name","value":"tags"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateQuestionMutationMutation, CreateQuestionMutationMutationVariables>;
-export const DeleteQuestionMutationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteQuestionMutation"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteQuestion"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<DeleteQuestionMutationMutation, DeleteQuestionMutationMutationVariables>;
-export const UpdateQuestionMutationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateQuestionMutation"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"QuestionType"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"title"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"prompt"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"options"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"correctAnswer"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"difficulty"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Difficulty"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"tags"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateQuestion"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"type"}}},{"kind":"Argument","name":{"kind":"Name","value":"title"},"value":{"kind":"Variable","name":{"kind":"Name","value":"title"}}},{"kind":"Argument","name":{"kind":"Name","value":"prompt"},"value":{"kind":"Variable","name":{"kind":"Name","value":"prompt"}}},{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"Variable","name":{"kind":"Name","value":"options"}}},{"kind":"Argument","name":{"kind":"Name","value":"correctAnswer"},"value":{"kind":"Variable","name":{"kind":"Name","value":"correctAnswer"}}},{"kind":"Argument","name":{"kind":"Name","value":"difficulty"},"value":{"kind":"Variable","name":{"kind":"Name","value":"difficulty"}}},{"kind":"Argument","name":{"kind":"Name","value":"tags"},"value":{"kind":"Variable","name":{"kind":"Name","value":"tags"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateQuestionMutationMutation, UpdateQuestionMutationMutationVariables>;
-export const CreateExamOptionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"CreateExamOptions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"classes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"questions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"difficulty"}},{"kind":"Field","name":{"kind":"Name","value":"bank"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}}]}}]} as unknown as DocumentNode<CreateExamOptionsQuery, CreateExamOptionsQueryVariables>;
-export const DashboardOverviewDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"DashboardOverview"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"fullName"}},{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"Field","name":{"kind":"Name","value":"exams"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"durationMinutes"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"class"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"students"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"questions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"points"}}]}},{"kind":"Field","name":{"kind":"Name","value":"attempts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"totalScore"}},{"kind":"Field","name":{"kind":"Name","value":"startedAt"}},{"kind":"Field","name":{"kind":"Name","value":"submittedAt"}},{"kind":"Field","name":{"kind":"Name","value":"student"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"fullName"}}]}}]}}]}}]}}]} as unknown as DocumentNode<DashboardOverviewQuery, DashboardOverviewQueryVariables>;
-export const HealthQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"HealthQuery"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"health"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ok"}},{"kind":"Field","name":{"kind":"Name","value":"service"}},{"kind":"Field","name":{"kind":"Name","value":"runtime"}}]}}]}}]} as unknown as DocumentNode<HealthQueryQuery, HealthQueryQueryVariables>;
-export const QuestionBankDetailQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"QuestionBankDetailQuery"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"questionBank"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"questionCount"}},{"kind":"Field","name":{"kind":"Name","value":"questions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"prompt"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"difficulty"}},{"kind":"Field","name":{"kind":"Name","value":"options"}},{"kind":"Field","name":{"kind":"Name","value":"correctAnswer"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}}]}}]}}]}}]} as unknown as DocumentNode<QuestionBankDetailQueryQuery, QuestionBankDetailQueryQueryVariables>;
-export const QuestionBanksQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"QuestionBanksQuery"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"questionBanks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"questionCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<QuestionBanksQueryQuery, QuestionBanksQueryQueryVariables>;
+export const AddQuestionToExamDocument = gql`
+    mutation AddQuestionToExam($examId: ID!, $questionId: ID!, $points: Int!) {
+  addQuestionToExam(examId: $examId, questionId: $questionId, points: $points) {
+    id
+    questions {
+      id
+      points
+      order
+      question {
+        id
+      }
+    }
+  }
+}
+    `;
+export type AddQuestionToExamMutationFn = ApolloReactCommon.MutationFunction<AddQuestionToExamMutation, AddQuestionToExamMutationVariables>;
+
+/**
+ * __useAddQuestionToExamMutation__
+ *
+ * To run a mutation, you first call `useAddQuestionToExamMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAddQuestionToExamMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [addQuestionToExamMutation, { data, loading, error }] = useAddQuestionToExamMutation({
+ *   variables: {
+ *      examId: // value for 'examId'
+ *      questionId: // value for 'questionId'
+ *      points: // value for 'points'
+ *   },
+ * });
+ */
+export function useAddQuestionToExamMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<AddQuestionToExamMutation, AddQuestionToExamMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<AddQuestionToExamMutation, AddQuestionToExamMutationVariables>(AddQuestionToExamDocument, options);
+      }
+export type AddQuestionToExamMutationHookResult = ReturnType<typeof useAddQuestionToExamMutation>;
+export type AddQuestionToExamMutationResult = ApolloReactCommon.MutationResult<AddQuestionToExamMutation>;
+export type AddQuestionToExamMutationOptions = ApolloReactCommon.BaseMutationOptions<AddQuestionToExamMutation, AddQuestionToExamMutationVariables>;
+export const CloseExamDocument = gql`
+    mutation CloseExam($examId: ID!) {
+  closeExam(examId: $examId) {
+    id
+    status
+  }
+}
+    `;
+export type CloseExamMutationFn = ApolloReactCommon.MutationFunction<CloseExamMutation, CloseExamMutationVariables>;
+
+/**
+ * __useCloseExamMutation__
+ *
+ * To run a mutation, you first call `useCloseExamMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCloseExamMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [closeExamMutation, { data, loading, error }] = useCloseExamMutation({
+ *   variables: {
+ *      examId: // value for 'examId'
+ *   },
+ * });
+ */
+export function useCloseExamMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CloseExamMutation, CloseExamMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<CloseExamMutation, CloseExamMutationVariables>(CloseExamDocument, options);
+      }
+export type CloseExamMutationHookResult = ReturnType<typeof useCloseExamMutation>;
+export type CloseExamMutationResult = ApolloReactCommon.MutationResult<CloseExamMutation>;
+export type CloseExamMutationOptions = ApolloReactCommon.BaseMutationOptions<CloseExamMutation, CloseExamMutationVariables>;
+export const CreateExamDocument = gql`
+    mutation CreateExam($classId: ID!, $title: String!, $description: String, $mode: ExamMode!, $durationMinutes: Int!) {
+  createExam(
+    classId: $classId
+    title: $title
+    description: $description
+    mode: $mode
+    durationMinutes: $durationMinutes
+  ) {
+    id
+    title
+    status
+    mode
+    durationMinutes
+    createdAt
+    class {
+      id
+      name
+    }
+  }
+}
+    `;
+export type CreateExamMutationFn = ApolloReactCommon.MutationFunction<CreateExamMutation, CreateExamMutationVariables>;
+
+/**
+ * __useCreateExamMutation__
+ *
+ * To run a mutation, you first call `useCreateExamMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateExamMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createExamMutation, { data, loading, error }] = useCreateExamMutation({
+ *   variables: {
+ *      classId: // value for 'classId'
+ *      title: // value for 'title'
+ *      description: // value for 'description'
+ *      mode: // value for 'mode'
+ *      durationMinutes: // value for 'durationMinutes'
+ *   },
+ * });
+ */
+export function useCreateExamMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreateExamMutation, CreateExamMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<CreateExamMutation, CreateExamMutationVariables>(CreateExamDocument, options);
+      }
+export type CreateExamMutationHookResult = ReturnType<typeof useCreateExamMutation>;
+export type CreateExamMutationResult = ApolloReactCommon.MutationResult<CreateExamMutation>;
+export type CreateExamMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateExamMutation, CreateExamMutationVariables>;
+export const CreateQuestionMutationDocument = gql`
+    mutation CreateQuestionMutation($bankId: ID!, $type: QuestionType!, $title: String!, $prompt: String!, $options: [String!], $correctAnswer: String, $difficulty: Difficulty!, $tags: [String!]) {
+  createQuestion(
+    bankId: $bankId
+    type: $type
+    title: $title
+    prompt: $prompt
+    options: $options
+    correctAnswer: $correctAnswer
+    difficulty: $difficulty
+    tags: $tags
+  ) {
+    id
+  }
+}
+    `;
+export type CreateQuestionMutationMutationFn = ApolloReactCommon.MutationFunction<CreateQuestionMutationMutation, CreateQuestionMutationMutationVariables>;
+
+/**
+ * __useCreateQuestionMutationMutation__
+ *
+ * To run a mutation, you first call `useCreateQuestionMutationMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateQuestionMutationMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createQuestionMutationMutation, { data, loading, error }] = useCreateQuestionMutationMutation({
+ *   variables: {
+ *      bankId: // value for 'bankId'
+ *      type: // value for 'type'
+ *      title: // value for 'title'
+ *      prompt: // value for 'prompt'
+ *      options: // value for 'options'
+ *      correctAnswer: // value for 'correctAnswer'
+ *      difficulty: // value for 'difficulty'
+ *      tags: // value for 'tags'
+ *   },
+ * });
+ */
+export function useCreateQuestionMutationMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreateQuestionMutationMutation, CreateQuestionMutationMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<CreateQuestionMutationMutation, CreateQuestionMutationMutationVariables>(CreateQuestionMutationDocument, options);
+      }
+export type CreateQuestionMutationMutationHookResult = ReturnType<typeof useCreateQuestionMutationMutation>;
+export type CreateQuestionMutationMutationResult = ApolloReactCommon.MutationResult<CreateQuestionMutationMutation>;
+export type CreateQuestionMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateQuestionMutationMutation, CreateQuestionMutationMutationVariables>;
+export const DeleteQuestionMutationDocument = gql`
+    mutation DeleteQuestionMutation($id: ID!) {
+  deleteQuestion(id: $id)
+}
+    `;
+export type DeleteQuestionMutationMutationFn = ApolloReactCommon.MutationFunction<DeleteQuestionMutationMutation, DeleteQuestionMutationMutationVariables>;
+
+/**
+ * __useDeleteQuestionMutationMutation__
+ *
+ * To run a mutation, you first call `useDeleteQuestionMutationMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteQuestionMutationMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteQuestionMutationMutation, { data, loading, error }] = useDeleteQuestionMutationMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useDeleteQuestionMutationMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<DeleteQuestionMutationMutation, DeleteQuestionMutationMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<DeleteQuestionMutationMutation, DeleteQuestionMutationMutationVariables>(DeleteQuestionMutationDocument, options);
+      }
+export type DeleteQuestionMutationMutationHookResult = ReturnType<typeof useDeleteQuestionMutationMutation>;
+export type DeleteQuestionMutationMutationResult = ApolloReactCommon.MutationResult<DeleteQuestionMutationMutation>;
+export type DeleteQuestionMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<DeleteQuestionMutationMutation, DeleteQuestionMutationMutationVariables>;
+export const UpdateQuestionMutationDocument = gql`
+    mutation UpdateQuestionMutation($id: ID!, $type: QuestionType!, $title: String!, $prompt: String!, $options: [String!], $correctAnswer: String, $difficulty: Difficulty!, $tags: [String!]) {
+  updateQuestion(
+    id: $id
+    type: $type
+    title: $title
+    prompt: $prompt
+    options: $options
+    correctAnswer: $correctAnswer
+    difficulty: $difficulty
+    tags: $tags
+  ) {
+    id
+  }
+}
+    `;
+export type UpdateQuestionMutationMutationFn = ApolloReactCommon.MutationFunction<UpdateQuestionMutationMutation, UpdateQuestionMutationMutationVariables>;
+
+/**
+ * __useUpdateQuestionMutationMutation__
+ *
+ * To run a mutation, you first call `useUpdateQuestionMutationMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateQuestionMutationMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateQuestionMutationMutation, { data, loading, error }] = useUpdateQuestionMutationMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      type: // value for 'type'
+ *      title: // value for 'title'
+ *      prompt: // value for 'prompt'
+ *      options: // value for 'options'
+ *      correctAnswer: // value for 'correctAnswer'
+ *      difficulty: // value for 'difficulty'
+ *      tags: // value for 'tags'
+ *   },
+ * });
+ */
+export function useUpdateQuestionMutationMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateQuestionMutationMutation, UpdateQuestionMutationMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UpdateQuestionMutationMutation, UpdateQuestionMutationMutationVariables>(UpdateQuestionMutationDocument, options);
+      }
+export type UpdateQuestionMutationMutationHookResult = ReturnType<typeof useUpdateQuestionMutationMutation>;
+export type UpdateQuestionMutationMutationResult = ApolloReactCommon.MutationResult<UpdateQuestionMutationMutation>;
+export type UpdateQuestionMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<UpdateQuestionMutationMutation, UpdateQuestionMutationMutationVariables>;
+export const ClassDetailDocument = gql`
+    query ClassDetail($id: ID!) {
+  class(id: $id) {
+    id
+    name
+    description
+    subject
+    grade
+    studentCount
+    assignedExamCount
+    upcomingExamCount
+    completedExamCount
+    averageScore
+    teacher {
+      id
+      fullName
+    }
+    studentInsights {
+      status
+      lastActiveAt
+      averageScore
+      student {
+        id
+        fullName
+        email
+      }
+    }
+    examInsights {
+      submittedCount
+      totalStudents
+      progressPercent
+      averageScore
+      questionCount
+      exam {
+        id
+        title
+        durationMinutes
+        status
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useClassDetailQuery__
+ *
+ * To run a query within a React component, call `useClassDetailQuery` and pass it any options that fit your needs.
+ * When your component renders, `useClassDetailQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useClassDetailQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useClassDetailQuery(baseOptions: ApolloReactHooks.QueryHookOptions<ClassDetailQuery, ClassDetailQueryVariables> & ({ variables: ClassDetailQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<ClassDetailQuery, ClassDetailQueryVariables>(ClassDetailDocument, options);
+      }
+export function useClassDetailLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<ClassDetailQuery, ClassDetailQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<ClassDetailQuery, ClassDetailQueryVariables>(ClassDetailDocument, options);
+        }
+// @ts-ignore
+export function useClassDetailSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<ClassDetailQuery, ClassDetailQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<ClassDetailQuery, ClassDetailQueryVariables>;
+export function useClassDetailSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<ClassDetailQuery, ClassDetailQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<ClassDetailQuery | undefined, ClassDetailQueryVariables>;
+export function useClassDetailSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<ClassDetailQuery, ClassDetailQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<ClassDetailQuery, ClassDetailQueryVariables>(ClassDetailDocument, options);
+        }
+export type ClassDetailQueryHookResult = ReturnType<typeof useClassDetailQuery>;
+export type ClassDetailLazyQueryHookResult = ReturnType<typeof useClassDetailLazyQuery>;
+export type ClassDetailSuspenseQueryHookResult = ReturnType<typeof useClassDetailSuspenseQuery>;
+export type ClassDetailQueryResult = ApolloReactCommon.QueryResult<ClassDetailQuery, ClassDetailQueryVariables>;
+export const ClassesListDocument = gql`
+    query ClassesList {
+  classes {
+    id
+    name
+    subject
+    grade
+    studentCount
+    upcomingExamCount
+    completedExamCount
+  }
+}
+    `;
+
+/**
+ * __useClassesListQuery__
+ *
+ * To run a query within a React component, call `useClassesListQuery` and pass it any options that fit your needs.
+ * When your component renders, `useClassesListQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useClassesListQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useClassesListQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<ClassesListQuery, ClassesListQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<ClassesListQuery, ClassesListQueryVariables>(ClassesListDocument, options);
+      }
+export function useClassesListLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<ClassesListQuery, ClassesListQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<ClassesListQuery, ClassesListQueryVariables>(ClassesListDocument, options);
+        }
+// @ts-ignore
+export function useClassesListSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<ClassesListQuery, ClassesListQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<ClassesListQuery, ClassesListQueryVariables>;
+export function useClassesListSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<ClassesListQuery, ClassesListQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<ClassesListQuery | undefined, ClassesListQueryVariables>;
+export function useClassesListSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<ClassesListQuery, ClassesListQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<ClassesListQuery, ClassesListQueryVariables>(ClassesListDocument, options);
+        }
+export type ClassesListQueryHookResult = ReturnType<typeof useClassesListQuery>;
+export type ClassesListLazyQueryHookResult = ReturnType<typeof useClassesListLazyQuery>;
+export type ClassesListSuspenseQueryHookResult = ReturnType<typeof useClassesListSuspenseQuery>;
+export type ClassesListQueryResult = ApolloReactCommon.QueryResult<ClassesListQuery, ClassesListQueryVariables>;
+export const CreateExamOptionsDocument = gql`
+    query CreateExamOptions {
+  classes {
+    id
+    name
+  }
+  questions {
+    id
+    title
+    type
+    difficulty
+    bank {
+      id
+      title
+    }
+  }
+}
+    `;
+
+/**
+ * __useCreateExamOptionsQuery__
+ *
+ * To run a query within a React component, call `useCreateExamOptionsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCreateExamOptionsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCreateExamOptionsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useCreateExamOptionsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<CreateExamOptionsQuery, CreateExamOptionsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<CreateExamOptionsQuery, CreateExamOptionsQueryVariables>(CreateExamOptionsDocument, options);
+      }
+export function useCreateExamOptionsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CreateExamOptionsQuery, CreateExamOptionsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<CreateExamOptionsQuery, CreateExamOptionsQueryVariables>(CreateExamOptionsDocument, options);
+        }
+// @ts-ignore
+export function useCreateExamOptionsSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<CreateExamOptionsQuery, CreateExamOptionsQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CreateExamOptionsQuery, CreateExamOptionsQueryVariables>;
+export function useCreateExamOptionsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CreateExamOptionsQuery, CreateExamOptionsQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CreateExamOptionsQuery | undefined, CreateExamOptionsQueryVariables>;
+export function useCreateExamOptionsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CreateExamOptionsQuery, CreateExamOptionsQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<CreateExamOptionsQuery, CreateExamOptionsQueryVariables>(CreateExamOptionsDocument, options);
+        }
+export type CreateExamOptionsQueryHookResult = ReturnType<typeof useCreateExamOptionsQuery>;
+export type CreateExamOptionsLazyQueryHookResult = ReturnType<typeof useCreateExamOptionsLazyQuery>;
+export type CreateExamOptionsSuspenseQueryHookResult = ReturnType<typeof useCreateExamOptionsSuspenseQuery>;
+export type CreateExamOptionsQueryResult = ApolloReactCommon.QueryResult<CreateExamOptionsQuery, CreateExamOptionsQueryVariables>;
+export const DashboardOverviewDocument = gql`
+    query DashboardOverview {
+  me {
+    id
+    fullName
+    role
+  }
+  exams {
+    id
+    title
+    status
+    durationMinutes
+    createdAt
+    class {
+      id
+      name
+      students {
+        id
+      }
+    }
+    questions {
+      id
+      points
+    }
+    attempts {
+      id
+      status
+      totalScore
+      startedAt
+      submittedAt
+      student {
+        id
+        fullName
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useDashboardOverviewQuery__
+ *
+ * To run a query within a React component, call `useDashboardOverviewQuery` and pass it any options that fit your needs.
+ * When your component renders, `useDashboardOverviewQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useDashboardOverviewQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useDashboardOverviewQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<DashboardOverviewQuery, DashboardOverviewQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<DashboardOverviewQuery, DashboardOverviewQueryVariables>(DashboardOverviewDocument, options);
+      }
+export function useDashboardOverviewLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<DashboardOverviewQuery, DashboardOverviewQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<DashboardOverviewQuery, DashboardOverviewQueryVariables>(DashboardOverviewDocument, options);
+        }
+// @ts-ignore
+export function useDashboardOverviewSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<DashboardOverviewQuery, DashboardOverviewQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<DashboardOverviewQuery, DashboardOverviewQueryVariables>;
+export function useDashboardOverviewSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<DashboardOverviewQuery, DashboardOverviewQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<DashboardOverviewQuery | undefined, DashboardOverviewQueryVariables>;
+export function useDashboardOverviewSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<DashboardOverviewQuery, DashboardOverviewQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<DashboardOverviewQuery, DashboardOverviewQueryVariables>(DashboardOverviewDocument, options);
+        }
+export type DashboardOverviewQueryHookResult = ReturnType<typeof useDashboardOverviewQuery>;
+export type DashboardOverviewLazyQueryHookResult = ReturnType<typeof useDashboardOverviewLazyQuery>;
+export type DashboardOverviewSuspenseQueryHookResult = ReturnType<typeof useDashboardOverviewSuspenseQuery>;
+export type DashboardOverviewQueryResult = ApolloReactCommon.QueryResult<DashboardOverviewQuery, DashboardOverviewQueryVariables>;
+export const HealthQueryDocument = gql`
+    query HealthQuery {
+  health {
+    ok
+    service
+    runtime
+  }
+}
+    `;
+
+/**
+ * __useHealthQueryQuery__
+ *
+ * To run a query within a React component, call `useHealthQueryQuery` and pass it any options that fit your needs.
+ * When your component renders, `useHealthQueryQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useHealthQueryQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useHealthQueryQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<HealthQueryQuery, HealthQueryQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<HealthQueryQuery, HealthQueryQueryVariables>(HealthQueryDocument, options);
+      }
+export function useHealthQueryLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<HealthQueryQuery, HealthQueryQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<HealthQueryQuery, HealthQueryQueryVariables>(HealthQueryDocument, options);
+        }
+// @ts-ignore
+export function useHealthQuerySuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<HealthQueryQuery, HealthQueryQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<HealthQueryQuery, HealthQueryQueryVariables>;
+export function useHealthQuerySuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<HealthQueryQuery, HealthQueryQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<HealthQueryQuery | undefined, HealthQueryQueryVariables>;
+export function useHealthQuerySuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<HealthQueryQuery, HealthQueryQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<HealthQueryQuery, HealthQueryQueryVariables>(HealthQueryDocument, options);
+        }
+export type HealthQueryQueryHookResult = ReturnType<typeof useHealthQueryQuery>;
+export type HealthQueryLazyQueryHookResult = ReturnType<typeof useHealthQueryLazyQuery>;
+export type HealthQuerySuspenseQueryHookResult = ReturnType<typeof useHealthQuerySuspenseQuery>;
+export type HealthQueryQueryResult = ApolloReactCommon.QueryResult<HealthQueryQuery, HealthQueryQueryVariables>;
+export const QuestionBankDetailQueryDocument = gql`
+    query QuestionBankDetailQuery($id: ID!) {
+  questionBank(id: $id) {
+    id
+    title
+    description
+    subject
+    questionCount
+    questions {
+      id
+      title
+      prompt
+      type
+      difficulty
+      options
+      correctAnswer
+      tags
+    }
+  }
+}
+    `;
+
+/**
+ * __useQuestionBankDetailQueryQuery__
+ *
+ * To run a query within a React component, call `useQuestionBankDetailQueryQuery` and pass it any options that fit your needs.
+ * When your component renders, `useQuestionBankDetailQueryQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useQuestionBankDetailQueryQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useQuestionBankDetailQueryQuery(baseOptions: ApolloReactHooks.QueryHookOptions<QuestionBankDetailQueryQuery, QuestionBankDetailQueryQueryVariables> & ({ variables: QuestionBankDetailQueryQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<QuestionBankDetailQueryQuery, QuestionBankDetailQueryQueryVariables>(QuestionBankDetailQueryDocument, options);
+      }
+export function useQuestionBankDetailQueryLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<QuestionBankDetailQueryQuery, QuestionBankDetailQueryQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<QuestionBankDetailQueryQuery, QuestionBankDetailQueryQueryVariables>(QuestionBankDetailQueryDocument, options);
+        }
+// @ts-ignore
+export function useQuestionBankDetailQuerySuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<QuestionBankDetailQueryQuery, QuestionBankDetailQueryQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<QuestionBankDetailQueryQuery, QuestionBankDetailQueryQueryVariables>;
+export function useQuestionBankDetailQuerySuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<QuestionBankDetailQueryQuery, QuestionBankDetailQueryQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<QuestionBankDetailQueryQuery | undefined, QuestionBankDetailQueryQueryVariables>;
+export function useQuestionBankDetailQuerySuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<QuestionBankDetailQueryQuery, QuestionBankDetailQueryQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<QuestionBankDetailQueryQuery, QuestionBankDetailQueryQueryVariables>(QuestionBankDetailQueryDocument, options);
+        }
+export type QuestionBankDetailQueryQueryHookResult = ReturnType<typeof useQuestionBankDetailQueryQuery>;
+export type QuestionBankDetailQueryLazyQueryHookResult = ReturnType<typeof useQuestionBankDetailQueryLazyQuery>;
+export type QuestionBankDetailQuerySuspenseQueryHookResult = ReturnType<typeof useQuestionBankDetailQuerySuspenseQuery>;
+export type QuestionBankDetailQueryQueryResult = ApolloReactCommon.QueryResult<QuestionBankDetailQueryQuery, QuestionBankDetailQueryQueryVariables>;
+export const QuestionBanksQueryDocument = gql`
+    query QuestionBanksQuery {
+  questionBanks {
+    id
+    title
+    description
+    subject
+    questionCount
+    createdAt
+  }
+}
+    `;
+
+/**
+ * __useQuestionBanksQueryQuery__
+ *
+ * To run a query within a React component, call `useQuestionBanksQueryQuery` and pass it any options that fit your needs.
+ * When your component renders, `useQuestionBanksQueryQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useQuestionBanksQueryQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useQuestionBanksQueryQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<QuestionBanksQueryQuery, QuestionBanksQueryQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<QuestionBanksQueryQuery, QuestionBanksQueryQueryVariables>(QuestionBanksQueryDocument, options);
+      }
+export function useQuestionBanksQueryLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<QuestionBanksQueryQuery, QuestionBanksQueryQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<QuestionBanksQueryQuery, QuestionBanksQueryQueryVariables>(QuestionBanksQueryDocument, options);
+        }
+// @ts-ignore
+export function useQuestionBanksQuerySuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<QuestionBanksQueryQuery, QuestionBanksQueryQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<QuestionBanksQueryQuery, QuestionBanksQueryQueryVariables>;
+export function useQuestionBanksQuerySuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<QuestionBanksQueryQuery, QuestionBanksQueryQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<QuestionBanksQueryQuery | undefined, QuestionBanksQueryQueryVariables>;
+export function useQuestionBanksQuerySuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<QuestionBanksQueryQuery, QuestionBanksQueryQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<QuestionBanksQueryQuery, QuestionBanksQueryQueryVariables>(QuestionBanksQueryDocument, options);
+        }
+export type QuestionBanksQueryQueryHookResult = ReturnType<typeof useQuestionBanksQueryQuery>;
+export type QuestionBanksQueryLazyQueryHookResult = ReturnType<typeof useQuestionBanksQueryLazyQuery>;
+export type QuestionBanksQuerySuspenseQueryHookResult = ReturnType<typeof useQuestionBanksQuerySuspenseQuery>;
+export type QuestionBanksQueryQueryResult = ApolloReactCommon.QueryResult<QuestionBanksQueryQuery, QuestionBanksQueryQueryVariables>;

@@ -1,3 +1,25 @@
+PRAGMA foreign_keys = OFF;
+
+ALTER TABLE classes ADD COLUMN subject TEXT NOT NULL DEFAULT 'Ерөнхий';
+ALTER TABLE classes ADD COLUMN grade INTEGER NOT NULL DEFAULT 0;
+
+PRAGMA foreign_keys = ON;
+
+DELETE FROM answers WHERE attempt_id IN (
+  'attempt_math_001', 'attempt_math_002', 'attempt_math_003', 'attempt_math_004',
+  'attempt_physics_001', 'attempt_physics_002'
+);
+DELETE FROM attempts WHERE id IN (
+  'attempt_math_001', 'attempt_math_002', 'attempt_math_003', 'attempt_math_004',
+  'attempt_physics_001', 'attempt_physics_002'
+) OR exam_id = 'exam_001';
+DELETE FROM exam_questions WHERE exam_id IN ('exam_001', 'exam_math_001');
+DELETE FROM exams WHERE id IN ('exam_001', 'exam_math_001', 'exam_physics_001', 'exam_physics_002', 'exam_biology_001');
+
+UPDATE users
+SET full_name = 'Тогтуун', email = 'togtuun@pinequest.dev'
+WHERE id = 'user_teacher_001';
+
 INSERT OR IGNORE INTO users (id, full_name, email, role, created_at) VALUES
   ('user_admin_001', 'PineQuest Admin', 'admin@pinequest.dev', 'ADMIN', '2026-03-24T00:00:00.000Z'),
   ('user_teacher_001', 'Тогтуун', 'togtuun@pinequest.dev', 'TEACHER', '2026-03-24T00:01:00.000Z'),
@@ -9,16 +31,16 @@ WITH RECURSIVE seq(n) AS (
 INSERT OR IGNORE INTO users (id, full_name, email, role, created_at)
 SELECT
   printf('user_student_%03d', n),
-  CASE n
-    WHEN 1 THEN 'John Doe'
-    WHEN 2 THEN 'Jane Smith'
-    WHEN 3 THEN 'Mike Johnson'
+  CASE
+    WHEN n = 1 THEN 'John Doe'
+    WHEN n = 2 THEN 'Jane Smith'
+    WHEN n = 3 THEN 'Mike Johnson'
     ELSE printf('Student %03d', n)
   END,
-  CASE n
-    WHEN 1 THEN 'john.doe@example.com'
-    WHEN 2 THEN 'jane.smith@example.com'
-    WHEN 3 THEN 'mike.johnson@example.com'
+  CASE
+    WHEN n = 1 THEN 'john.doe@example.com'
+    WHEN n = 2 THEN 'jane.smith@example.com'
+    WHEN n = 3 THEN 'mike.johnson@example.com'
     ELSE printf('student%03d@pinequest.dev', n)
   END,
   'STUDENT',
@@ -57,9 +79,7 @@ INSERT OR REPLACE INTO questions (
   ('question_class_math_003', 'bank_class_math_001', 'SHORT_ANSWER', 'Геометр 1', 'Тэгш өнцөгт гурвалжны Пифагорын томъёог бич.', '[]', 'a^2 + b^2 = c^2', 'MEDIUM', '["Математик","Геометр"]', 'user_teacher_001', '2026-03-24T03:12:00.000Z'),
   ('question_class_math_004', 'bank_class_math_001', 'SHORT_ANSWER', 'Магадлал 1', 'Шударга зоос шидэхэд сүлд гарах магадлал хэд вэ?', '[]', '1/2', 'EASY', '["Математик","Магадлал"]', 'user_teacher_001', '2026-03-24T03:13:00.000Z');
 
-INSERT OR REPLACE INTO exams (
-  id, class_id, title, description, mode, status, duration_minutes, created_by_id, created_at
-) VALUES
+INSERT OR REPLACE INTO exams (id, class_id, title, description, mode, status, duration_minutes, created_by_id, created_at) VALUES
   ('exam_math_001', 'class_001', 'Математикийн эцсийн шалгалт', 'Альгебр, функц, геометрийн нэгтгэсэн шалгалт', 'SCHEDULED', 'PUBLISHED', 120, 'user_teacher_001', '2026-03-25T08:00:00.000Z'),
   ('exam_physics_001', 'class_002', 'Физикийн сорил 1', 'Явцын шалгалт', 'SCHEDULED', 'PUBLISHED', 90, 'user_teacher_001', '2026-03-25T08:30:00.000Z'),
   ('exam_physics_002', 'class_002', 'Физикийн сорил 0', 'Өмнөх улирлын сорил', 'SCHEDULED', 'CLOSED', 60, 'user_teacher_001', '2026-03-10T08:30:00.000Z'),

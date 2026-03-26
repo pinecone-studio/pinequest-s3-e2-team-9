@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@apollo/client/react";
-import { QuestionBankDetailQueryDocument } from "@/graphql/generated";
+import { useQuestionBankDetailQueryQuery } from "@/graphql/generated";
 import {
   ArrowLeftIcon,
   ChevronDownIcon,
@@ -56,7 +55,7 @@ export function QuestionBankDetailSection({
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState("Бүх түвшин");
   const [type, setType] = useState("Бүх төрөл");
-  const { data, loading, error } = useQuery(QuestionBankDetailQueryDocument, {
+  const { data, loading, error } = useQuestionBankDetailQueryQuery({
     variables: { id: bankId },
     fetchPolicy: "cache-and-network",
   });

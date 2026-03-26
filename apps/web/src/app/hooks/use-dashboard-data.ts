@@ -1,9 +1,8 @@
 "use client";
 
-import { useMutation, useQuery } from "@apollo/client/react";
 import {
-  CloseExamDocument,
-  DashboardOverviewDocument,
+  useCloseExamMutation,
+  useDashboardOverviewQuery,
 } from "@/graphql/generated";
 import {
   buildDashboardViewModel,
@@ -21,12 +20,12 @@ type UseDashboardDataResult = {
 };
 
 export const useDashboardData = (): UseDashboardDataResult => {
-  const dashboardQuery = useQuery(DashboardOverviewDocument, {
+  const dashboardQuery = useDashboardOverviewQuery({
     ssr: false,
     notifyOnNetworkStatusChange: true,
   });
 
-  const [runCloseExam, closeExamState] = useMutation(CloseExamDocument);
+  const [runCloseExam, closeExamState] = useCloseExamMutation();
 
   const closeExam = async (examId: string): Promise<boolean> => {
     try {

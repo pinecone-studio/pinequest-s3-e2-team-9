@@ -1,0 +1,41 @@
+query ClassDetail($id: ID!) {
+  class(id: $id) {
+    id
+    name
+    description
+    subject
+    grade
+    studentCount
+    assignedExamCount
+    upcomingExamCount
+    completedExamCount
+    averageScore
+    teacher {
+      id
+      fullName
+    }
+    studentInsights {
+      status
+      lastActiveAt
+      averageScore
+      student {
+        id
+        fullName
+        email
+      }
+    }
+    examInsights {
+      submittedCount
+      totalStudents
+      progressPercent
+      averageScore
+      questionCount
+      exam {
+        id
+        title
+        durationMinutes
+        status
+      }
+    }
+  }
+}

@@ -1,12 +1,11 @@
 "use client";
 
-import { useMutation, useQuery } from "@apollo/client/react";
 import { useEffect, useMemo, useState } from "react";
 import {
-  AddQuestionToExamDocument,
-  CreateExamDocument,
-  CreateExamOptionsDocument,
   ExamMode,
+  useAddQuestionToExamMutation,
+  useCreateExamMutation,
+  useCreateExamOptionsQuery,
 } from "@/graphql/generated";
 import { parseDurationMinutes, toSelectedQuestionsPayload, validateCreateExamForm } from "../create-exam-validation";
 import { type CreateExamFieldErrors, type CreateExamFormValues, type CreateExamSubmitState, type SelectedQuestionPoints } from "../create-exam-types";
@@ -26,13 +25,13 @@ const toErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : "Шалгалт үүсгэх үед алдаа гарлаа. Дахин оролдоно уу.";
 
 export const useCreateExamFlow = () => {
-  const optionsQuery = useQuery(CreateExamOptionsDocument, {
+  const optionsQuery = useCreateExamOptionsQuery({
     fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
     ssr: false,
   });
-  const [runCreateExam, createExamState] = useMutation(CreateExamDocument);
-  const [runAddQuestionToExam] = useMutation(AddQuestionToExamDocument);
+  const [runCreateExam, createExamState] = useCreateExamMutation();
+  const [runAddQuestionToExam] = useAddQuestionToExamMutation();
   const [formValues, setFormValues] = useState(INITIAL_FORM_VALUES);
   const [selectedQuestionPoints, setSelectedQuestionPoints] = useState<SelectedQuestionPoints>({});
   const [errors, setErrors] = useState<CreateExamFieldErrors>(EMPTY_ERRORS);
