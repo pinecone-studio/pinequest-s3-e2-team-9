@@ -10,22 +10,24 @@ export function CreateExamHeader({
   disabled,
 }: CreateExamHeaderProps) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 className="text-[24px] font-semibold text-[#0F1216]">Шалгалт үүсгэх</h1>
-        <p className="mt-1 text-[14px] text-[#52555B]">
-          Анги, асуулт, тохиргоогоо сонгоод шалгалтаа хадгална.
+    <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="space-y-2">
+        <h1 className="text-[32px] font-semibold leading-tight text-[#101828]">
+          Шалгалт үүсгэх
+        </h1>
+        <p className="max-w-[620px] text-[15px] leading-6 text-[#667085]">
+          Анги, асуулт, тохиргоогоо сонгож шалгалтаа хадгална.
         </p>
       </div>
 
       <button
-        className="inline-flex items-center gap-2 rounded-md bg-[#00267F] px-3 py-2 text-[14px] font-medium text-white/90 shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#163D99] px-5 text-[14px] font-semibold text-white shadow-[0px_10px_20px_rgba(22,61,153,0.18)] disabled:cursor-not-allowed disabled:opacity-60"
         type="submit"
         disabled={disabled}
       >
         <SaveIcon className="h-4 w-4" />
         {isSubmitting ? "Үүсгэж байна..." : "Шалгалт үүсгэх"}
       </button>
-    </div>
+    </header>
   );
 }

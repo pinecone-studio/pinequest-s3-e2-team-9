@@ -20,7 +20,6 @@ type CreateExamQuestionLibraryProps = {
   questionOptions: CreateExamQuestionOption[];
   disabled: boolean;
   checkedQuestionIds: string[];
-  highlightedQuestionId?: string | null;
   onToggleChecked: (questionId: string) => void;
   onAddSelected: () => void;
 };
@@ -55,7 +54,6 @@ export function CreateExamQuestionLibrary({
   questionOptions,
   disabled,
   checkedQuestionIds,
-  highlightedQuestionId,
   onToggleChecked,
   onAddSelected,
 }: CreateExamQuestionLibraryProps) {
@@ -115,7 +113,7 @@ export function CreateExamQuestionLibrary({
               onClick={() => onToggleChecked(question.id)}
               className={[
                 "w-full rounded-xl border px-4 py-4 text-left transition",
-                checked || highlightedQuestionId === question.id
+                checked
                   ? "border-[#B8CFFF] bg-[#EEF4FF]"
                   : "border-[#DFE1E5] bg-white",
               ].join(" ")}
@@ -143,7 +141,7 @@ export function CreateExamQuestionLibrary({
       <div className="pt-4">
         <button
           type="button"
-          className="w-full cursor-pointer rounded-xl bg-[#6E8FD8] px-4 py-3 text-[16px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full cursor-pointer rounded-xl bg-[#163D99] px-4 py-3 text-[16px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
           onClick={onAddSelected}
           disabled={!checkedQuestionIds.length || disabled}
         >

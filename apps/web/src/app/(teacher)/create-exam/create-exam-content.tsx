@@ -20,7 +20,6 @@ export function CreateExamContent({
 }: CreateExamContentProps) {
   const router = useRouter();
   const flow = useCreateExamFlow(initialClassId, returnTo ? initialClassId : "");
-
   const isDisabled =
     flow.isSubmitting ||
     flow.isOptionsLoading ||
@@ -38,59 +37,54 @@ export function CreateExamContent({
   };
 
   return (
-    <div className="mx-auto w-full max-w-[760px]">
-      <form className="w-full" onSubmit={handleSubmit}>
+    <div className="mx-auto w-full max-w-[836px]">
+      <form className="space-y-6" onSubmit={handleSubmit}>
         <CreateExamHeader isSubmitting={flow.isSubmitting} disabled={isDisabled} />
+        <CreateExamSubmitAlert submitState={flow.submitState} />
 
         {flow.isOptionsLoading ? (
-          <p className="mt-4 text-[13px] text-[#52555B]">Системийн өгөгдөл ачаалж байна...</p>
+          <p className="text-[13px] text-[#667085]">Системийн өгөгдөл ачаалж байна...</p>
         ) : null}
 
         {flow.optionsError ? (
-          <div className="mt-4 rounded-md border border-[#FDA29B] bg-[#FEF3F2] px-4 py-3 text-[13px] text-[#B42318]">
+          <div className="rounded-[20px] border border-[#FDA29B] bg-[#FEF3F2] px-4 py-3 text-[13px] text-[#B42318]">
             Сонголтын мэдээллийг ачаалахад алдаа гарлаа. Дахин оролдоно уу.
           </div>
         ) : null}
 
         {!flow.classOptions.length && !flow.isOptionsLoading ? (
-          <p className="mt-4 text-[13px] text-[#B42318]">
-            Анги олдсонгүй. Системийн өгөгдлөө шалгана уу.
+          <p className="text-[13px] text-[#B42318]">
+            Шалгалт үүсгэх ангийн мэдээлэл олдсонгүй. Системийн өгөгдлөө шалгана уу.
           </p>
         ) : null}
 
         {!flow.questionBankOptions.length && !flow.isOptionsLoading ? (
-          <p className="mt-2 text-[13px] text-[#B42318]">
-            Асуултын сан олдсонгүй. Системийн өгөгдлөө шалгана уу.
+          <p className="text-[13px] text-[#B42318]">
+            Асуултын сангийн мэдээлэл олдсонгүй. Системийн өгөгдлөө шалгана уу.
           </p>
         ) : null}
 
-        <div className="mt-6 flex flex-col gap-5">
-          <CreateExamSubmitAlert submitState={flow.submitState} />
-          <CreateExamDetailsCard
-            values={flow.formValues}
-            classOptions={flow.classOptions}
-            errors={flow.errors}
-            disabled={isDisabled}
-            lockClassSelection={flow.isClassSelectionLocked}
-            onFieldChange={flow.setFieldValue}
-          />
-          <CreateExamSettingsCard
-            mode={flow.formValues.mode}
-            disabled={isDisabled}
-            onModeChange={(value) => flow.setFieldValue("mode", value)}
-          />
-          <CreateExamQuestionCard
-            questionBankOptions={flow.questionBankOptions}
-            questionOptions={flow.questionOptions}
-            selectedQuestionPoints={flow.selectedQuestionPoints}
-            errors={flow.errors}
-            disabled={isDisabled}
-            onToggleQuestion={flow.toggleQuestion}
-            onAddQuestion={flow.addQuestion}
-            onPointsChange={flow.setQuestionPoints}
-            onQuestionsRefresh={flow.refetchOptions}
-          />
-        </div>
+        <CreateExamDetailsCard
+          values={flow.formValues}
+          errors={flow.errors}
+          disabled={isDisabled}
+          onFieldChange={flow.setFieldValue}
+        />
+        <CreateExamSettingsCard
+          disabled={isDisabled}
+          selectedQuestionPoints={flow.selectedQuestionPoints}
+        />
+        <CreateExamQuestionCard
+          questionBankOptions={flow.questionBankOptions}
+          questionOptions={flow.questionOptions}
+          selectedQuestionPoints={flow.selectedQuestionPoints}
+          errors={flow.errors}
+          disabled={isDisabled}
+          onToggleQuestion={flow.toggleQuestion}
+          onAddQuestion={flow.addQuestion}
+          onPointsChange={flow.setQuestionPoints}
+          onQuestionsRefresh={flow.refetchOptions}
+        />
       </form>
     </div>
   );

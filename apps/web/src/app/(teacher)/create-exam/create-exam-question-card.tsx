@@ -22,6 +22,14 @@ type CreateExamQuestionCardProps = {
   onQuestionsRefresh: () => Promise<unknown>;
 };
 
+function PlusIcon({ solid = false }: { solid?: boolean }) {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
+      <path d="M8 3.333v9.334M3.333 8h9.334" stroke={solid ? "#FFF" : "currentColor"} strokeWidth="1.333" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function CreateExamQuestionCard({
   questionBankOptions,
   questionOptions,
@@ -36,19 +44,57 @@ export function CreateExamQuestionCard({
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [drawerSelectedIds, setDrawerSelectedIds] = useState<string[]>([]);
-  const [highlightedQuestionId, setHighlightedQuestionId] = useState<string | null>(
-    null,
-  );
-
   const selectedCount = Object.keys(selectedQuestionPoints).length;
-  const openLibrary = (questionIds: string[] = []) => {
-    setDrawerSelectedIds(questionIds);
+
+  const openLibrary = () => {
+    setDrawerSelectedIds(Object.keys(selectedQuestionPoints));
     setIsLibraryOpen(true);
   };
 
   return (
-    <section className="space-y-4">
-      <h2 className="text-[20px] font-medium text-[#0F1216]">Асуултууд ({selectedCount})</h2>
+    <section className="space-y-3">
+      <div className="h-5 text-[14px] font-medium leading-5 text-[#52555B]">
+        Questions ({selectedCount})
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <button
+          type="button"
+          className="flex h-[47.2px] items-center justify-center gap-2 rounded-[8px] border border-dashed border-[#DFE1E5] bg-white px-4 text-[14px] font-medium leading-5 text-[#52555B]"
+          onClick={() => setIsComposerOpen((current) => !current)}
+        >
+          <PlusIcon />
+          Create Question
+        </button>
+        <button
+          type="button"
+          className="flex h-[45.2px] items-center justify-center gap-2 rounded-[8px] bg-[#6F90FF] px-4 text-[14px] font-semibold leading-5 text-white"
+          onClick={openLibrary}
+        >
+          <PlusIcon solid />
+          Add Question from Bank
+        </button>
+      </div>
+
+      {errors.selectedQuestions ? (
+        <p className="text-[12px] text-[#B42318]">{errors.selectedQuestions}</p>
+      ) : null}
+
+      {isComposerOpen ? (
+        <CreateExamQuestionComposer
+          bankOptions={questionBankOptions}
+          disabled={disabled}
+          onOpenLibrary={openLibrary}
+          onQuestionCreated={(questionId, points) => {
+            onAddQuestion(questionId);
+            onPointsChange(questionId, points);
+            setIsComposerOpen(false);
+          }}
+          onQuestionsRefresh={onQuestionsRefresh}
+          onClose={() => setIsComposerOpen(false)}
+        />
+      ) : null}
+
       <CreateExamSelectedQuestions
         disabled={disabled}
         questionOptions={questionOptions}
@@ -57,65 +103,29 @@ export function CreateExamQuestionCard({
         onRemove={onToggleQuestion}
         onPointsChange={onPointsChange}
       />
-      {!isComposerOpen ? (
-        <div className="space-y-5 rounded-xl">
-          <button
-            type="button"
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#D0D5DD] bg-white px-4 py-6 text-[16px] font-medium text-[#52555B]"
-            onClick={() => setIsComposerOpen(true)}
-          >
-            <span className="text-[28px] leading-none">+</span>
-            Асуулт нэмэх
-          </button>
-          {!selectedCount ? (
-            <div className="rounded-xl bg-white px-4 py-10 text-center text-[#52555B] shadow-sm">
-              <p className="text-[28px]">Одоогоор асуулт алга</p>
-              <p className="mt-2 text-[16px]">
-                Дээрх товчоор анхны асуултаа нэмнэ
-              </p>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-      {errors.selectedQuestions ? (
-        <p className="text-[12px] text-[#B42318]">{errors.selectedQuestions}</p>
-      ) : null}
-      {isComposerOpen ? (
-        <CreateExamQuestionComposer
-          bankOptions={questionBankOptions}
-          disabled={disabled}
-          onOpenLibrary={() => openLibrary()}
-          onQuestionCreated={(questionId) => {
-            setHighlightedQuestionId(questionId);
-            openLibrary([questionId]);
-          }}
-          onQuestionsRefresh={onQuestionsRefresh}
-          onClose={() => setIsComposerOpen(false)}
-        />
-      ) : null}
+
       <CreateExamQuestionDrawer
         open={isLibraryOpen}
-        title="Асуултын сан"
-        description="Шалгалтдаа нэмэх асуултуудаа сонгоно"
+        title="Add Question from Bank"
+        description="Select questions to include in this exam."
         onClose={() => setIsLibraryOpen(false)}
       >
-          <CreateExamQuestionLibrary
-            questionOptions={questionOptions}
-            disabled={disabled}
-            checkedQuestionIds={drawerSelectedIds}
-            highlightedQuestionId={highlightedQuestionId}
-            onToggleChecked={(questionId) =>
-              setDrawerSelectedIds((current) =>
-                current.includes(questionId)
-                  ? current.filter((item) => item !== questionId)
-                  : [...current, questionId],
-              )
-            }
-            onAddSelected={() => {
-              drawerSelectedIds.forEach((questionId) => onAddQuestion(questionId));
-              setIsLibraryOpen(false);
-            }}
-          />
+        <CreateExamQuestionLibrary
+          questionOptions={questionOptions}
+          disabled={disabled}
+          checkedQuestionIds={drawerSelectedIds}
+          onToggleChecked={(questionId) =>
+            setDrawerSelectedIds((current) =>
+              current.includes(questionId)
+                ? current.filter((item) => item !== questionId)
+                : [...current, questionId],
+            )
+          }
+          onAddSelected={() => {
+            drawerSelectedIds.forEach((questionId) => onAddQuestion(questionId));
+            setIsLibraryOpen(false);
+          }}
+        />
       </CreateExamQuestionDrawer>
     </section>
   );
