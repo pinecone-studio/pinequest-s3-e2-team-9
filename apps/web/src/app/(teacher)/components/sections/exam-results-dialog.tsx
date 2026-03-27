@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { CloseIcon } from "../icons";
+import { ExamResultsReportDialog } from "./exam-results-report-dialog";
+import { ExamResultsStudentDetailDialog } from "./exam-results-student-detail-dialog";
 import { ExamResultsStudents } from "./exam-results-students";
 import { ExamResultsSummary } from "./exam-results-summary";
-import type { MyExamView } from "./my-exams-types";
+import type { MyExamStudentRow, MyExamView } from "./my-exams-types";
 
 type ExamResultsDialogProps = {
   exam: MyExamView | null;
@@ -19,6 +21,10 @@ export function ExamResultsDialog({
 }: ExamResultsDialogProps) {
   const [activeTab, setActiveTab] = useState<"summary" | "students">(
     "summary",
+  );
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<MyExamStudentRow | null>(
+    null,
   );
 
   if (!open || !exam) {
@@ -86,12 +92,28 @@ export function ExamResultsDialog({
           </div>
 
           {activeTab === "summary" ? (
-            <ExamResultsSummary footer={exam.footer} />
+            <ExamResultsSummary
+              footer={exam.footer}
+              onOpenReport={() => setIsReportOpen(true)}
+            />
           ) : (
-            <ExamResultsStudents rows={exam.students} />
+            <ExamResultsStudents
+              rows={exam.students}
+              onSelectStudent={setSelectedStudent}
+            />
           )}
         </div>
       </div>
+      <ExamResultsStudentDetailDialog
+        open={Boolean(selectedStudent)}
+        student={selectedStudent}
+        onClose={() => setSelectedStudent(null)}
+      />
+      <ExamResultsReportDialog
+        open={isReportOpen}
+        exam={exam}
+        onClose={() => setIsReportOpen(false)}
+      />
     </div>
   );
 }

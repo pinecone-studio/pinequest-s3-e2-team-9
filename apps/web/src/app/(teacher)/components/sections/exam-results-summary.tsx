@@ -1,10 +1,12 @@
-import { CheckCircleIcon, CloseIcon } from "../icons";
+import { CheckCircleIcon, CloseIcon, DetailsIcon } from "../icons";
 import type { ExamFooterData } from "./my-exams-types";
 
 export function ExamResultsSummary({
   footer,
+  onOpenReport,
 }: {
   footer: ExamFooterData | undefined;
+  onOpenReport: () => void;
 }) {
   const summaryStats = [
     { value: footer?.students ?? 0, label: "Нийт сурагч", tone: "#0F1216" },
@@ -22,6 +24,16 @@ export function ExamResultsSummary({
   ];
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={onOpenReport}
+          className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-[#DFE1E5] bg-white px-3 py-2 text-[14px] font-medium text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] hover:bg-[#F9FAFB]"
+        >
+          <DetailsIcon className="h-4 w-4" />
+          Тайлан
+        </button>
+      </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {summaryStats.map((stat) => (
           <div

@@ -23,6 +23,19 @@ export type MyExamQuestionPreview = {
   prompt: string;
   kind: "options" | "text" | "upload";
   options: string[];
+  points: number;
+};
+
+export type MyExamStudentAnswer = {
+  id: string;
+  questionId: string;
+  prompt: string;
+  value: string;
+  type: string;
+  score: number;
+  total: number;
+  feedback: string | null;
+  submitted: string;
 };
 
 export type MyExamStudentRow = {
@@ -35,6 +48,7 @@ export type MyExamStudentRow = {
   statusLabel: string;
   statusTone: string;
   submitted: string;
+  answers: MyExamStudentAnswer[];
 };
 
 export type MyExamView = {

@@ -2,8 +2,10 @@ import type { MyExamStudentRow } from "./my-exams-types";
 
 export function ExamResultsStudents({
   rows,
+  onSelectStudent,
 }: {
   rows: MyExamStudentRow[];
+  onSelectStudent: (row: MyExamStudentRow) => void;
 }) {
   return (
     <div className="space-y-4">
@@ -22,7 +24,13 @@ export function ExamResultsStudents({
               className="grid grid-cols-[1.6fr_1fr_0.9fr_1fr] items-center gap-4 border-t border-[#E4E7EC] px-2 py-3 text-[14px]"
             >
               <div>
-                <div className="font-medium text-[#0F1216]">{row.name}</div>
+                <button
+                  type="button"
+                  onClick={() => onSelectStudent(row)}
+                  className="cursor-pointer text-left text-[14px] font-medium text-[#0F1216] underline-offset-4 hover:text-[#155EEF] hover:underline"
+                >
+                  {row.name}
+                </button>
                 <div className="text-[12px] text-[#52555B]">
                   {row.subject}
                 </div>

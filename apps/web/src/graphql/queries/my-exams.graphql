@@ -10,6 +10,8 @@ query MyExamsQuery {
     status
     durationMinutes
     createdAt
+    startedAt
+    endsAt
     createdBy {
       id
     }
@@ -36,12 +38,28 @@ query MyExamsQuery {
     attempts {
       id
       status
+      autoScore
+      manualScore
       totalScore
       startedAt
       submittedAt
       student {
         id
         fullName
+      }
+      answers {
+        id
+        value
+        autoScore
+        manualScore
+        feedback
+        createdAt
+        question {
+          id
+          title
+          prompt
+          type
+        }
       }
     }
   }
