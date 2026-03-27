@@ -11,6 +11,7 @@ import {
   useSubmitAttemptMutation,
 } from "@/graphql/generated";
 import { formatRemaining, getExamEnd, getExamStart, parseDate } from "./student-home-time";
+import { useStudentExamAutoSave } from "./use-student-exam-auto-save";
 import { useLiveExamEvents } from "./use-live-exam-events";
 import type { StudentExamRoomState } from "./student-exam-room-types";
 
@@ -25,14 +26,27 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
   const [saveAnswer, saveAnswerState] = useSaveAnswerMutation();
   const [submitAttempt, submitAttemptState] = useSubmitAttemptMutation();
   const [draftAnswers, setDraftAnswers] = useState<Record<string, string>>({});
-  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
-  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [localPersistedAnswers, setLocalPersistedAnswers] = useState<{
+    attemptId: string | null;
+    values: Record<string, string>;
+  }>({
+    attemptId: null,
+    values: {},
+  });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const exam = query.data?.exam ?? null;
   const viewer = query.data?.me ?? null;
   const currentAttempt = query.data?.attempts.find((attempt) => attempt.exam.id === examId) ?? null;
-  const attemptAnswers = new Map(currentAttempt?.answers.map((answer) => [answer.question.id, answer.value]) ?? []);
+  const basePersistedAnswers = Object.fromEntries(
+    currentAttempt?.answers.map((answer) => [answer.question.id, answer.value]) ?? [],
+  );
+  const persistedAnswers = {
+    ...basePersistedAnswers,
+    ...(localPersistedAnswers.attemptId === currentAttempt?.id
+      ? localPersistedAnswers.values
+      : {}),
+  };
 
   useEffect(() => {
     const timer = window.setInterval(() => setNowMs(Date.now()), 1000);
@@ -47,27 +61,6 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
     },
   });
 
-  useEffect(() => {
-    if (!currentAttempt) {
-      return;
-    }
-
-    setDraftAnswers((currentDrafts) => {
-      const nextDrafts = { ...currentDrafts };
-      let changed = false;
-
-      for (const answer of currentAttempt.answers) {
-        if (nextDrafts[answer.question.id] === undefined) {
-          nextDrafts[answer.question.id] = answer.value;
-          changed = true;
-        }
-      }
-
-      return changed ? nextDrafts : currentDrafts;
-    });
-  }, [currentAttempt]);
-
-  const examStart = currentAttempt?.startedAt ?? (exam ? getExamStart(exam) : null);
   const examEnd = !exam
     ? null
     : exam.endsAt ?? (() => {
@@ -76,7 +69,10 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
           ? new Date(startedAt.getTime() + exam.durationMinutes * 60_000).toISOString()
           : getExamEnd(exam);
       })();
-  const remainingLabel = formatRemaining((parseDate(examEnd)?.getTime() ?? nowMs) - nowMs);
+  const remainingLabel = currentAttempt
+    ? formatRemaining((parseDate(examEnd)?.getTime() ?? nowMs) - nowMs)
+    : `${exam?.durationMinutes ?? 0} минут`;
+  const attemptAnswers = new Map(Object.entries(persistedAnswers));
   const answeredCount = exam
     ? exam.questions.filter((item) =>
         Boolean((draftAnswers[item.question.id] ?? attemptAnswers.get(item.question.id) ?? "").trim()),
@@ -86,17 +82,45 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
   const canStart = Boolean(exam && viewer && exam.status === ExamStatus.Published && !currentAttempt);
   const isInProgress = currentAttempt?.status === AttemptStatus.InProgress;
   const isCompleted = currentAttempt?.status === AttemptStatus.Submitted || currentAttempt?.status === AttemptStatus.Graded;
+  const autoSave = useStudentExamAutoSave({
+    getSnapshot: () => ({
+      attemptId: currentAttempt?.id ?? null,
+      draftAnswers,
+      persistedAnswers,
+      questionIds: exam?.questions
+        .filter((item) => item.question.type !== QuestionType.ImageUpload)
+        .map((item) => item.question.id) ?? [],
+    }),
+    onPersistAnswer: async (attemptId, questionId, value) => {
+      await saveAnswer({ variables: { attemptId, questionId, value } });
+    },
+    onPersisted: (questionId, value) => {
+      setLocalPersistedAnswers((current) => ({
+        attemptId: currentAttempt?.id ?? null,
+        values: {
+          ...(current.attemptId === currentAttempt?.id ? current.values : {}),
+          [questionId]: value,
+        },
+      }));
+    },
+    onSaveError: () => {
+      setErrorMessage("Зарим хариулт автоматаар хадгалагдсангүй. Дахин оролдоно уу.");
+    },
+  });
 
-  const setDraftAnswer = (questionId: string, value: string) =>
+  const setDraftAnswer = (questionId: string, value: string) => {
     setDraftAnswers((currentDrafts) => ({ ...currentDrafts, [questionId]: value }));
+    setErrorMessage(null);
+    if (currentAttempt?.status === AttemptStatus.InProgress) {
+      autoSave.scheduleAutoSave();
+    }
+  };
 
   const handleStartAttempt = async () => {
     if (!viewer || !exam || !canStart) return;
     try {
       setErrorMessage(null);
-      setFeedbackMessage(null);
       await startAttempt({ variables: { examId: exam.id, studentId: viewer.id } });
-      setFeedbackMessage("Шалгалт амжилттай эхэллээ.");
       await query.refetch();
     } catch (error) {
       console.error("Failed to start attempt", error);
@@ -104,42 +128,12 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
     }
   };
 
-  const handleSaveAnswer = async (questionId: string) => {
-    if (!currentAttempt) return;
-    const value = draftAnswers[questionId]?.trim();
-    if (!value) {
-      setErrorMessage("Хоосон хариулт хадгалах боломжгүй.");
-      return;
-    }
-    try {
-      setActiveQuestionId(questionId);
-      setErrorMessage(null);
-      setFeedbackMessage(null);
-      await saveAnswer({ variables: { attemptId: currentAttempt.id, questionId, value } });
-      setFeedbackMessage("Хариулт хадгалагдлаа.");
-      await query.refetch();
-    } catch (error) {
-      console.error("Failed to save answer", error);
-      setErrorMessage("Хариулт хадгалах үед алдаа гарлаа.");
-    } finally {
-      setActiveQuestionId(null);
-    }
-  };
-
   const handleSubmitAttempt = async () => {
     if (!currentAttempt || !exam) return;
     try {
       setErrorMessage(null);
-      setFeedbackMessage(null);
-      for (const item of exam.questions) {
-        if (item.question.type === QuestionType.ImageUpload) continue;
-        const nextValue = draftAnswers[item.question.id]?.trim();
-        const savedValue = attemptAnswers.get(item.question.id)?.trim() ?? "";
-        if (!nextValue || nextValue === savedValue) continue;
-        await saveAnswer({ variables: { attemptId: currentAttempt.id, questionId: item.question.id, value: nextValue } });
-      }
+      await autoSave.flushPendingSaves();
       await submitAttempt({ variables: { attemptId: currentAttempt.id } });
-      setFeedbackMessage("Шалгалтыг амжилттай илгээлээ.");
       await query.refetch();
     } catch (error) {
       console.error("Failed to submit attempt", error);
@@ -148,7 +142,6 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
   };
 
   return {
-    activeQuestionId,
     answeredCount,
     attemptAnswers,
     canStart,
@@ -156,13 +149,11 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
     draftAnswers,
     errorMessage,
     exam,
-    examStart,
-    feedbackMessage,
-    handleSaveAnswer,
     handleStartAttempt,
     handleSubmitAttempt,
     isCompleted,
     isInProgress,
+    isQuestionSaving: autoSave.isQuestionSaving,
     isSaving: saveAnswerState.loading,
     isStarting: startAttemptState.loading,
     isSubmitting: submitAttemptState.loading,
@@ -170,7 +161,9 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
     queryError: query.error ?? null,
     refetching: query.loading,
     remainingLabel,
+    saveErrorByQuestion: autoSave.saveErrorByQuestion,
     setDraftAnswer,
+    showQuestions: currentAttempt?.status === AttemptStatus.InProgress,
     totalPoints,
   };
 }

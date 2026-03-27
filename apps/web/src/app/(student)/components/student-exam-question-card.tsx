@@ -10,24 +10,26 @@ const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
 };
 
 type StudentExamQuestionCardProps = {
-  activeQuestionId: string | null;
   draftValue: string;
+  isDirty: boolean;
   isInProgress: boolean;
+  isSaving: boolean;
   onChange: (value: string) => void;
-  onSave: () => void;
   question: StudentExamQuestion;
   questionIndex: number;
+  saveError?: string;
   savedValue?: string;
 };
 
 export function StudentExamQuestionCard({
-  activeQuestionId,
   draftValue,
+  isDirty,
   isInProgress,
+  isSaving,
   onChange,
-  onSave,
   question,
   questionIndex,
+  saveError,
   savedValue,
 }: StudentExamQuestionCardProps) {
   const isImageUpload = question.question.type === QuestionType.ImageUpload;
@@ -65,18 +67,47 @@ export function StudentExamQuestionCard({
         {isImageUpload ? <div className="rounded-[14px] border border-dashed border-[#D0D5DD] bg-[#F8FAFF] px-4 py-5 text-[14px] leading-6 text-[#667085]">Зураг upload төрлийн асуултын UI энэ MVP-д хараахан холбогдоогүй. Хэрэв ийм асуулт байвал дараагийн алхмаар file upload route холбоно.</div> : null}
       </div>
 
-      {isInProgress && !isImageUpload ? (
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-          <span className="text-[13px] text-[#667085]">{savedValue ? "Сүүлд хадгалсан хариулт байна." : "Хариултаа хадгалахаа мартуузай."}</span>
-          <button className="inline-flex h-10 items-center justify-center rounded-[12px] border border-[#2466D0] px-4 text-[14px] font-semibold text-[#2466D0] disabled:opacity-70" disabled={activeQuestionId === question.question.id} onClick={onSave} type="button">
-            {activeQuestionId === question.question.id ? "Хадгалж байна..." : "Энэ хариултыг хадгалах"}
-          </button>
-        </div>
-      ) : null}
+      {!isImageUpload ? <SaveStatus isDirty={isDirty} isInProgress={isInProgress} isSaving={isSaving} saveError={saveError} savedValue={savedValue} /> : null}
     </article>
   );
 }
 
 function Badge({ children }: { children: React.ReactNode }) {
   return <span className="inline-flex items-center rounded-full bg-[#EEF4FF] px-3 py-1 text-[12px] font-semibold text-[#3538CD]">{children}</span>;
+}
+
+function SaveStatus({
+  isDirty,
+  isInProgress,
+  isSaving,
+  saveError,
+  savedValue,
+}: {
+  isDirty: boolean;
+  isInProgress: boolean;
+  isSaving: boolean;
+  saveError?: string;
+  savedValue?: string;
+}) {
+  if (saveError) {
+    return <p className="mt-5 text-[13px] font-medium text-[#B42318]">{saveError}</p>;
+  }
+
+  if (!isInProgress) {
+    return savedValue ? <p className="mt-5 text-[13px] text-[#667085]">Хадгалагдсан хариулт харагдаж байна.</p> : null;
+  }
+
+  if (isSaving) {
+    return <p className="mt-5 text-[13px] font-medium text-[#2466D0]">Автоматаар хадгалж байна...</p>;
+  }
+
+  if (isDirty) {
+    return <p className="mt-5 text-[13px] text-[#B54708]">Өөрчлөлт автоматаар хадгалагдана.</p>;
+  }
+
+  if (savedValue?.trim()) {
+    return <p className="mt-5 text-[13px] font-medium text-[#027A48]">Хариулт автоматаар хадгалагдсан.</p>;
+  }
+
+  return <p className="mt-5 text-[13px] text-[#667085]">Хариултаа оруулахад автоматаар хадгална.</p>;
 }
