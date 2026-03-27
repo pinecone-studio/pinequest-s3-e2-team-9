@@ -4,7 +4,6 @@ export type StudentExamData = NonNullable<StudentExamRoomQuery["exam"]>;
 export type StudentExamAttempt = StudentExamRoomQuery["attempts"][number];
 export type StudentExamQuestion = StudentExamData["questions"][number];
 export type StudentExamRoomState = {
-  activeQuestionId: string | null;
   answeredCount: number;
   attemptAnswers: Map<string, string>;
   canStart: boolean;
@@ -12,13 +11,11 @@ export type StudentExamRoomState = {
   draftAnswers: Record<string, string>;
   errorMessage: string | null;
   exam: StudentExamData | null;
-  examStart: string | null;
-  feedbackMessage: string | null;
-  handleSaveAnswer: (questionId: string) => Promise<void>;
   handleStartAttempt: () => Promise<void>;
   handleSubmitAttempt: () => Promise<void>;
   isCompleted: boolean;
   isInProgress: boolean;
+  isQuestionSaving: (questionId: string) => boolean;
   isSaving: boolean;
   isStarting: boolean;
   isSubmitting: boolean;
@@ -26,6 +23,8 @@ export type StudentExamRoomState = {
   queryError: Error | null;
   refetching: boolean;
   remainingLabel: string;
+  saveErrorByQuestion: Record<string, string>;
   setDraftAnswer: (questionId: string, value: string) => void;
+  showQuestions: boolean;
   totalPoints: number;
 };
