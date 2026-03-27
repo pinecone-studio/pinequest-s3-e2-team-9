@@ -379,68 +379,36 @@ jobs:
 
           echo "name=${prefix}${sanitized}" >> "$GITHUB_OUTPUT"
 
-      - name: Check preview D1 configuration
-        if: steps.cloudflare.outputs.available == 'true'
-        id: preview-db
-        env:
-          PREVIEW_DATABASE_ID: ${{ vars.CF_API_PREVIEW_DATABASE_ID }}
-          PREVIEW_DATABASE_NAME: ${{ vars.CF_API_PREVIEW_DATABASE_NAME }}
-        run: |
-          set -euo pipefail
-
-          if [ -n "${PREVIEW_DATABASE_ID}" ] && [ -n "${PREVIEW_DATABASE_NAME}" ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Preview D1 database variables are missing, skipping API preview deploy to avoid using the production database."
-          fi
-
       - name: Render API preview Wrangler config
-        if: steps.cloudflare.outputs.available == 'true' && steps.preview-db.outputs.available == 'true'
+        if: steps.cloudflare.outputs.available == 'true'
         working-directory: apps/api
         env:
           TARGET_NAME: ${{ steps.api-name.outputs.name }}
-          PREVIEW_DATABASE_ID: ${{ vars.CF_API_PREVIEW_DATABASE_ID }}
-          PREVIEW_DATABASE_NAME: ${{ vars.CF_API_PREVIEW_DATABASE_NAME }}
         run: |
           node <<'NODE'
           const fs = require("node:fs");
-          const inputPath = "wrangler.toml";
+          const inputPath = "wrangler.dev.toml";
           const outputPath = "wrangler.preview.toml";
           const source = fs.readFileSync(inputPath, "utf8");
 
-          const rendered = source
-            .replace(/^name = ".*"$/m, `name = "${process.env.TARGET_NAME}"`)
-            .replace(
-              /^database_name = ".*"$/m,
-              `database_name = "${process.env.PREVIEW_DATABASE_NAME}"`,
-            )
-            .replace(
-              /^database_id = ".*"$/m,
-              `database_id = "${process.env.PREVIEW_DATABASE_ID}"`,
-            );
+          const rendered = source.replace(
+            /^name = ".*"$/m,
+            `name = "${process.env.TARGET_NAME}"`,
+          );
 
           fs.writeFileSync(outputPath, rendered);
           NODE
 
       - name: Apply remote D1 migrations
-        if: steps.cloudflare.outputs.available == 'true' && steps.preview-db.outputs.available == 'true'
+        if: steps.cloudflare.outputs.available == 'true'
         working-directory: apps/api
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler d1 migrations apply DB --remote --config wrangler.preview.toml
 
-      - name: Seed preview D1 database
-        if: steps.cloudflare.outputs.available == 'true' && steps.preview-db.outputs.available == 'true'
-        working-directory: apps/api
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler d1 execute DB --remote --config wrangler.preview.toml --file=./migrations/0002_seed.sql
-
       - name: Deploy API preview
-        if: steps.cloudflare.outputs.available == 'true' && steps.preview-db.outputs.available == 'true'
+        if: steps.cloudflare.outputs.available == 'true'
         id: deploy
         working-directory: apps/api
         env:
@@ -465,7 +433,7 @@ jobs:
       - name: Publish API preview URL
         if: steps.cloudflare.outputs.available == 'true'
         env:
-          URL: ${{ steps.deploy.outputs.deployment-url }}
+          URL: ${{ steps.deploy.outputs.url }}
         run: |
           if [ -n "${URL}" ]; then
             echo "API Preview URL: ${URL}" >> "$GITHUB_STEP_SUMMARY"
