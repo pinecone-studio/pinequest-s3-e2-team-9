@@ -38,29 +38,29 @@ export function CreateExamContent({
   };
 
   return (
-    <div className="w-full px-5 py-8 sm:px-8 sm:py-10 lg:px-[60px] lg:py-[54px]">
-      <form className="w-full max-w-[760px]" onSubmit={handleSubmit}>
+    <div className="mx-auto w-full max-w-[760px]">
+      <form className="w-full" onSubmit={handleSubmit}>
         <CreateExamHeader isSubmitting={flow.isSubmitting} disabled={isDisabled} />
 
         {flow.isOptionsLoading ? (
-          <p className="mt-4 text-[13px] text-[#52555B]">Backend өгөгдөл ачаалж байна...</p>
+          <p className="mt-4 text-[13px] text-[#52555B]">Системийн өгөгдөл ачаалж байна...</p>
         ) : null}
 
         {flow.optionsError ? (
           <div className="mt-4 rounded-md border border-[#FDA29B] bg-[#FEF3F2] px-4 py-3 text-[13px] text-[#B42318]">
-            GraphQL холбоход алдаа гарлаа: {flow.optionsError.message}
+            Сонголтын мэдээллийг ачаалахад алдаа гарлаа. Дахин оролдоно уу.
           </div>
         ) : null}
 
         {!flow.classOptions.length && !flow.isOptionsLoading ? (
           <p className="mt-4 text-[13px] text-[#B42318]">
-            Анги олдсонгүй. Backend-ийн seed өгөгдлийг шалгана уу.
+            Анги олдсонгүй. Системийн өгөгдлөө шалгана уу.
           </p>
         ) : null}
 
         {!flow.questionBankOptions.length && !flow.isOptionsLoading ? (
           <p className="mt-2 text-[13px] text-[#B42318]">
-            Асуултын сан олдсонгүй. Backend-ийн seed өгөгдлийг шалгана уу.
+            Асуултын сан олдсонгүй. Системийн өгөгдлөө шалгана уу.
           </p>
         ) : null}
 

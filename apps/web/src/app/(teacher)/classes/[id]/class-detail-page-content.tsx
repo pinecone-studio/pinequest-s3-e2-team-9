@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRightIcon, ClipboardIcon } from "../../components/icons";
+import { TEACHER_COMMON_TEXT } from "../../components/teacher-ui";
 import { ClassesSearchInput } from "../components/classes-search-input";
 import { ClassesStatePanel } from "../components/classes-state-panel";
 import { ClassExamsTable } from "../components/class-exams-table";
@@ -45,8 +46,8 @@ export function ClassDetailPageContent({
       <ClassesStatePanel
         tone="error"
         title="Ангийн мэдээллийг уншиж чадсангүй"
-        description={error.message}
-        actionLabel="Дахин оролдох"
+        description={TEACHER_COMMON_TEXT.genericError}
+        actionLabel={TEACHER_COMMON_TEXT.retry}
         onAction={() => {
           void refetch();
         }}
@@ -64,7 +65,7 @@ export function ClassDetailPageContent({
   }
 
   return (
-    <section className="space-y-6">
+    <section className="mx-auto w-full max-w-[1120px] space-y-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-start gap-4">
           <Link
@@ -103,10 +104,10 @@ export function ClassDetailPageContent({
           <h2 className="text-[16px] font-semibold text-[#0F1216]">Сурагчид</h2>
           <div className="flex flex-wrap gap-2">
             <button className="rounded-md border border-[#DFE1E5] bg-[#FAFAFA] px-4 py-2 text-[14px] font-medium text-[#0F1216]">
-              CSV файлаас оруулах
+              Файлаас нэмэх
             </button>
             <button className="rounded-md bg-[#00267F] px-4 py-2 text-[14px] font-medium text-white">
-              Add Student
+              Сурагч нэмэх
             </button>
           </div>
         </div>

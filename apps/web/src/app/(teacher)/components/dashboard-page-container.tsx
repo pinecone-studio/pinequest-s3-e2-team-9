@@ -49,7 +49,6 @@ export function DashboardPageContainer() {
   if (error && !viewModel) {
     return (
       <DashboardErrorState
-        message={error.message}
         onRetry={() => {
           void refetch();
         }}
@@ -77,7 +76,7 @@ export function DashboardPageContainer() {
       {!viewModel.hasAnyData ? (
         <DashboardEmptyState />
       ) : (
-        <div className="grid h-[312px] w-[1120px] justify-center gap-4 xl:grid-cols-[repeat(3,362.67px)]">
+        <div className="mx-auto grid h-[312px] w-full max-w-[1120px] justify-center gap-4 xl:grid-cols-[repeat(3,362.67px)]">
           <DashboardQuickActions actions={viewModel.quickActions} />
           <DashboardUpcomingList
             emptyMessage={

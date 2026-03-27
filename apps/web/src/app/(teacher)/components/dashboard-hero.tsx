@@ -6,7 +6,7 @@ type DashboardHeroProps = {
 
 export function DashboardHero({ teacherName }: DashboardHeroProps) {
   return (
-    <section className="relative h-[182px] w-[1120px] overflow-hidden rounded-[16px] border border-[#DFE1E5] bg-[linear-gradient(135deg,#6F90FF_0%,#2466D0_100%)] px-0 pb-12 pl-6 pt-12 text-white shadow-[0_4px_8px_-2px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.06)]">
+    <section className="relative mx-auto h-[182px] w-full max-w-[1120px] overflow-hidden rounded-[16px] border border-[#DFE1E5] bg-[linear-gradient(135deg,#6F90FF_0%,#2466D0_100%)] px-0 pb-12 pl-6 pt-12 text-white shadow-[0_4px_8px_-2px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.06)]">
       <div className="relative z-10 w-[322px] space-y-2">
         <h1 className="text-[20px] font-semibold leading-[28px]">
           Өглөөний мэнд, {teacherName}
@@ -19,7 +19,7 @@ export function DashboardHero({ teacherName }: DashboardHeroProps) {
 
       <div className="absolute left-[692px] top-[-58px] z-10 h-[325px] w-[487px]">
         <Image
-          alt="Owl"
+          alt="Шувууны зураг"
           className="h-full w-full object-contain"
           priority
           src={OwlIcon}

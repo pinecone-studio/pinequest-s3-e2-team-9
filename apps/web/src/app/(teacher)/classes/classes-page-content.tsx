@@ -1,6 +1,7 @@
 "use client";
 
 import { PlusIcon } from "../components/icons";
+import { TEACHER_COMMON_TEXT } from "../components/teacher-ui";
 import { ClassCard } from "./components/class-card";
 import { ClassesSearchInput } from "./components/classes-search-input";
 import { ClassesStatePanel } from "./components/classes-state-panel";
@@ -24,8 +25,8 @@ export function ClassesPageContent() {
       <ClassesStatePanel
         tone="error"
         title="Ангиудыг уншиж чадсангүй"
-        description={error.message}
-        actionLabel="Дахин оролдох"
+        description={TEACHER_COMMON_TEXT.genericError}
+        actionLabel={TEACHER_COMMON_TEXT.retry}
         onAction={() => {
           void refetch();
         }}
@@ -34,7 +35,7 @@ export function ClassesPageContent() {
   }
 
   return (
-    <section className="space-y-6">
+    <section className="mx-auto w-full max-w-[1120px] space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-[24px] font-semibold text-[#0F1216]">Ангиуд</h1>

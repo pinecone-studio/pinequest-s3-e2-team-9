@@ -45,11 +45,11 @@ export function QuestionBankSection() {
   }
 
   if (error) {
-    errorMessage = "GraphQL холбоход алдаа гарлаа. Backend-ээ шалгаад дахин оролдоно уу.";
+    errorMessage = "Асуултын сангийн мэдээллийг ачаалахад алдаа гарлаа. Дахин оролдоно уу.";
   }
 
   return (
-    <section className="space-y-6">
+    <section className="mx-auto w-full max-w-[1120px] space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-[24px] font-semibold text-[#0F1216]">
@@ -81,7 +81,7 @@ export function QuestionBankSection() {
 
       {!loading && !errorMessage && !items.length ? (
         <p className="text-[14px] text-[#52555B]">
-          Асуултын сан алга. Backend seed эсвэл sync-ээ шалгана уу.
+          Асуултын сан бүртгэгдээгүй байна.
         </p>
       ) : null}
 

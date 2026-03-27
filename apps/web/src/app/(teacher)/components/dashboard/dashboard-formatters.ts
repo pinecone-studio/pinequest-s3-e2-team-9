@@ -25,12 +25,12 @@ export const formatReviewSubtitle = (count: number): string =>
 
 export const formatDraftSubtitle = (draftCount: number, ongoingCount: number): string => {
   if (draftCount > 0) {
-    return `${draftCount.toLocaleString("mn-MN")} Draft Exams`;
+    return `${draftCount.toLocaleString("mn-MN")} ноорог шалгалт`;
   }
 
   return ongoingCount > 0
     ? `${ongoingCount.toLocaleString("mn-MN")} явагдаж байна`
-    : "Draft Exams байхгүй";
+    : "Ноорог шалгалт алга";
 };
 
 export const formatScheduledSubtitle = (count: number): string =>

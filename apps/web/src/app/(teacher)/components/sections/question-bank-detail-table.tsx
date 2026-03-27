@@ -145,7 +145,7 @@ export function QuestionBankDetailTable({
                 ))}
               </tbody>
             </table>
-            {!rows.length ? <p className="p-5 text-[14px] text-[#52555B]">Шүүлтүүрт таарах асуулт алга.</p> : null}
+            {!rows.length ? <p className="p-5 text-[14px] text-[#52555B]">Шүүлтүүрт тохирох асуулт алга.</p> : null}
           </div>
         ) : null}
       </div>

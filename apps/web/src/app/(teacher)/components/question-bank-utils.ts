@@ -96,7 +96,7 @@ export const buildQuestionBankRows = (
     difficulty: DIFFICULTY_LABELS[question.difficulty],
     rawDifficulty: question.difficulty,
     difficultyTone: DIFFICULTY_TONES[question.difficulty],
-    usedCount: `${12 + ((index * 7) % 19)}x`,
+    usedCount: `${12 + ((index * 7) % 19)} удаа`,
     averageScore: `${62 + ((index * 11) % 31)}%`,
     options: question.options,
     correctAnswer: question.correctAnswer ?? null,

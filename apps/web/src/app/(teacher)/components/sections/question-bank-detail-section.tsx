@@ -113,7 +113,7 @@ export function QuestionBankDetailSection({
   const subject = bank?.subject ?? "Хичээл";
   const count = bank?.questionCount ?? 0;
   return (
-    <section className="space-y-8">
+    <section className="mx-auto w-full max-w-[1120px] space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex items-start gap-4">
           <Link href="/question-bank" className="mt-1 cursor-pointer rounded-md p-2 text-[#0F1216] hover:bg-white">

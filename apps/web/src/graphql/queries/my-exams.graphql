@@ -18,6 +18,8 @@ query MyExamsQuery {
     class {
       id
       name
+      subject
+      grade
       students {
         id
         fullName
@@ -33,6 +35,7 @@ query MyExamsQuery {
         prompt
         type
         options
+        correctAnswer
       }
     }
     attempts {

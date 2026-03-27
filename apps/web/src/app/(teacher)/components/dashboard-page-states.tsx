@@ -1,5 +1,6 @@
+import { TEACHER_COMMON_TEXT } from "./teacher-ui";
+
 type DashboardRetryProps = {
-  message: string;
   onRetry: () => void;
 };
 
@@ -22,17 +23,19 @@ export function DashboardSkeleton() {
   );
 }
 
-export function DashboardErrorState({ message, onRetry }: DashboardRetryProps) {
+export function DashboardErrorState({ onRetry }: DashboardRetryProps) {
   return (
     <section className="mx-auto max-w-[1184px] rounded-[32px] border border-[#FECACA] bg-[#FEF2F2] px-6 py-8 text-center shadow-[0_14px_36px_rgba(127,29,29,0.06)]">
-      <h2 className="text-[22px] font-semibold text-[#991B1B]">Dashboard ачаалж чадсангүй</h2>
-      <p className="mx-auto mt-3 max-w-[520px] text-[15px] leading-7 text-[#B42318]">{message}</p>
+      <h2 className="text-[22px] font-semibold text-[#991B1B]">Хяналтын самбарыг ачаалж чадсангүй</h2>
+      <p className="mx-auto mt-3 max-w-[520px] text-[15px] leading-7 text-[#B42318]">
+        {TEACHER_COMMON_TEXT.genericError}
+      </p>
       <button
         className="mt-6 rounded-2xl bg-white px-5 py-3 text-[15px] font-semibold text-[#344054] shadow-sm transition hover:bg-[#FFF7F7] focus:outline-none focus:ring-4 focus:ring-[#FECACA]"
         onClick={onRetry}
         type="button"
       >
-        Дахин оролдох
+        {TEACHER_COMMON_TEXT.retry}
       </button>
     </section>
   );
@@ -41,7 +44,7 @@ export function DashboardErrorState({ message, onRetry }: DashboardRetryProps) {
 export function DashboardEmptyState() {
   return (
     <section className="mx-auto max-w-[1184px] rounded-[32px] border border-[#E6ECF8] bg-white px-6 py-10 text-center shadow-[0_14px_36px_rgba(15,23,42,0.06)]">
-      <h2 className="text-[24px] font-semibold text-[#101828]">Dashboard дээр харуулах өгөгдөл алга</h2>
+      <h2 className="text-[24px] font-semibold text-[#101828]">Хяналтын самбарт харуулах өгөгдөл алга</h2>
       <p className="mx-auto mt-3 max-w-[560px] text-[15px] leading-7 text-[#667085]">
         Анги, шалгалтын өгөгдөл орж ирмэгц энэ хэсэг бодит тайлан, товлолт, үр дүнгээр автоматаар дүүрнэ.
       </p>
