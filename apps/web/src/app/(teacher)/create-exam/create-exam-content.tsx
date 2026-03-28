@@ -11,15 +11,21 @@ import { useCreateExamFlow } from "./hooks/use-create-exam-flow";
 
 type CreateExamContentProps = {
   initialClassId?: string;
+  initialBankId?: string;
   returnTo?: string;
 };
 
 export function CreateExamContent({
   initialClassId = "",
+  initialBankId = "",
   returnTo = "",
 }: CreateExamContentProps) {
   const router = useRouter();
-  const flow = useCreateExamFlow(initialClassId, returnTo ? initialClassId : "");
+  const flow = useCreateExamFlow(
+    initialClassId,
+    returnTo ? initialClassId : "",
+    initialBankId,
+  );
   const isDisabled =
     flow.isSubmitting ||
     flow.isOptionsLoading ||
@@ -41,6 +47,12 @@ export function CreateExamContent({
       <form className="space-y-6" onSubmit={handleSubmit}>
         <CreateExamHeader isSubmitting={flow.isSubmitting} disabled={isDisabled} />
         <CreateExamSubmitAlert submitState={flow.submitState} />
+
+        {initialBankId ? (
+          <div className="mt-4 rounded-md border border-[#B2DDFF] bg-[#F0F9FF] px-4 py-3 text-[13px] text-[#175CD3]">
+            Энэ шалгалт тухайн question bank-аас эхэлж байна. Хэрэв өөр bank сонгох бол энэ хуудсыг question bank-гүй нээнэ.
+          </div>
+        ) : null}
 
         {flow.isOptionsLoading ? (
           <p className="text-[13px] text-[#667085]">Системийн өгөгдөл ачаалж байна...</p>

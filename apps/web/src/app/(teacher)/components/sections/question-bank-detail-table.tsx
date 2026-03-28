@@ -14,6 +14,7 @@ import { QuestionBankQuestionPreviewDialog } from "./question-bank-question-prev
 type QuestionBankDetailTableProps = {
   bankId: string;
   subject: string;
+  editable: boolean;
   loading: boolean;
   errorMessage: string | null;
   rows: QuestionBankQuestionRow[];
@@ -22,6 +23,7 @@ type QuestionBankDetailTableProps = {
 export function QuestionBankDetailTable({
   bankId,
   subject,
+  editable,
   loading,
   errorMessage,
   rows,
@@ -133,13 +135,19 @@ export function QuestionBankDetailTable({
                     <td className="px-4 py-4 text-center text-[14px] text-[#52555B]">{row.usedCount}</td>
                     <td className="px-4 py-4 text-[14px] text-[#0F1216]">{row.averageScore}</td>
                     <td className="relative px-4 py-4 text-right">
-                      <button type="button" className="cursor-pointer rounded-md p-2 text-[#0F1216] hover:bg-[#F6F9FC]" onClick={() => setMenuRowId((current) => current === row.id ? null : row.id)}><DotsIcon className="h-4 w-4" /></button>
-                      {menuRowId === row.id ? (
-                        <div className="absolute right-4 top-12 z-10 min-w-28 rounded-lg border border-[#DFE1E5] bg-white p-1 text-left shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
-                          <button type="button" className="block w-full cursor-pointer rounded-md px-3 py-2 text-[14px] text-[#0F1216] hover:bg-[#F6F9FC]" onClick={() => { setEditingRow(row); setMenuRowId(null); }}>Засах</button>
-                          <button type="button" className="block w-full cursor-pointer rounded-md px-3 py-2 text-[14px] text-[#B42318] hover:bg-[#FEF3F2]" onClick={() => void handleDelete(row)}>Устгах</button>
-                        </div>
-                      ) : null}
+                      {editable ? (
+                        <>
+                          <button type="button" className="cursor-pointer rounded-md p-2 text-[#0F1216] hover:bg-[#F6F9FC]" onClick={() => setMenuRowId((current) => current === row.id ? null : row.id)}><DotsIcon className="h-4 w-4" /></button>
+                          {menuRowId === row.id ? (
+                            <div className="absolute right-4 top-12 z-10 min-w-28 rounded-lg border border-[#DFE1E5] bg-white p-1 text-left shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
+                              <button type="button" className="block w-full cursor-pointer rounded-md px-3 py-2 text-[14px] text-[#0F1216] hover:bg-[#F6F9FC]" onClick={() => { setEditingRow(row); setMenuRowId(null); }}>Засах</button>
+                              <button type="button" className="block w-full cursor-pointer rounded-md px-3 py-2 text-[14px] text-[#B42318] hover:bg-[#FEF3F2]" onClick={() => void handleDelete(row)}>Устгах</button>
+                            </div>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span className="text-[12px] font-medium text-[#98A2B3]">Read only</span>
+                      )}
                     </td>
                   </tr>
                 ))}

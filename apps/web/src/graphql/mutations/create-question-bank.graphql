@@ -1,0 +1,24 @@
+mutation CreateQuestionBankMutation(
+  $title: String!
+  $description: String
+  $grade: Int!
+  $subject: String!
+  $topic: String!
+  $visibility: QuestionBankVisibility!
+) {
+  createQuestionBank(
+    title: $title
+    description: $description
+    grade: $grade
+    subject: $subject
+    topic: $topic
+    visibility: $visibility
+  ) {
+    id
+    title
+    grade
+    subject
+    topic
+    visibility
+  }
+}

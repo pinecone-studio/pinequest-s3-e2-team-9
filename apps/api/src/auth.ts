@@ -42,7 +42,26 @@ type ClerkUserLike = {
 
 type ClerkClientLike = ReturnType<typeof createClerkClient>;
 
-const normalizeEmail = (email: string) => email.trim().toLowerCase();
+const LOCAL_AUTH_EMAIL_ALIASES: Record<string, string> = {
+  "admin@test.com": "admin@pinequest.dev",
+  "teacher@test.com": "togtuun@pinequest.dev",
+  "student@test.com": "john.doe@example.com",
+};
+
+const stripClerkTestSuffix = (email: string): string => {
+  const [localPart, domain] = email.split("@");
+
+  if (!localPart || !domain) {
+    return email;
+  }
+
+  return `${localPart.replace(/\+clerk_test.*$/, "")}@${domain}`;
+};
+
+const normalizeEmail = (email: string) => {
+  const normalized = stripClerkTestSuffix(email.trim().toLowerCase());
+  return LOCAL_AUTH_EMAIL_ALIASES[normalized] ?? normalized;
+};
 
 const getBearerToken = (authorizationHeader: string | null): string | null => {
   if (!authorizationHeader) {

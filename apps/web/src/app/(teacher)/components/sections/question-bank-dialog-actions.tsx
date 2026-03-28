@@ -44,6 +44,7 @@ export function QuestionBankDialogSaveSection({
 type FooterProps = {
   disabled?: boolean;
   loading?: boolean;
+  showLibraryAction?: boolean;
   submitLabel?: string;
   onCancel: () => void;
   onSubmit: () => void;
@@ -52,18 +53,23 @@ type FooterProps = {
 export function QuestionBankDialogFooter({
   disabled,
   loading,
+  showLibraryAction = true,
   submitLabel = "Асуулт нэмэх",
   onCancel,
   onSubmit,
 }: FooterProps) {
   return (
     <div className="flex flex-col gap-3 border-t border-[#DFE1E5] pt-4 sm:flex-row sm:items-center sm:justify-between">
-      <button
-        type="button"
-        className="inline-flex h-8 items-center justify-center rounded-md border border-[#DFE1E5] bg-[#FAFAFA] px-4 text-[14px] font-medium text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)]"
-      >
-        Сангаас нэмэх
-      </button>
+      {showLibraryAction ? (
+        <button
+          type="button"
+          className="inline-flex h-8 items-center justify-center rounded-md border border-[#DFE1E5] bg-[#FAFAFA] px-4 text-[14px] font-medium text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)]"
+        >
+          Сангаас нэмэх
+        </button>
+      ) : (
+        <span />
+      )}
       <div className="flex items-center gap-2">
         <button
           type="button"

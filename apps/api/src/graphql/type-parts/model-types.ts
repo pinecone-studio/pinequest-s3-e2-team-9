@@ -1,4 +1,5 @@
 export type Role = "ADMIN" | "TEACHER" | "STUDENT";
+export type QuestionBankVisibility = "PRIVATE" | "PUBLIC";
 export type QuestionType =
   | "MCQ"
   | "TRUE_FALSE"
@@ -33,7 +34,10 @@ export type QuestionBankRow = {
   id: string;
   title: string;
   description: string | null;
+  grade: number;
   subject: string;
+  topic: string;
+  visibility: QuestionBankVisibility;
   owner_id: string;
   created_at: string;
 };

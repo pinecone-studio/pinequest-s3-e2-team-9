@@ -1,12 +1,25 @@
+/* eslint-disable max-lines */
 "use client";
 
+import { useMemo, useState } from "react";
 import { useQuestionBanksQueryQuery } from "@/graphql/generated";
-import Link from "next/link";
-import { BookIcon, PlusIcon, SearchIcon } from "../icons";
+import { PlusIcon } from "../icons";
+import {
+  getCurriculumGrades,
+  getCurriculumSubjects,
+  getCurriculumTopics,
+} from "../question-bank-curriculum";
 import {
   formatQuestionBankDate,
   type QuestionBankItem,
 } from "../question-bank-utils";
+import { QuestionBankCreateDialog } from "./question-bank-create-dialog";
+import {
+  QuestionBankEmptyState,
+  QuestionBankFilterPanel,
+  QuestionBankGrid,
+  QuestionBankTabButton,
+} from "./question-bank-section-ui";
 
 const QUESTION_BANK_SKELETONS = Array.from({ length: 6 }, (_, index) => index);
 
@@ -15,126 +28,229 @@ const mapQuestionBankItems = (
     id: string;
     title: string;
     description?: string | null;
+    grade: number;
     subject: string;
+    topic: string;
+    topics: string[];
+    visibility: "PRIVATE" | "PUBLIC";
     questionCount: number;
     createdAt: string;
+    owner: {
+      id: string;
+      fullName: string;
+    };
   }[],
 ): QuestionBankItem[] =>
   banks.map((bank) => ({
     id: bank.id,
     title: bank.title,
     description: bank.description ?? "Тайлбар оруулаагүй асуултын сан",
+    grade: bank.grade,
     subject: bank.subject,
+    topic: bank.topic,
+    topics: bank.topics,
+    visibility: bank.visibility,
+    ownerId: bank.owner.id,
+    ownerName: bank.owner.fullName,
     questions: `${bank.questionCount} асуулт`,
     date: formatQuestionBankDate(bank.createdAt),
   }));
 
+type LibraryTab = "public" | "mine";
+
 export function QuestionBankSection() {
+  const [activeTab, setActiveTab] = useState<LibraryTab>("public");
+  const [search, setSearch] = useState("");
+  const [grade, setGrade] = useState("");
+  const [subject, setSubject] = useState("");
+  const [topic, setTopic] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
   const { data, loading, error } = useQuestionBanksQueryQuery({
     fetchPolicy: "cache-and-network",
   });
 
-  let items: QuestionBankItem[] = [];
-  let errorMessage: string | null = null;
+  const viewerId = data?.me?.id ?? null;
+  const itemsState = useMemo(() => {
+    try {
+      return {
+        items: mapQuestionBankItems(data?.questionBanks ?? []),
+        errorMessage: error
+          ? "Асуултын сангийн мэдээллийг ачаалахад алдаа гарлаа. Дахин оролдоно уу."
+          : null,
+      };
+    } catch (mappingError) {
+      console.error("Failed to map question banks", mappingError);
+      return {
+        items: [] as QuestionBankItem[],
+        errorMessage: "Асуултын сангийн өгөгдлийг боловсруулахад алдаа гарлаа.",
+      };
+    }
+  }, [data?.questionBanks, error]);
 
-  try {
-    items = mapQuestionBankItems(data?.questionBanks ?? []);
-  } catch (mappingError) {
-    console.error("Failed to map question banks", mappingError);
-    errorMessage = "Асуултын сангийн өгөгдлийг боловсруулахад алдаа гарлаа.";
-  }
+  const scopedItems = useMemo(() => {
+    if (!viewerId) {
+      return itemsState.items.filter((item) => item.visibility === "PUBLIC");
+    }
 
-  if (error) {
-    errorMessage = "Асуултын сангийн мэдээллийг ачаалахад алдаа гарлаа. Дахин оролдоно уу.";
-  }
+    return itemsState.items.filter((item) =>
+      activeTab === "public"
+        ? item.visibility === "PUBLIC"
+        : item.ownerId === viewerId,
+    );
+  }, [activeTab, itemsState.items, viewerId]);
+
+  const gradeOptions = useMemo(
+    () =>
+      [...new Set([...getCurriculumGrades(), ...scopedItems.map((item) => item.grade)])]
+        .sort((left, right) => left - right)
+        .map((value) => String(value)),
+    [scopedItems],
+  );
+
+  const subjectOptions = useMemo(() => {
+    if (!grade) {
+      return [];
+    }
+
+    const numericGrade = Number(grade);
+    const fromCurriculum = getCurriculumSubjects(numericGrade).map((entry) => entry.name);
+    const fromBanks = scopedItems
+      .filter((item) => item.grade === numericGrade)
+      .map((item) => item.subject);
+
+    return [...new Set([...fromCurriculum, ...fromBanks])];
+  }, [grade, scopedItems]);
+
+  const topicOptions = useMemo(() => {
+    if (!grade || !subject) {
+      return [];
+    }
+
+    const numericGrade = Number(grade);
+    const fromCurriculum = getCurriculumTopics(numericGrade, subject);
+    const fromBanks = scopedItems
+      .filter((item) => item.grade === numericGrade && item.subject === subject)
+      .flatMap((item) => (item.topic !== "Ерөнхий" ? [item.topic] : item.topics));
+
+    return [...new Set([...fromCurriculum, ...fromBanks])];
+  }, [grade, scopedItems, subject]);
+
+  const filteredItems = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+
+    return scopedItems.filter((item) => {
+      const topicValues = item.topic !== "Ерөнхий" ? [item.topic] : item.topics;
+      const matchesSearch =
+        !keyword ||
+        `${item.title} ${item.description} ${item.subject} ${topicValues.join(" ")} ${item.ownerName}`
+          .toLowerCase()
+          .includes(keyword);
+      const matchesGrade = !grade || item.grade === Number(grade);
+      const matchesSubject = !subject || item.subject === subject;
+      const matchesTopic = !topic || topicValues.includes(topic);
+
+      return matchesSearch && matchesGrade && matchesSubject && matchesTopic;
+    });
+  }, [grade, scopedItems, search, subject, topic]);
+
+  const selectedPathLabel = useMemo(() => {
+    const path = [
+      grade ? `${grade}-р анги` : "Анги",
+      subject || "Хичээл",
+      topic || "Дэд сэдэв",
+    ];
+
+    return path.join(" / ");
+  }, [grade, subject, topic]);
 
   return (
-    <section className="mx-auto w-full max-w-[1120px] space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-[24px] font-semibold text-[#0F1216]">
-            Асуултын сан
-          </h1>
-          <p className="mt-1 text-[14px] text-[#52555B]">
-            Асуултуудыг зохион байгуулж, олон шалгалтад дахин ашиглах
-          </p>
-        </div>
-        <button className="inline-flex items-center gap-2 rounded-md bg-[#00267F] px-4 py-2 text-[14px] font-medium text-white">
-          <PlusIcon className="h-4 w-4" />
-          Сан үүсгэх
-        </button>
-      </div>
-
-      <label className="relative block max-w-[384px]">
-        <span className="sr-only">Асуултын сан хайх</span>
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#52555B]">
-          <SearchIcon className="h-4 w-4" />
-        </span>
-        <input
-          type="text"
-          placeholder="Асуултын сан хайх..."
-          className="h-9 w-full rounded-md border border-[#DFE1E5] bg-white px-9 text-[14px] text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#52555B]"
-        />
-      </label>
-
-      {errorMessage ? <p className="text-[14px] text-[#B42318]">{errorMessage}</p> : null}
-
-      {!loading && !errorMessage && !items.length ? (
-        <p className="text-[14px] text-[#52555B]">
-          Асуултын сан бүртгэгдээгүй байна.
-        </p>
-      ) : null}
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {loading
-          ? QUESTION_BANK_SKELETONS.map((item) => (
-              <div
-                key={item}
-                className="rounded-xl border border-[#DFE1E5] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
-              >
-                <div className="animate-pulse">
-                  <div className="flex items-start justify-between">
-                    <div className="h-10 w-10 rounded-lg bg-[#E9EDF3]" />
-                    <div className="h-7 w-20 rounded-md bg-[#E9EDF3]" />
-                  </div>
-                  <div className="mt-4 h-5 w-2/3 rounded bg-[#E9EDF3]" />
-                  <div className="mt-2 h-4 w-full rounded bg-[#E9EDF3]" />
-                  <div className="mt-2 h-4 w-5/6 rounded bg-[#E9EDF3]" />
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="h-4 w-20 rounded bg-[#E9EDF3]" />
-                    <div className="h-4 w-24 rounded bg-[#E9EDF3]" />
-                  </div>
-                </div>
-              </div>
-            ))
-          : null}
-        {items.map((item) => (
-          <Link
-            key={item.id}
-            href={`/question-bank/${item.id}`}
-            className="relative block cursor-pointer rounded-xl border border-[#DFE1E5] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition hover:-translate-y-0.5 hover:shadow-[0px_8px_24px_rgba(15,18,22,0.08)]"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1922301A] text-[#192230]">
-                <BookIcon className="h-5 w-5" />
-              </div>
-              <span className="rounded-md bg-[#F63D6B] px-2.5 py-1 text-[12px] font-medium text-white">
-                {item.subject}
-              </span>
-            </div>
-            <h3 className="mt-4 text-[16px] font-medium text-[#0F1216]">
-              {item.title}
-            </h3>
+    <>
+      <section className="mx-auto w-full max-w-[1120px] space-y-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="text-[24px] font-semibold text-[#0F1216]">
+              Асуултын сан
+            </h1>
             <p className="mt-1 text-[14px] text-[#52555B]">
-              {item.description}
+              Эхлээд анги, дараа нь хичээл, дараа нь дэд сэдвээ сонгоод тухайн сэдвийн банкууд дээр ажиллана.
             </p>
-            <div className="mt-4 flex items-center justify-between text-[14px] text-[#52555B]">
-              <span>{item.questions}</span>
-              <span>{item.date}</span>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </section>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="inline-flex items-center gap-2 rounded-md bg-[#00267F] px-4 py-2 text-[14px] font-medium text-white"
+          >
+            <PlusIcon className="h-4 w-4" />
+            Сан үүсгэх
+          </button>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <QuestionBankTabButton
+            active={activeTab === "public"}
+            label="Нэгдсэн сан"
+            onClick={() => setActiveTab("public")}
+          />
+          <QuestionBankTabButton
+            active={activeTab === "mine"}
+            label="Миний сан"
+            onClick={() => setActiveTab("mine")}
+          />
+        </div>
+
+        <QuestionBankFilterPanel
+          gradeOptions={gradeOptions}
+          grade={grade}
+          subjectOptions={subjectOptions}
+          subject={subject}
+          topicOptions={topicOptions}
+          topic={topic}
+          search={search}
+          selectedPathLabel={selectedPathLabel}
+          onGradeChange={(value) => {
+            const nextGrade = value.replace("-р анги", "").trim();
+            setGrade(nextGrade);
+            setSubject("");
+            setTopic("");
+          }}
+          onSubjectChange={(value) => {
+            setSubject(value);
+            setTopic("");
+          }}
+          onTopicChange={setTopic}
+          onSearchChange={setSearch}
+        />
+
+        {itemsState.errorMessage ? (
+          <p className="text-[14px] text-[#B42318]">{itemsState.errorMessage}</p>
+        ) : null}
+
+        {!loading && !itemsState.errorMessage && !filteredItems.length ? (
+          <QuestionBankEmptyState
+            grade={grade}
+            subject={subject}
+            topic={topic}
+            selectedPathLabel={selectedPathLabel}
+            onCreate={() => setCreateOpen(true)}
+          />
+        ) : null}
+
+        <QuestionBankGrid
+          items={filteredItems}
+          loading={loading}
+          skeletons={QUESTION_BANK_SKELETONS}
+        />
+      </section>
+
+      {createOpen ? (
+        <QuestionBankCreateDialog
+          key={`${grade}-${subject}-${topic}-${activeTab}`}
+          initialGrade={grade ? Number(grade) : null}
+          initialSubject={subject || null}
+          initialTopic={topic || null}
+          onClose={() => setCreateOpen(false)}
+        />
+      ) : null}
+    </>
   );
 }

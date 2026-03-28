@@ -47,7 +47,11 @@ export const schemaDomainTypes = /* GraphQL */ `
     id: ID!
     title: String!
     description: String
+    grade: Int!
     subject: String!
+    topic: String!
+    topics: [String!]!
+    visibility: QuestionBankVisibility!
     questionCount: Int!
     owner: User!
     questions: [Question!]!

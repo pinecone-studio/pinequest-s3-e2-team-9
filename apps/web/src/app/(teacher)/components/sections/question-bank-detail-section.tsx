@@ -1,45 +1,27 @@
+/* eslint-disable max-lines */
 "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useQuestionBankDetailQueryQuery } from "@/graphql/generated";
 import {
-  ArrowLeftIcon,
-  ChevronDownIcon,
-  FilterIcon,
-  PlusIcon,
-  SearchIcon,
-} from "../icons";
-import { buildQuestionBankRows } from "../question-bank-utils";
+  useMyExamsQueryQuery,
+  useQuestionBankDetailQueryQuery,
+} from "@/graphql/generated";
+import { ArrowLeftIcon, PlusIcon } from "../icons";
 import { QuestionBankDetailTable } from "./question-bank-detail-table";
-
-const SELECT_STYLE =
-  "h-9 w-full cursor-pointer appearance-none rounded-md border border-[#DFE1E5] bg-white px-3 pr-9 text-[14px] text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)]";
-
-const FilterSelect = ({
-  options,
-  value,
-  onChange,
-}: {
-  options: string[];
-  value: string;
-  onChange: (value: string) => void;
-}) => (
-  <label className="relative block min-w-[150px]">
-    <select
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className={SELECT_STYLE}
-    >
-      {options.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-    <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#52555B]" />
-  </label>
-);
+import { QuestionBankDetailFilters } from "./question-bank-detail-filters";
+import {
+  getDifficultyOptions,
+  getFilteredQuestionRows,
+  getQuestionBankRows,
+  getQuestionUsageStats,
+  getRelatedExamRows,
+  getTopicOptions,
+  getTypeOptions,
+} from "./question-bank-detail-helpers";
+import {
+  QuestionBankRelatedExams,
+} from "./question-bank-related-exams";
 
 type QuestionBankDetailSectionProps = {
   bankId: string;
@@ -47,24 +29,39 @@ type QuestionBankDetailSectionProps = {
   onSubjectChange: (subject: string) => void;
 };
 
+type DetailTab = "questions" | "related-exams";
+
 export function QuestionBankDetailSection({
   bankId,
   onAddQuestion,
   onSubjectChange,
 }: QuestionBankDetailSectionProps) {
   const [search, setSearch] = useState("");
+  const [topic, setTopic] = useState("Бүх сэдэв");
   const [difficulty, setDifficulty] = useState("Бүх түвшин");
   const [type, setType] = useState("Бүх төрөл");
+  const [activeTab, setActiveTab] = useState<DetailTab>("questions");
   const { data, loading, error } = useQuestionBankDetailQueryQuery({
     variables: { id: bankId },
     fetchPolicy: "cache-and-network",
   });
+  const examsQuery = useMyExamsQueryQuery({
+    fetchPolicy: "cache-and-network",
+  });
 
   const bank = data?.questionBank ?? null;
+  const questionUsageStats = useMemo(
+    () => getQuestionUsageStats(bank?.questions, examsQuery.data?.exams),
+    [bank?.questions, examsQuery.data?.exams],
+  );
+  const relatedExams = useMemo(
+    () => getRelatedExamRows(bank?.questions, examsQuery.data?.exams),
+    [bank?.questions, examsQuery.data?.exams],
+  );
   const rowState = useMemo(() => {
     try {
       return {
-        rows: bank ? buildQuestionBankRows(bank.questions) : [],
+        rows: getQuestionBankRows(bank?.questions, questionUsageStats),
         mappingError: null as string | null,
       };
     } catch (mappingError) {
@@ -74,7 +71,7 @@ export function QuestionBankDetailSection({
         mappingError: "Асуултын мөрүүдийг боловсруулах үед алдаа гарлаа.",
       };
     }
-  }, [bank]);
+  }, [bank, questionUsageStats]);
   const rows = rowState.rows;
   const errorMessage =
     rowState.mappingError ??
@@ -88,27 +85,21 @@ export function QuestionBankDetailSection({
     }
   }, [bank?.subject, onSubjectChange]);
 
+  const viewerId = data?.me?.id ?? null;
+  const isEditable = Boolean(bank && viewerId && bank.owner.id === viewerId);
+
   const filteredRows = useMemo(() => {
     try {
-      const keyword = search.trim().toLowerCase();
-      return rows.filter((row) => {
-        const matchesSearch = !keyword || row.text.toLowerCase().includes(keyword);
-        const matchesDifficulty =
-          difficulty === "Бүх түвшин" || row.difficulty === difficulty;
-        const matchesType = type === "Бүх төрөл" || row.type === type;
-        return matchesSearch && matchesDifficulty && matchesType;
-      });
+      return getFilteredQuestionRows({ rows, search, topic, difficulty, type });
     } catch (filterError) {
       console.error("Failed to filter question bank rows", filterError);
       return rows;
     }
-  }, [difficulty, rows, search, type]);
+  }, [difficulty, rows, search, topic, type]);
 
-  const typeOptions = ["Бүх төрөл", ...new Set(rows.map((row) => row.type))];
-  const difficultyOptions = [
-    "Бүх түвшин",
-    ...new Set(rows.map((row) => row.difficulty)),
-  ];
+  const topicOptions = getTopicOptions(rows);
+  const typeOptions = getTypeOptions(rows);
+  const difficultyOptions = getDifficultyOptions(rows);
   const title = bank?.title ?? "Асуултын сан";
   const subject = bank?.subject ?? "Хичээл";
   const count = bank?.questionCount ?? 0;
@@ -131,49 +122,102 @@ export function QuestionBankDetailSection({
               {loading ? (
                 <span className="block h-5 w-40 animate-pulse rounded bg-[#E9EDF3]" />
               ) : (
-                `${subject} · ${count} асуулт`
+                `${subject} · ${count} асуулт · ${relatedExams.length} холбоотой шалгалт`
               )}
             </p>
           </div>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {bank ? (
+            <Link
+              href={`/create-exam?bankId=${bank.id}`}
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-[#00267F] bg-white px-4 text-[14px] font-medium text-[#00267F]"
+            >
+              Энэ сэдвээс шалгалт үүсгэх
+            </Link>
+          ) : null}
+          <button
+            type="button"
+            onClick={onAddQuestion}
+            disabled={!isEditable}
+            className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md bg-[#00267F] px-4 text-[14px] font-medium text-white disabled:cursor-not-allowed disabled:bg-[#98A2B3]"
+          >
+            <PlusIcon className="h-4 w-4" />
+            {isEditable ? "Асуулт нэмэх" : "Read only сан"}
+          </button>
+        </div>
+      </div>
+
+      {!loading && bank ? (
+        <div className="flex flex-wrap items-center gap-2 text-[13px] text-[#52555B]">
+          <span className="rounded-md bg-[#F2F4F7] px-2.5 py-1 font-medium text-[#344054]">
+            {`${bank.grade}-р анги`}
+          </span>
+          <span className="rounded-md bg-[#F2F4F7] px-2.5 py-1 font-medium text-[#344054]">
+            {bank.visibility === "PUBLIC" ? "Нэгдсэн сан" : "Миний сан"}
+          </span>
+          <span>
+            {isEditable
+              ? "Энэ сан дээр асуулт нэмэх, засах боломжтой."
+              : `${bank.owner.fullName}-ийн хуваалцсан сан. Асуултыг зөвхөн харах боломжтой.`}
+          </span>
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap gap-3">
         <button
           type="button"
-          onClick={onAddQuestion}
-          className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md bg-[#00267F] px-4 text-[14px] font-medium text-white"
+          onClick={() => setActiveTab("questions")}
+          className={`inline-flex h-9 items-center rounded-full border px-4 text-[14px] font-medium transition ${
+            activeTab === "questions"
+              ? "border-[#00267F] bg-[#00267F] text-white"
+              : "border-[#DFE1E5] bg-white text-[#344054] hover:border-[#BFC5D0]"
+          }`}
         >
-          <PlusIcon className="h-4 w-4" />
-          Асуулт нэмэх
+          Асуултууд
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("related-exams")}
+          className={`inline-flex h-9 items-center rounded-full border px-4 text-[14px] font-medium transition ${
+            activeTab === "related-exams"
+              ? "border-[#00267F] bg-[#00267F] text-white"
+              : "border-[#DFE1E5] bg-white text-[#344054] hover:border-[#BFC5D0]"
+          }`}
+        >
+          Холбоотой шалгалтууд
         </button>
       </div>
 
-      <div className="rounded-xl border border-[#DFE1E5] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
-        <div className="mb-3 flex items-center gap-2 text-[14px] font-medium text-[#0F1216]">
-          <FilterIcon className="h-4 w-4" />
-          Шүүлтүүр
-        </div>
-        <div className="flex flex-col gap-3 lg:flex-row">
-          <label className="relative block flex-1">
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Асуулт хайх..."
-              className="h-9 w-full rounded-md border border-[#DFE1E5] bg-white px-10 text-[14px] text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#52555B]"
-            />
-            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#52555B]" />
-          </label>
-          <FilterSelect options={[subject]} value={subject} onChange={() => undefined} />
-          <FilterSelect options={difficultyOptions} value={difficulty} onChange={setDifficulty} />
-          <FilterSelect options={typeOptions} value={type} onChange={setType} />
-        </div>
-      </div>
+      {activeTab === "questions" ? (
+        <>
+          <QuestionBankDetailFilters
+            search={search}
+            subject={subject}
+            topic={topic}
+            difficulty={difficulty}
+            type={type}
+            topicOptions={topicOptions}
+            difficultyOptions={difficultyOptions}
+            typeOptions={typeOptions}
+            onSearchChange={setSearch}
+            onTopicChange={setTopic}
+            onDifficultyChange={setDifficulty}
+            onTypeChange={setType}
+          />
 
-      <QuestionBankDetailTable
-        bankId={bankId}
-        subject={bank?.subject ?? "Хичээл"}
-        loading={loading}
-        errorMessage={errorMessage}
-        rows={filteredRows}
-      />
+          <QuestionBankDetailTable
+            bankId={bankId}
+            subject={bank?.subject ?? "Хичээл"}
+            editable={isEditable}
+            loading={loading}
+            errorMessage={errorMessage}
+            rows={filteredRows}
+          />
+        </>
+      ) : (
+        <QuestionBankRelatedExams rows={relatedExams} />
+      )}
     </section>
   );
 }

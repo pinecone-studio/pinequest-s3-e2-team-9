@@ -2,7 +2,13 @@ export type QuestionBankItem = {
   id: string;
   title: string;
   description: string;
+  grade: number;
   subject: string;
+  topic: string;
+  topics: string[];
+  visibility: "PRIVATE" | "PUBLIC";
+  ownerId: string;
+  ownerName: string;
   questions: string;
   date: string;
 };
@@ -22,6 +28,7 @@ export type QuestionBankQuestionRow = {
   id: string;
   text: string;
   prompt: string;
+  topic: string;
   type: string;
   rawType: RawQuestion["type"];
   difficulty: string;
@@ -33,6 +40,14 @@ export type QuestionBankQuestionRow = {
   correctAnswer: string | null;
   tags: string[];
 };
+
+export type QuestionUsageStats = Record<
+  string,
+  {
+    usedCount: number;
+    averageScorePercent: number | null;
+  }
+>;
 
 const QUESTION_TYPE_LABELS: Record<RawQuestion["type"], string> = {
   MCQ: "Олон сонголт",
@@ -84,20 +99,35 @@ export const formatQuestionBankDate = (value: string): string => {
   }).format(date);
 };
 
+export const formatGradeLabel = (grade: number) =>
+  grade > 0 ? `${grade}-р анги` : "Анги сонгоогүй";
+
+export const formatVisibilityLabel = (visibility: QuestionBankItem["visibility"]) =>
+  visibility === "PUBLIC" ? "Нэгдсэн сан" : "Миний сан";
+
 export const buildQuestionBankRows = (
   questions: RawQuestion[],
+  usageStats: QuestionUsageStats = {},
 ): QuestionBankQuestionRow[] =>
-  questions.map((question, index) => ({
+  questions.map((question) => ({
     id: question.id,
     text: question.prompt.trim() || question.title.trim(),
     prompt: question.prompt.trim(),
+    topic:
+      question.tags.filter((tag) => tag && !tag.includes("анги"))[1] ??
+      question.tags.filter((tag) => tag && !tag.includes("анги"))[0] ??
+      question.title.trim(),
     type: QUESTION_TYPE_LABELS[question.type],
     rawType: question.type,
     difficulty: DIFFICULTY_LABELS[question.difficulty],
     rawDifficulty: question.difficulty,
     difficultyTone: DIFFICULTY_TONES[question.difficulty],
-    usedCount: `${12 + ((index * 7) % 19)} удаа`,
-    averageScore: `${62 + ((index * 11) % 31)}%`,
+    usedCount: `${usageStats[question.id]?.usedCount ?? 0} удаа`,
+    averageScore:
+      usageStats[question.id]?.averageScorePercent === undefined ||
+      usageStats[question.id]?.averageScorePercent === null
+        ? "-"
+        : `${Math.round(usageStats[question.id].averageScorePercent ?? 0)}%`,
     options: question.options,
     correctAnswer: question.correctAnswer ?? null,
     tags: question.tags,

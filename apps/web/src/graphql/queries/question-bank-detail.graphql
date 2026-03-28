@@ -1,10 +1,21 @@
 query QuestionBankDetailQuery($id: ID!) {
+  me {
+    id
+  }
   questionBank(id: $id) {
     id
     title
     description
+    grade
     subject
+    topic
+    topics
+    visibility
     questionCount
+    owner {
+      id
+      fullName
+    }
     questions {
       id
       title

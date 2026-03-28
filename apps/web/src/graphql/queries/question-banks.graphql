@@ -1,10 +1,21 @@
 query QuestionBanksQuery {
+  me {
+    id
+  }
   questionBanks {
     id
     title
     description
+    grade
     subject
+    topic
+    topics
+    visibility
     questionCount
     createdAt
+    owner {
+      id
+      fullName
+    }
   }
 }

@@ -19,6 +19,11 @@ export const schemaEnums = /* GraphQL */ `
     HARD
   }
 
+  enum QuestionBankVisibility {
+    PRIVATE
+    PUBLIC
+  }
+
   enum ExamMode {
     SCHEDULED
     OPEN_WINDOW

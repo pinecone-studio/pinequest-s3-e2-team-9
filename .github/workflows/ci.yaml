@@ -220,12 +220,16 @@ jobs:
         id: web-graphql
         env:
           API_PREVIEW_URL: ${{ needs.api_preview.outputs.preview_url }}
+          API_CHANGED: ${{ needs.detect_changes.outputs.api }}
           DEFAULT_GRAPHQL_ENDPOINT: ${{ vars.NEXT_PUBLIC_GRAPHQL_ENDPOINT }}
         run: |
           set -euo pipefail
 
           if [ -n "${API_PREVIEW_URL}" ]; then
             echo "endpoint=${API_PREVIEW_URL}/graphql" >> "$GITHUB_OUTPUT"
+          elif [ "${API_CHANGED}" = "true" ]; then
+            echo "::error::API files changed but no API preview URL is available. Skipping web preview rather than falling back to the production API."
+            exit 1
           else
             echo "endpoint=${DEFAULT_GRAPHQL_ENDPOINT}" >> "$GITHUB_OUTPUT"
           fi
@@ -309,7 +313,7 @@ jobs:
       - api_verify
     if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_name != 'main')) && needs.detect_changes.outputs.api == 'true'
     outputs:
-      preview_url: ${{ steps.deploy.outputs.deployment-url }}
+      preview_url: ${{ steps.deploy.outputs.url }}
 
     steps:
       - name: Check Cloudflare credentials
@@ -375,28 +379,61 @@ jobs:
 
           echo "name=${prefix}${sanitized}" >> "$GITHUB_OUTPUT"
 
+      - name: Render API preview Wrangler config
+        if: steps.cloudflare.outputs.available == 'true'
+        working-directory: apps/api
+        env:
+          TARGET_NAME: ${{ steps.api-name.outputs.name }}
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const inputPath = "wrangler.dev.toml";
+          const outputPath = "wrangler.preview.toml";
+          const source = fs.readFileSync(inputPath, "utf8");
+
+          const rendered = source.replace(
+            /^name = ".*"$/m,
+            `name = "${process.env.TARGET_NAME}"`,
+          );
+
+          fs.writeFileSync(outputPath, rendered);
+          NODE
+
       - name: Apply remote D1 migrations
         if: steps.cloudflare.outputs.available == 'true'
         working-directory: apps/api
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler d1 migrations apply DB --remote
+        run: npx wrangler d1 migrations apply DB --remote --config wrangler.preview.toml
 
       - name: Deploy API preview
         if: steps.cloudflare.outputs.available == 'true'
         id: deploy
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: apps/api
-          command: deploy --name=${{ steps.api-name.outputs.name }}
+        working-directory: apps/api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+          trap 'rm -f .deploy.secrets.env' EXIT
+
+          printf 'CLERK_SECRET_KEY=%s\n' "${CLERK_SECRET_KEY}" > .deploy.secrets.env
+
+          log_file="$(mktemp)"
+          npx wrangler deploy \
+            --config wrangler.preview.toml \
+            --keep-vars \
+            --secrets-file .deploy.secrets.env 2>&1 | tee "${log_file}"
+
+          url="$(grep -Eo 'https://[A-Za-z0-9._/-]+\.workers\.dev' "${log_file}" | tail -n1)"
+          echo "url=${url}" >> "$GITHUB_OUTPUT"
 
       - name: Publish API preview URL
         if: steps.cloudflare.outputs.available == 'true'
         env:
-          URL: ${{ steps.deploy.outputs.deployment-url }}
+          URL: ${{ steps.deploy.outputs.url }}
         run: |
           if [ -n "${URL}" ]; then
             echo "API Preview URL: ${URL}" >> "$GITHUB_STEP_SUMMARY"

@@ -31,6 +31,7 @@ export type CreateExamQuestionOption = {
   prompt: string;
   type: string;
   difficulty: string;
+  bankId: string;
   bankTitle: string;
   bankSubject: string;
 };

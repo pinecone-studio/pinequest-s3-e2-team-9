@@ -411,7 +411,18 @@ const handleLoginEligibility = async (
     );
   }
 
-  await ensureClerkUserForAppUser(user, env);
+  try {
+    await ensureClerkUserForAppUser(user, env);
+  } catch (error) {
+    console.error("Failed to sync Clerk user during login eligibility", error);
+    return json(
+      {
+        error:
+          "Authentication service is unreachable. Check the API deployment or endpoint configuration.",
+      },
+      { status: 503 },
+    );
+  }
 
   return json(toAuthResponse(user));
 };

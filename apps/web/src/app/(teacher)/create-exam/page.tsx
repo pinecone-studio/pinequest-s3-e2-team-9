@@ -4,6 +4,7 @@ import { RoleGuard } from "@/components/role-guard";
 
 type CreateExamPageProps = {
   searchParams: Promise<{
+    bankId?: string;
     classId?: string;
     returnTo?: string;
   }>;
@@ -18,6 +19,7 @@ export default async function CreateExamPage({
     <RoleGuard allowedRoles={["TEACHER"]}>
       <AppShell contentClassName="px-6 pb-10 pt-6 sm:px-7 lg:px-8 lg:pb-12 lg:pt-8">
         <CreateExamContent
+          initialBankId={params.bankId}
           initialClassId={params.classId}
           returnTo={params.returnTo}
         />

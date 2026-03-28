@@ -22,7 +22,7 @@ export const findQuestionBankById = async (
 ): Promise<QuestionBankRow> => {
   const bank = await first<QuestionBankRow>(
     db,
-    "SELECT id, title, description, subject, owner_id, created_at FROM question_banks WHERE id = ?",
+    "SELECT id, title, description, grade, subject, topic, visibility, owner_id, created_at FROM question_banks WHERE id = ?",
     [id],
   );
   invariant(bank, `Question bank ${id} not found`);
@@ -61,6 +61,9 @@ const normalizeQuestionOptions = (
 ) =>
   type === "TRUE_FALSE" ? ["True", "False"] : type === "MCQ" ? options ?? [] : [];
 
+const questionBankSelectFields =
+  "id, title, description, grade, subject, topic, visibility, owner_id, created_at";
+
 type QuestionModuleDependencies = {
   db: D1DatabaseLike;
   requireActor: (context: RequestContext, roles: Role[]) => Promise<UserRow>;
@@ -80,15 +83,15 @@ export const createQuestionQueriesAndMutations = ({
       actor.role === "ADMIN"
         ? await all<QuestionBankRow>(
             db,
-            `SELECT id, title, description, subject, owner_id, created_at
+            `SELECT ${questionBankSelectFields}
              FROM question_banks
              ORDER BY created_at DESC`,
           )
         : await all<QuestionBankRow>(
             db,
-            `SELECT id, title, description, subject, owner_id, created_at
+            `SELECT ${questionBankSelectFields}
              FROM question_banks
-             WHERE owner_id = ?
+             WHERE visibility = 'PUBLIC' OR owner_id = ?
              ORDER BY created_at DESC`,
             [actor.id],
           );
@@ -100,16 +103,16 @@ export const createQuestionQueriesAndMutations = ({
       actor.role === "ADMIN"
         ? await first<QuestionBankRow>(
             db,
-            `SELECT id, title, description, subject, owner_id, created_at
+            `SELECT ${questionBankSelectFields}
              FROM question_banks
              WHERE id = ?`,
             [id],
           )
         : await first<QuestionBankRow>(
             db,
-            `SELECT id, title, description, subject, owner_id, created_at
+            `SELECT ${questionBankSelectFields}
              FROM question_banks
-             WHERE id = ? AND owner_id = ?`,
+             WHERE id = ? AND (visibility = 'PUBLIC' OR owner_id = ?)`,
             [id, actor.id],
           );
     return bank ? toQuestionBank(db, bank) : null;
@@ -172,7 +175,7 @@ export const createQuestionQueriesAndMutations = ({
                 q.created_at
               FROM questions q
               JOIN question_banks qb ON qb.id = q.bank_id
-              WHERE q.bank_id = ? AND qb.owner_id = ?
+              WHERE q.bank_id = ? AND (qb.visibility = 'PUBLIC' OR qb.owner_id = ?)
               ORDER BY q.created_at DESC`,
               [bankId, actor.id],
             )
@@ -192,14 +195,14 @@ export const createQuestionQueriesAndMutations = ({
                 q.created_at
               FROM questions q
               JOIN question_banks qb ON qb.id = q.bank_id
-              WHERE qb.owner_id = ?
+              WHERE qb.visibility = 'PUBLIC' OR qb.owner_id = ?
               ORDER BY q.created_at DESC`,
               [actor.id],
             );
     return rows.map((row) => toQuestion(db, row));
   },
   createQuestionBank: async (
-    { title, description }: CreateQuestionBankArgs,
+    { title, description, grade, subject, topic, visibility }: CreateQuestionBankArgs,
     context: RequestContext,
   ) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
@@ -208,9 +211,19 @@ export const createQuestionQueriesAndMutations = ({
 
     await run(
       db,
-      `INSERT INTO question_banks (id, title, description, subject, owner_id, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [id, title, description ?? null, "Асуултын сан", actor.id, createdAt],
+      `INSERT INTO question_banks (id, title, description, grade, subject, topic, visibility, owner_id, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        title,
+        description ?? null,
+        grade ?? 10,
+        subject?.trim() || "Ерөнхий",
+        topic?.trim() || "Ерөнхий",
+        visibility ?? "PRIVATE",
+        actor.id,
+        createdAt,
+      ],
     );
 
     return toQuestionBank(db, await findQuestionBankById(db, id));

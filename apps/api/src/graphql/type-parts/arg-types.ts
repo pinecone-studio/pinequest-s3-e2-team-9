@@ -1,12 +1,20 @@
 import type {
   Difficulty,
   ExamMode,
+  QuestionBankVisibility,
   QuestionType,
 } from "./model-types";
 
 export type HelloArgs = { name?: string };
 export type CreateClassArgs = { name: string; description?: string };
-export type CreateQuestionBankArgs = { title: string; description?: string };
+export type CreateQuestionBankArgs = {
+  title: string;
+  description?: string;
+  grade?: number;
+  subject?: string;
+  topic?: string;
+  visibility?: QuestionBankVisibility;
+};
 
 export type CreateQuestionArgs = {
   bankId: string;

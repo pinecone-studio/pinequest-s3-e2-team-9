@@ -18,7 +18,14 @@ export const schemaRootTypes = /* GraphQL */ `
 
   type Mutation {
     createClass(name: String!, description: String): Class!
-    createQuestionBank(title: String!, description: String): QuestionBank!
+    createQuestionBank(
+      title: String!
+      description: String
+      grade: Int = 10
+      subject: String = "Ерөнхий"
+      topic: String = "Ерөнхий"
+      visibility: QuestionBankVisibility = PRIVATE
+    ): QuestionBank!
     createQuestion(
       bankId: ID!
       type: QuestionType!

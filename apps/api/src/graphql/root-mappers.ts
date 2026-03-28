@@ -17,6 +17,24 @@ type MapperDependencies = {
 export const createEntityMappers = ({
   db, findClass, findExam, findQuestion, findQuestionBank, findUser,
 }: MapperDependencies) => {
+  const deriveBankTopics = async (bank: QuestionBankRow): Promise<string[]> => {
+    if (bank.topic !== "Ерөнхий") {
+      return [bank.topic];
+    }
+
+    const rows = await all<{ tags_json: string }>(
+      db,
+      "SELECT tags_json FROM questions WHERE bank_id = ? ORDER BY created_at DESC",
+      [bank.id],
+    );
+
+    return [...new Set(
+      rows
+        .flatMap((row) => parseJsonArray(row.tags_json))
+        .filter((tag) => tag && tag !== bank.subject && !tag.includes("анги")),
+    )];
+  };
+
   const toUser = (user: UserRow) => ({
     id: user.id,
     fullName: user.full_name,
@@ -74,7 +92,11 @@ export const createEntityMappers = ({
     id: bank.id,
     title: bank.title,
     description: bank.description,
+    grade: bank.grade,
     subject: bank.subject,
+    topic: bank.topic,
+    topics: async () => deriveBankTopics(bank),
+    visibility: bank.visibility,
     createdAt: bank.created_at,
     questionCount: async () => (await first<{ count: number | null }>(db, "SELECT COUNT(*) AS count FROM questions WHERE bank_id = ?", [bank.id]))?.count ?? 0,
     owner: async () => toUser(await findUser(db, bank.owner_id)),

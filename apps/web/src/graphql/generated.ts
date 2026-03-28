@@ -251,7 +251,11 @@ export type MutationCreateQuestionArgs = {
 
 export type MutationCreateQuestionBankArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
+  grade?: InputMaybe<Scalars['Int']['input']>;
+  subject?: InputMaybe<Scalars['String']['input']>;
   title: Scalars['String']['input'];
+  topic?: InputMaybe<Scalars['String']['input']>;
+  visibility?: InputMaybe<QuestionBankVisibility>;
 };
 
 
@@ -361,13 +365,22 @@ export type QuestionBank = {
   __typename?: 'QuestionBank';
   createdAt: Scalars['String']['output'];
   description?: Maybe<Scalars['String']['output']>;
+  grade: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
   owner: User;
   questionCount: Scalars['Int']['output'];
   questions: Array<Question>;
   subject: Scalars['String']['output'];
   title: Scalars['String']['output'];
+  topic: Scalars['String']['output'];
+  topics: Array<Scalars['String']['output']>;
+  visibility: QuestionBankVisibility;
 };
+
+export enum QuestionBankVisibility {
+  Private = 'PRIVATE',
+  Public = 'PUBLIC'
+}
 
 export enum QuestionType {
   Essay = 'ESSAY',
@@ -428,6 +441,18 @@ export type CreateExamMutationVariables = Exact<{
 
 
 export type CreateExamMutation = { __typename?: 'Mutation', createExam: { __typename?: 'Exam', id: string, title: string, status: ExamStatus, mode: ExamMode, durationMinutes: number, scheduledFor?: string | null, createdAt: string, class: { __typename?: 'Class', id: string, name: string } } };
+
+export type CreateQuestionBankMutationMutationVariables = Exact<{
+  title: Scalars['String']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  grade: Scalars['Int']['input'];
+  subject: Scalars['String']['input'];
+  topic: Scalars['String']['input'];
+  visibility: QuestionBankVisibility;
+}>;
+
+
+export type CreateQuestionBankMutationMutation = { __typename?: 'Mutation', createQuestionBank: { __typename?: 'QuestionBank', id: string, title: string, grade: number, subject: string, topic: string, visibility: QuestionBankVisibility } };
 
 export type CreateQuestionMutationMutationVariables = Exact<{
   bankId: Scalars['ID']['input'];
@@ -532,12 +557,12 @@ export type QuestionBankDetailQueryQueryVariables = Exact<{
 }>;
 
 
-export type QuestionBankDetailQueryQuery = { __typename?: 'Query', questionBank?: { __typename?: 'QuestionBank', id: string, title: string, description?: string | null, subject: string, questionCount: number, questions: Array<{ __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, difficulty: Difficulty, options: Array<string>, correctAnswer?: string | null, tags: Array<string> }> } | null };
+export type QuestionBankDetailQueryQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string } | null, questionBank?: { __typename?: 'QuestionBank', id: string, title: string, description?: string | null, grade: number, subject: string, topic: string, topics: Array<string>, visibility: QuestionBankVisibility, questionCount: number, owner: { __typename?: 'User', id: string, fullName: string }, questions: Array<{ __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, difficulty: Difficulty, options: Array<string>, correctAnswer?: string | null, tags: Array<string> }> } | null };
 
 export type QuestionBanksQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type QuestionBanksQueryQuery = { __typename?: 'Query', questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, description?: string | null, subject: string, questionCount: number, createdAt: string }> };
+export type QuestionBanksQueryQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string } | null, questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, description?: string | null, grade: number, subject: string, topic: string, topics: Array<string>, visibility: QuestionBankVisibility, questionCount: number, createdAt: string, owner: { __typename?: 'User', id: string, fullName: string } }> };
 
 export type StudentExamRoomQueryVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -724,6 +749,56 @@ export function useCreateExamMutation(baseOptions?: ApolloReactHooks.MutationHoo
 export type CreateExamMutationHookResult = ReturnType<typeof useCreateExamMutation>;
 export type CreateExamMutationResult = ApolloReactCommon.MutationResult<CreateExamMutation>;
 export type CreateExamMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateExamMutation, CreateExamMutationVariables>;
+export const CreateQuestionBankMutationDocument = gql`
+    mutation CreateQuestionBankMutation($title: String!, $description: String, $grade: Int!, $subject: String!, $topic: String!, $visibility: QuestionBankVisibility!) {
+  createQuestionBank(
+    title: $title
+    description: $description
+    grade: $grade
+    subject: $subject
+    topic: $topic
+    visibility: $visibility
+  ) {
+    id
+    title
+    grade
+    subject
+    topic
+    visibility
+  }
+}
+    `;
+export type CreateQuestionBankMutationMutationFn = ApolloReactCommon.MutationFunction<CreateQuestionBankMutationMutation, CreateQuestionBankMutationMutationVariables>;
+
+/**
+ * __useCreateQuestionBankMutationMutation__
+ *
+ * To run a mutation, you first call `useCreateQuestionBankMutationMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateQuestionBankMutationMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createQuestionBankMutationMutation, { data, loading, error }] = useCreateQuestionBankMutationMutation({
+ *   variables: {
+ *      title: // value for 'title'
+ *      description: // value for 'description'
+ *      grade: // value for 'grade'
+ *      subject: // value for 'subject'
+ *      topic: // value for 'topic'
+ *      visibility: // value for 'visibility'
+ *   },
+ * });
+ */
+export function useCreateQuestionBankMutationMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreateQuestionBankMutationMutation, CreateQuestionBankMutationMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<CreateQuestionBankMutationMutation, CreateQuestionBankMutationMutationVariables>(CreateQuestionBankMutationDocument, options);
+      }
+export type CreateQuestionBankMutationMutationHookResult = ReturnType<typeof useCreateQuestionBankMutationMutation>;
+export type CreateQuestionBankMutationMutationResult = ApolloReactCommon.MutationResult<CreateQuestionBankMutationMutation>;
+export type CreateQuestionBankMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateQuestionBankMutationMutation, CreateQuestionBankMutationMutationVariables>;
 export const CreateQuestionMutationDocument = gql`
     mutation CreateQuestionMutation($bankId: ID!, $type: QuestionType!, $title: String!, $prompt: String!, $options: [String!], $correctAnswer: String, $difficulty: Difficulty!, $tags: [String!]) {
   createQuestion(
@@ -1422,12 +1497,23 @@ export type MyExamsQuerySuspenseQueryHookResult = ReturnType<typeof useMyExamsQu
 export type MyExamsQueryQueryResult = ApolloReactCommon.QueryResult<MyExamsQueryQuery, MyExamsQueryQueryVariables>;
 export const QuestionBankDetailQueryDocument = gql`
     query QuestionBankDetailQuery($id: ID!) {
+  me {
+    id
+  }
   questionBank(id: $id) {
     id
     title
     description
+    grade
     subject
+    topic
+    topics
+    visibility
     questionCount
+    owner {
+      id
+      fullName
+    }
     questions {
       id
       title
@@ -1479,13 +1565,24 @@ export type QuestionBankDetailQuerySuspenseQueryHookResult = ReturnType<typeof u
 export type QuestionBankDetailQueryQueryResult = ApolloReactCommon.QueryResult<QuestionBankDetailQueryQuery, QuestionBankDetailQueryQueryVariables>;
 export const QuestionBanksQueryDocument = gql`
     query QuestionBanksQuery {
+  me {
+    id
+  }
   questionBanks {
     id
     title
     description
+    grade
     subject
+    topic
+    topics
+    visibility
     questionCount
     createdAt
+    owner {
+      id
+      fullName
+    }
   }
 }
     `;
