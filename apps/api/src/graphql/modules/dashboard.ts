@@ -106,8 +106,22 @@ export const createDashboardOverviewQuery = ({
              e.id,
              e.title,
              COUNT(a.id) AS attempt_count,
-             SUM(CASE WHEN totals.max_score > 0 AND a.total_score * 100 >= totals.max_score * 60 THEN 1 ELSE 0 END) AS pass_count,
-             SUM(CASE WHEN totals.max_score > 0 AND a.total_score * 100 < totals.max_score * 60 THEN 1 ELSE 0 END) AS fail_count,
+             SUM(
+               CASE
+                 WHEN totals.max_score <= 0 THEN 0
+                 WHEN e.passing_criteria_type = 'POINTS' AND a.total_score >= e.passing_threshold THEN 1
+                 WHEN e.passing_criteria_type = 'PERCENTAGE' AND a.total_score * 100 >= totals.max_score * e.passing_threshold THEN 1
+                 ELSE 0
+               END
+             ) AS pass_count,
+             SUM(
+               CASE
+                 WHEN totals.max_score <= 0 THEN 0
+                 WHEN e.passing_criteria_type = 'POINTS' AND a.total_score < e.passing_threshold THEN 1
+                 WHEN e.passing_criteria_type = 'PERCENTAGE' AND a.total_score * 100 < totals.max_score * e.passing_threshold THEN 1
+                 ELSE 0
+               END
+             ) AS fail_count,
              ROUND(
                AVG(
                  CASE

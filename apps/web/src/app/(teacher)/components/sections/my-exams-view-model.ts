@@ -1,4 +1,6 @@
+/* eslint-disable max-lines */
 import { AttemptStatus, ExamStatus, QuestionType } from "@/graphql/generated";
+import { getCurriculumTopicGroupName } from "../question-bank-curriculum";
 import type {
   MyExamQuestionPreview,
   MyExamStudentAnswer,
@@ -14,6 +16,7 @@ import {
   getAttemptLabel,
   getAttemptStatus,
   getExamStatus,
+  hasPassedExam,
 } from "./my-exams-view-model-utils";
 import { formatDateOnly } from "./my-exams-view-model-helpers";
 
@@ -49,7 +52,13 @@ const buildPreviewQuestions = (exam: QueryExam): MyExamQuestionPreview[] =>
     .sort((first, second) => first.order - second.order)
     .map((item) => ({
       id: item.question.id,
+      order: item.order,
       prompt: item.question.prompt || item.question.title,
+      topic: getCurriculumTopicGroupName(
+        exam.class.grade,
+        exam.class.subject,
+        item.question.bank.topic || "Ерөнхий сэдэв",
+      ),
       kind:
         item.question.type === QuestionType.Mcq ||
         item.question.type === QuestionType.TrueFalse
@@ -123,7 +132,13 @@ export const buildMyExamViews = (exams: QueryExam[]): MyExamView[] =>
       });
 
       const passed = submittedAttempts.filter(
-        (attempt) => calculatePercent(attempt.totalScore, totalPoints) >= 60,
+        (attempt) =>
+          hasPassedExam(
+            attempt.totalScore,
+            totalPoints,
+            exam.passingCriteriaType,
+            exam.passingThreshold,
+          ),
       ).length;
 
       const average = submittedAttempts.length
@@ -159,9 +174,12 @@ export const buildMyExamViews = (exams: QueryExam[]): MyExamView[] =>
         title: exam.title,
         subject: exam.class.name,
         subjectName: exam.class.subject,
+        classGrade: exam.class.grade,
         createdDateLabel: formatDateOnly(exam.createdAt),
         questionCount: exam.questions.length,
         totalPoints,
+        passingCriteriaType: exam.passingCriteriaType,
+        passingThreshold: exam.passingThreshold,
         secondaryLabel:
           exam.status === ExamStatus.Draft
             ? "Хувийн сан"

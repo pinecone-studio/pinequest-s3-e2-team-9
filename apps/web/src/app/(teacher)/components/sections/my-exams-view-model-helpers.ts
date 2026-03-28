@@ -3,6 +3,7 @@ import {
   ExamStatus,
   QuestionType,
 } from "@/graphql/generated";
+import { getCurriculumTopicGroupName } from "../question-bank-curriculum";
 import type { MyExamQuestionPreview, QueryExam } from "./my-exams-types";
 
 export const formatDate = (value: string | null | undefined) => {
@@ -95,7 +96,13 @@ export const buildPreviewQuestions = (exam: QueryExam): MyExamQuestionPreview[] 
     .sort((first, second) => first.order - second.order)
     .map((item) => ({
       id: item.id,
+      order: item.order,
       prompt: item.question.prompt || item.question.title,
+      topic: getCurriculumTopicGroupName(
+        exam.class.grade,
+        exam.class.subject,
+        item.question.bank.topic || "Ерөнхий сэдэв",
+      ),
       kind:
         item.question.type === QuestionType.Mcq ||
         item.question.type === QuestionType.TrueFalse

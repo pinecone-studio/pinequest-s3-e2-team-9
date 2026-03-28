@@ -107,6 +107,7 @@ export function ExamResultsDialog({
       <ExamResultsStudentDetailDialog
         open={Boolean(selectedStudent)}
         student={selectedStudent}
+        exam={exam}
         onClose={() => setSelectedStudent(null)}
       />
       <ExamResultsReportDialog

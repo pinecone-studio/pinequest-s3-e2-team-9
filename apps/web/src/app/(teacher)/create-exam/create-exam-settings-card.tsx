@@ -1,11 +1,23 @@
+/* eslint-disable max-lines */
 "use client";
 
-import { useMemo, useState } from "react";
-import type { SelectedQuestionPoints } from "./create-exam-types";
+import { useMemo } from "react";
+import { PassingCriteriaType } from "@/graphql/generated";
+import type {
+  CreateExamFieldErrors,
+  CreateExamFormValues,
+  SelectedQuestionPoints,
+} from "./create-exam-types";
 
 type CreateExamSettingsCardProps = {
   disabled: boolean;
+  values: CreateExamFormValues;
+  errors: CreateExamFieldErrors;
   selectedQuestionPoints: SelectedQuestionPoints;
+  onFieldChange: <K extends keyof CreateExamFormValues>(
+    field: K,
+    value: CreateExamFormValues[K],
+  ) => void;
 };
 
 const BOX_CLASS =
@@ -64,27 +76,36 @@ function ToggleBox({ title, description, checked, disabled, onChange }: {
 
 export function CreateExamSettingsCard({
   disabled,
+  values,
+  errors,
   selectedQuestionPoints,
+  onFieldChange,
 }: CreateExamSettingsCardProps) {
-  const [passingPercentage, setPassingPercentage] = useState("40");
-  const [shuffleQuestions, setShuffleQuestions] = useState(false);
-  const [shuffleAnswers, setShuffleAnswers] = useState(false);
   const totalPoints = useMemo(
     () => totalFromPoints(selectedQuestionPoints),
     [selectedQuestionPoints],
   );
-  const requiredPercent = Math.min(100, Math.max(0, Number(passingPercentage) || 0));
-  const passingScore = Math.ceil((totalPoints * requiredPercent) / 100);
+  const passingThreshold = Math.max(0, Number(values.passingThreshold) || 0);
+  const requiredPercent =
+    values.passingCriteriaType === PassingCriteriaType.Percentage
+      ? Math.min(100, passingThreshold)
+      : totalPoints > 0
+        ? Math.min(100, Math.round((passingThreshold / totalPoints) * 100))
+        : 0;
+  const passingScore =
+    values.passingCriteriaType === PassingCriteriaType.Percentage
+      ? Math.ceil((totalPoints * requiredPercent) / 100)
+      : Math.min(totalPoints, passingThreshold);
 
   return (
     <section className="flex flex-col gap-3 self-stretch rounded-[12px] border border-[#DFE1E5] bg-white p-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <SectionIcon type="chart" />
-          <h2 className="text-[14px] font-medium leading-5 text-[#0F1216]">Exam Scoring</h2>
+          <h2 className="text-[14px] font-medium leading-5 text-[#0F1216]">Шалгалтын үнэлгээ</h2>
         </div>
         <div className="text-right">
-          <p className="text-[12px] leading-4 text-[#52555B]">Total Points</p>
+          <p className="text-[12px] leading-4 text-[#52555B]">Нийт оноо</p>
           <p className="text-[24px] font-bold leading-8 text-[#6F90FF]">{totalPoints}</p>
         </div>
       </div>
@@ -93,41 +114,63 @@ export function CreateExamSettingsCard({
         <div className="grid gap-3 md:grid-cols-2">
           <label className="space-y-2">
             <span className="block text-[12px] font-medium leading-4 text-[#52555B]">
-              Passing Criteria
+              Тэнцэх шалгуур
             </span>
-            <div className="flex h-9 w-[123px] items-center justify-between rounded-[6px] border border-[#DFE1E5] px-3 shadow-[0px_1px_2px_rgba(0,0,0,0.05)]">
-              <span className="text-[14px] leading-5 text-[#0F1216]">Percentage</span>
-              <span className="text-[#52555B] opacity-50">⌄</span>
-            </div>
+            <label className="relative block w-[123px]">
+              <select
+                value={values.passingCriteriaType}
+                onChange={(event) =>
+                  onFieldChange(
+                    "passingCriteriaType",
+                    event.target.value as PassingCriteriaType,
+                  )
+                }
+                disabled={disabled}
+                className="h-9 w-[123px] appearance-none rounded-[6px] border border-[#DFE1E5] px-3 pr-8 text-[14px] leading-5 text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] outline-none"
+              >
+                <option value={PassingCriteriaType.Percentage}>Хувь</option>
+                <option value={PassingCriteriaType.Points}>Оноо</option>
+              </select>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#52555B] opacity-50">⌄</span>
+            </label>
           </label>
 
           <label className="space-y-2">
             <span className="block text-[12px] font-medium leading-4 text-[#52555B]">
-              Passing Percentage
+              {values.passingCriteriaType === PassingCriteriaType.Percentage
+                ? "Тэнцэх хувь"
+                : "Тэнцэх оноо"}
             </span>
             <div className="flex items-center gap-2">
               <input
-                value={passingPercentage}
-                onChange={(event) => setPassingPercentage(event.target.value)}
+                value={values.passingThreshold}
+                onChange={(event) => onFieldChange("passingThreshold", event.target.value)}
                 disabled={disabled}
                 inputMode="numeric"
                 className="h-9 flex-1 rounded-[6px] border border-[#DFE1E5] px-[11.8px] text-[14px] leading-[18px] text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] outline-none"
               />
-              <span className="text-[14px] leading-5 text-[#52555B]">%</span>
+              <span className="text-[14px] leading-5 text-[#52555B]">
+                {values.passingCriteriaType === PassingCriteriaType.Percentage ? "%" : "оноо"}
+              </span>
             </div>
+            {errors.passingThreshold ? (
+              <span className="block text-[12px] text-[#B42318]">
+                {errors.passingThreshold}
+              </span>
+            ) : null}
           </label>
         </div>
 
         <div className="rounded-[8px] border border-[rgba(111,144,255,0.2)] bg-[rgba(111,144,255,0.1)] px-[15.8px] py-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-[12px] leading-4 text-[#52555B]">Passing Score</p>
+              <p className="text-[12px] leading-4 text-[#52555B]">Тэнцэх оноо</p>
               <p className="mt-1 text-[18px] font-semibold leading-7 text-[#0F1216]">
                 {passingScore} / {totalPoints}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[12px] leading-4 text-[#52555B]">Required</p>
+              <p className="text-[12px] leading-4 text-[#52555B]">Шаардлагатай</p>
               <p className="mt-1 text-[18px] font-semibold leading-7 text-[#6F90FF]">
                 {requiredPercent}%
               </p>
@@ -138,23 +181,23 @@ export function CreateExamSettingsCard({
 
       <div className="flex items-center gap-2">
         <SectionIcon type="settings" />
-        <h3 className="text-[14px] font-medium leading-5 text-[#0F1216]">Exam Settings</h3>
+        <h3 className="text-[14px] font-medium leading-5 text-[#0F1216]">Шалгалтын тохиргоо</h3>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
         <ToggleBox
-          title="Shuffle Questions"
-          description="Randomize question order"
-          checked={shuffleQuestions}
+          title="Асуултуудыг холих"
+          description="Шалгалтын асуултуудын дарааллыг санамсаргүй болгоно"
+          checked={values.shuffleQuestions}
           disabled={disabled}
-          onChange={setShuffleQuestions}
+          onChange={(value) => onFieldChange("shuffleQuestions", value)}
         />
         <ToggleBox
-          title="Shuffle Answers"
-          description="Randomize MCQ options"
-          checked={shuffleAnswers}
+          title="Сонголтуудыг холих"
+          description="Сонголттой асуултын хувилбаруудын дарааллыг санамсаргүй болгоно"
+          checked={values.shuffleAnswers}
           disabled={disabled}
-          onChange={setShuffleAnswers}
+          onChange={(value) => onFieldChange("shuffleAnswers", value)}
         />
       </div>
     </section>

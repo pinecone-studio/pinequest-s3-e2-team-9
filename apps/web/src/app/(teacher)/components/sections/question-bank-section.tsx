@@ -6,15 +6,18 @@ import { useQuestionBanksQueryQuery } from "@/graphql/generated";
 import { PlusIcon } from "../icons";
 import {
   getCurriculumGrades,
+  getCurriculumTopicGroupName,
   getCurriculumSubjects,
-  getCurriculumTopics,
+  getCurriculumTopicGroups,
 } from "../question-bank-curriculum";
 import {
   formatQuestionBankDate,
   type QuestionBankItem,
 } from "../question-bank-utils";
+import { TeacherBackButton } from "../teacher-back-button";
 import { QuestionBankCreateDialog } from "./question-bank-create-dialog";
 import {
+  QuestionBankBrowseGrid,
   QuestionBankEmptyState,
   QuestionBankFilterPanel,
   QuestionBankGrid,
@@ -44,11 +47,15 @@ const mapQuestionBankItems = (
   banks.map((bank) => ({
     id: bank.id,
     title: bank.title,
+    displayTitle:
+      bank.topic !== "Ерөнхий" ? bank.topic : bank.topics[0] ?? bank.title,
     description: bank.description ?? "Тайлбар оруулаагүй асуултын сан",
     grade: bank.grade,
     subject: bank.subject,
     topic: bank.topic,
+    categoryLabel: `${bank.grade}-р анги ${bank.subject}`,
     topics: bank.topics,
+    subtopics: bank.topic !== "Ерөнхий" ? [bank.topic] : bank.topics,
     visibility: bank.visibility,
     ownerId: bank.owner.id,
     ownerName: bank.owner.fullName,
@@ -127,7 +134,9 @@ export function QuestionBankSection() {
     }
 
     const numericGrade = Number(grade);
-    const fromCurriculum = getCurriculumTopics(numericGrade, subject);
+    const fromCurriculum = getCurriculumTopicGroups(numericGrade, subject).map(
+      (entry) => entry.name,
+    );
     const fromBanks = scopedItems
       .filter((item) => item.grade === numericGrade && item.subject === subject)
       .flatMap((item) => (item.topic !== "Ерөнхий" ? [item.topic] : item.topics));
@@ -135,11 +144,25 @@ export function QuestionBankSection() {
     return [...new Set([...fromCurriculum, ...fromBanks])];
   }, [grade, scopedItems, subject]);
 
+  const topicGroups = useMemo(() => {
+    if (!grade || !subject) {
+      return [];
+    }
+
+    return getCurriculumTopicGroups(Number(grade), subject);
+  }, [grade, subject]);
+
+  const topicGroupMap = useMemo(
+    () => new Map(topicGroups.map((entry) => [entry.name, entry.topics])),
+    [topicGroups],
+  );
+
   const filteredItems = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
     return scopedItems.filter((item) => {
       const topicValues = item.topic !== "Ерөнхий" ? [item.topic] : item.topics;
+      const selectedTopicMembers = topic ? topicGroupMap.get(topic) ?? [topic] : [];
       const matchesSearch =
         !keyword ||
         `${item.title} ${item.description} ${item.subject} ${topicValues.join(" ")} ${item.ownerName}`
@@ -147,17 +170,118 @@ export function QuestionBankSection() {
           .includes(keyword);
       const matchesGrade = !grade || item.grade === Number(grade);
       const matchesSubject = !subject || item.subject === subject;
-      const matchesTopic = !topic || topicValues.includes(topic);
+      const matchesTopic =
+        !topic || topicValues.some((value) => selectedTopicMembers.includes(value));
 
       return matchesSearch && matchesGrade && matchesSubject && matchesTopic;
     });
-  }, [grade, scopedItems, search, subject, topic]);
+  }, [grade, scopedItems, search, subject, topic, topicGroupMap]);
+
+  const groupedCategoryItems = useMemo(() => {
+    if (!grade || !subject || topic) {
+      return [];
+    }
+
+    const grouped = new Map<
+      string,
+      QuestionBankItem & { questionCountNumber: number; bankCount: number }
+    >();
+
+    for (const item of filteredItems) {
+      const topicValues = item.topic !== "Ерөнхий" ? [item.topic] : item.topics;
+      const primaryTopic = topicValues[0] ?? item.displayTitle;
+      const groupName = getCurriculumTopicGroupName(Number(grade), subject, primaryTopic);
+      const current = grouped.get(groupName) ?? {
+        ...item,
+        id: `group:${groupName}`,
+        title: groupName,
+        displayTitle: groupName,
+        description: `${groupName} сэдэвт хамаарах сангуудыг нэгтгэн харуулж байна.`,
+        subtopics: [],
+        ownerName: "",
+        questions: "0 асуулт",
+        questionCountNumber: 0,
+        bankCount: 0,
+      };
+
+      current.bankCount += 1;
+      const questionCount = Number.parseInt(item.questions, 10);
+      current.questionCountNumber += Number.isFinite(questionCount) ? questionCount : 0;
+      current.questions = `${current.questionCountNumber} асуулт`;
+      current.ownerName = `${current.bankCount} сан нэгтгэсэн`;
+      current.subtopics = [
+        ...new Set([...(current.subtopics ?? []), ...topicValues]),
+      ];
+      grouped.set(groupName, current);
+    }
+
+    return [...grouped.values()]
+      .sort((left, right) => left.displayTitle.localeCompare(right.displayTitle, "mn"))
+      .map(({ questionCountNumber: _questionCountNumber, bankCount: _bankCount, ...item }) => item);
+  }, [filteredItems, grade, subject, topic]);
+
+  const categoryBrowseItems = useMemo(() => {
+    if (grade) {
+      return [];
+    }
+
+    const keyword = search.trim().toLowerCase();
+    const itemsByCategory = new Map<
+      string,
+      { key: string; label: string; subtitle: string; bankCount: number }
+    >();
+
+    for (const item of scopedItems) {
+      const key = `${item.grade}:${item.subject}`;
+      const current = itemsByCategory.get(key) ?? {
+        key,
+        label: `${item.grade}-р анги ${item.subject}`,
+        subtitle: "",
+        bankCount: 0,
+      };
+      current.bankCount += 1;
+      current.subtitle = `${current.bankCount} сан`;
+      itemsByCategory.set(key, current);
+    }
+
+    return [...itemsByCategory.values()]
+      .filter((item) => !keyword || item.label.toLowerCase().includes(keyword))
+      .sort((left, right) => left.label.localeCompare(right.label, "mn"));
+  }, [grade, scopedItems, search]);
+
+  const subjectBrowseItems = useMemo(() => {
+    if (!grade || subject) {
+      return [];
+    }
+
+    const keyword = search.trim().toLowerCase();
+    const itemsBySubject = new Map<
+      string,
+      { key: string; label: string; subtitle: string; bankCount: number }
+    >();
+
+    for (const item of scopedItems.filter((entry) => entry.grade === Number(grade))) {
+      const current = itemsBySubject.get(item.subject) ?? {
+        key: item.subject,
+        label: item.subject,
+        subtitle: "",
+        bankCount: 0,
+      };
+      current.bankCount += 1;
+      current.subtitle = `${current.bankCount} сан`;
+      itemsBySubject.set(item.subject, current);
+    }
+
+    return [...itemsBySubject.values()]
+      .filter((item) => !keyword || item.label.toLowerCase().includes(keyword))
+      .sort((left, right) => left.label.localeCompare(right.label, "mn"));
+  }, [grade, scopedItems, search, subject]);
 
   const selectedPathLabel = useMemo(() => {
     const path = [
       grade ? `${grade}-р анги` : "Анги",
       subject || "Хичээл",
-      topic || "Дэд сэдэв",
+      topic || "Бүх дэд сэдэв",
     ];
 
     return path.join(" / ");
@@ -167,13 +291,16 @@ export function QuestionBankSection() {
     <>
       <section className="mx-auto w-full max-w-[1120px] space-y-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
+          <div className="space-y-3">
+            <TeacherBackButton fallbackHref="/" />
+            <div>
             <h1 className="text-[24px] font-semibold text-[#0F1216]">
               Асуултын сан
             </h1>
             <p className="mt-1 text-[14px] text-[#52555B]">
-              Эхлээд анги, дараа нь хичээл, дараа нь дэд сэдвээ сонгоод тухайн сэдвийн банкууд дээр ажиллана.
+              Эхлээд анги, дараа нь хичээлээ сонгоно. Ижил утгатай дэд сэдвүүдийг нэгтгэн харуулж, хүсвэл дэд сэдвээр нь нэмж шүүнэ.
             </p>
+            </div>
           </div>
           <button
             type="button"
@@ -225,7 +352,37 @@ export function QuestionBankSection() {
           <p className="text-[14px] text-[#B42318]">{itemsState.errorMessage}</p>
         ) : null}
 
-        {!loading && !itemsState.errorMessage && !filteredItems.length ? (
+        {!loading && !itemsState.errorMessage && !grade && categoryBrowseItems.length ? (
+          <QuestionBankBrowseGrid
+            title="Категориуд"
+            description="Анги, хичээлээр ангилсан сангийн category-оос сонгоно уу."
+            items={categoryBrowseItems}
+            onSelect={(value) => {
+              const [nextGrade, nextSubject] = value.split(":");
+              setGrade(nextGrade ?? "");
+              setSubject(nextSubject ?? "");
+              setTopic("");
+            }}
+          />
+        ) : null}
+
+        {!loading && !itemsState.errorMessage && grade && !subject && subjectBrowseItems.length ? (
+          <QuestionBankBrowseGrid
+            title={`${grade}-р ангийн хичээлүүд`}
+            description="Энэ ангийн category дотроос хичээлээ сонгоно уу."
+            items={subjectBrowseItems}
+            onSelect={(value) => {
+              setSubject(value);
+              setTopic("");
+            }}
+          />
+        ) : null}
+
+        {!loading &&
+        !itemsState.errorMessage &&
+        !filteredItems.length &&
+        !categoryBrowseItems.length &&
+        !subjectBrowseItems.length ? (
           <QuestionBankEmptyState
             grade={grade}
             subject={subject}
@@ -235,11 +392,16 @@ export function QuestionBankSection() {
           />
         ) : null}
 
-        <QuestionBankGrid
-          items={filteredItems}
-          loading={loading}
-          skeletons={QUESTION_BANK_SKELETONS}
-        />
+        {grade && subject ? (
+          <QuestionBankGrid
+            items={topic ? filteredItems : groupedCategoryItems}
+            loading={loading}
+            skeletons={QUESTION_BANK_SKELETONS}
+            categoryLabel={grade && subject ? `${grade}-р анги ${subject}` : ""}
+            showCategoryContext={Boolean(grade && subject)}
+            onSelectItem={topic ? undefined : (item) => setTopic(item.displayTitle)}
+          />
+        ) : null}
       </section>
 
       {createOpen ? (

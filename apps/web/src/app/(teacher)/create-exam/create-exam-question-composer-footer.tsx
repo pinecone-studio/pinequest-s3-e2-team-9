@@ -50,7 +50,7 @@ export function CreateExamQuestionComposerFooter({
             onChange={(event) => onToggleSave(event.target.checked)}
             disabled={disabled || loading}
           />
-          <span>Save this question to Question Bank</span>
+          <span>Энэ асуултыг асуултын санд хадгалах</span>
         </label>
         {bankSummary ? <p className="text-[13px] text-[#667085]">{bankSummary}</p> : null}
         {errorMessage ? <p className="text-[13px] text-[#B42318]">{errorMessage}</p> : null}
@@ -64,7 +64,7 @@ export function CreateExamQuestionComposerFooter({
           disabled={disabled || loading}
         >
           <FromBankIcon />
-          From Bank
+          Сангаас сонгох
         </button>
         <div className="flex items-start gap-2 self-end">
           <button
@@ -73,7 +73,7 @@ export function CreateExamQuestionComposerFooter({
             onClick={onCancel}
             disabled={disabled || loading}
           >
-            Cancel
+            Болих
           </button>
           <button
             type="button"
@@ -82,7 +82,7 @@ export function CreateExamQuestionComposerFooter({
             disabled={disabled || loading}
           >
             <SparkleIcon />
-            {loading ? "Adding..." : "Add Question"}
+            {loading ? "Нэмж байна..." : "Асуулт нэмэх"}
           </button>
         </div>
       </div>

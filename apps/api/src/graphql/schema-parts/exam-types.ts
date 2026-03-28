@@ -19,6 +19,10 @@ export const schemaExamTypes = /* GraphQL */ `
     startedAt: String
     endsAt: String
     scheduledFor: String
+    shuffleQuestions: Boolean!
+    shuffleAnswers: Boolean!
+    passingCriteriaType: PassingCriteriaType!
+    passingThreshold: Int!
     questions: [ExamQuestion!]!
     createdBy: User!
     attempts: [Attempt!]!

@@ -1,4 +1,10 @@
-import { AttemptStatus, ExamStatus, QuestionType } from "@/graphql/generated";
+import {
+  AttemptStatus,
+  ExamStatus,
+  PassingCriteriaType,
+  QuestionType,
+} from "@/graphql/generated";
+import { getCurriculumTopicGroupName } from "../question-bank-curriculum";
 import { CalendarIcon, ClipboardIcon, ClockIcon } from "../icons";
 import type { ExamMetaItem, MyExamQuestionPreview, QueryExam } from "./my-exams-types";
 
@@ -40,6 +46,16 @@ export const getAttemptLabel = (status: AttemptStatus) =>
 export const calculatePercent = (score: number, total: number) =>
   total > 0 ? Math.round((score / total) * 100) : 0;
 
+export const hasPassedExam = (
+  score: number,
+  total: number,
+  passingCriteriaType: PassingCriteriaType,
+  passingThreshold: number,
+) =>
+  passingCriteriaType === PassingCriteriaType.Points
+    ? score >= passingThreshold
+    : calculatePercent(score, total) >= passingThreshold;
+
 export const formatAnswerValue = (type: QuestionType, value: string) => {
   if (type === QuestionType.TrueFalse) {
     return value === "true" ? "Үнэн" : value === "false" ? "Худал" : value;
@@ -79,7 +95,13 @@ export const buildPreviewQuestions = (exam: QueryExam): MyExamQuestionPreview[] 
     .sort((first, second) => first.order - second.order)
     .map((item) => ({
       id: item.question.id,
+      order: item.order,
       prompt: item.question.prompt || item.question.title,
+      topic: getCurriculumTopicGroupName(
+        exam.class.grade,
+        exam.class.subject,
+        item.question.bank.topic || "Ерөнхий сэдэв",
+      ),
       kind:
         item.question.type === QuestionType.Mcq ||
         item.question.type === QuestionType.TrueFalse

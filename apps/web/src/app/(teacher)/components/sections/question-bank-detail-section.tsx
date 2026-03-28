@@ -7,7 +7,8 @@ import {
   useMyExamsQueryQuery,
   useQuestionBankDetailQueryQuery,
 } from "@/graphql/generated";
-import { ArrowLeftIcon, PlusIcon } from "../icons";
+import { PlusIcon } from "../icons";
+import { TeacherBackButton } from "../teacher-back-button";
 import { QuestionBankDetailTable } from "./question-bank-detail-table";
 import { QuestionBankDetailFilters } from "./question-bank-detail-filters";
 import {
@@ -107,9 +108,9 @@ export function QuestionBankDetailSection({
     <section className="mx-auto w-full max-w-[1120px] space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex items-start gap-4">
-          <Link href="/question-bank" className="mt-1 cursor-pointer rounded-md p-2 text-[#0F1216] hover:bg-white">
-            <ArrowLeftIcon className="h-4 w-4" />
-          </Link>
+          <div className="mt-0.5">
+            <TeacherBackButton fallbackHref="/question-bank" />
+          </div>
           <div>
             <h1 className="text-[24px] font-semibold text-[#0F1216]">
               {loading ? (

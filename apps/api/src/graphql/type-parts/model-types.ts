@@ -11,6 +11,7 @@ export type ExamMode = "SCHEDULED" | "OPEN_WINDOW";
 export type ExamStatus = "DRAFT" | "PUBLISHED" | "CLOSED";
 export type AttemptStatus = "IN_PROGRESS" | "SUBMITTED" | "GRADED";
 export type ClassStudentStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+export type PassingCriteriaType = "PERCENTAGE" | "POINTS";
 
 export type UserRow = {
   id: string;
@@ -70,6 +71,10 @@ export type ExamRow = {
   ends_at: string | null;
   created_by_id: string;
   scheduled_for: string | null;
+  shuffle_questions: number;
+  shuffle_answers: number;
+  passing_criteria_type: PassingCriteriaType;
+  passing_threshold: number;
   created_at: string;
 };
 

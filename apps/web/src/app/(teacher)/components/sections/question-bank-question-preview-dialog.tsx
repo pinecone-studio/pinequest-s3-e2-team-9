@@ -78,6 +78,15 @@ export function QuestionBankQuestionPreviewDialog({
               <p className="mt-2 text-[12px] text-[#52555B]">Хүлцэл: {tolerance}</p>
             ) : null}
           </section>
+          <div className="flex justify-end border-t border-[#DFE1E5] pt-4">
+            <button
+              type="button"
+              className="inline-flex h-9 items-center justify-center rounded-md px-4 text-[14px] font-medium text-[#0F1216]"
+              onClick={onClose}
+            >
+              Буцах
+            </button>
+          </div>
         </div>
       </div>
     </div>

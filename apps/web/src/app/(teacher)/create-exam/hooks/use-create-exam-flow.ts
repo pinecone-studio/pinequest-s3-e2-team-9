@@ -10,9 +10,9 @@ import {
 } from "@/graphql/generated";
 import {
   parseDurationMinutes,
+  validateCreateExamForm,
   toScheduledForIso,
   toSelectedQuestionsPayload,
-  validateCreateExamForm,
 } from "../create-exam-validation";
 import {
   EMPTY_ERRORS,
@@ -138,6 +138,7 @@ export const useCreateExamFlow = (
       return null;
     }
     const selectedQuestions = toSelectedQuestionsPayload(selectedQuestionPoints);
+    const passingThreshold = Number.parseInt(formValues.passingThreshold.trim(), 10);
     setErrors(EMPTY_ERRORS);
     setSubmitState({ status: "idle" });
     try {
@@ -149,6 +150,10 @@ export const useCreateExamFlow = (
           mode: formValues.mode,
           durationMinutes,
           scheduledFor,
+          shuffleQuestions: formValues.shuffleQuestions,
+          shuffleAnswers: formValues.shuffleAnswers,
+          passingCriteriaType: formValues.passingCriteriaType,
+          passingThreshold,
         },
       });
       const createdExam = createResult.data?.createExam;
@@ -186,6 +191,8 @@ export const useCreateExamFlow = (
         ...INITIAL_FORM_VALUES,
         classId: previous.classId,
         mode: previous.mode,
+        shuffleQuestions: previous.shuffleQuestions,
+        shuffleAnswers: previous.shuffleAnswers,
       }));
       setSelectedQuestionPoints({});
       await optionsQuery.refetch();

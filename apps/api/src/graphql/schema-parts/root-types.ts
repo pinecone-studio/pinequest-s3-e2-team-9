@@ -54,6 +54,10 @@ export const schemaRootTypes = /* GraphQL */ `
       mode: ExamMode = SCHEDULED
       durationMinutes: Int!
       scheduledFor: String
+      shuffleQuestions: Boolean = false
+      shuffleAnswers: Boolean = false
+      passingCriteriaType: PassingCriteriaType = PERCENTAGE
+      passingThreshold: Int = 40
     ): Exam!
     assignExamToClass(examId: ID!, classId: ID!): Exam!
     addQuestionToExam(examId: ID!, questionId: ID!, points: Int!): Exam!
