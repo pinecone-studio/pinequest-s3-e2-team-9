@@ -1,6 +1,7 @@
 import type {
   Difficulty,
   ExamMode,
+  PassingCriteriaType,
   QuestionBankVisibility,
   QuestionType,
 } from "./model-types";
@@ -49,6 +50,10 @@ export type CreateExamArgs = {
   mode?: ExamMode;
   durationMinutes: number;
   scheduledFor?: string;
+  shuffleQuestions?: boolean;
+  shuffleAnswers?: boolean;
+  passingCriteriaType?: PassingCriteriaType;
+  passingThreshold?: number;
 };
 
 export type AddQuestionToExamArgs = {

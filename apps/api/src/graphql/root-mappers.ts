@@ -78,7 +78,7 @@ export const createEntityMappers = ({
         await closeExpiredExams(db),
         await all<ExamRow>(
           db,
-          `SELECT id, class_id, is_template, source_exam_id, title, description, mode, status, duration_minutes, started_at, ends_at, created_by_id, scheduled_for, created_at
+          `SELECT id, class_id, is_template, source_exam_id, title, description, mode, status, duration_minutes, started_at, ends_at, created_by_id, scheduled_for, shuffle_questions, shuffle_answers, passing_criteria_type, passing_threshold, created_at
            FROM exams
            WHERE class_id = ? AND COALESCE(is_template, 0) = 0
            ORDER BY created_at DESC`,
@@ -175,6 +175,10 @@ export const createEntityMappers = ({
     startedAt: exam.started_at,
     endsAt: exam.ends_at,
     scheduledFor: exam.scheduled_for,
+    shuffleQuestions: Boolean(exam.shuffle_questions),
+    shuffleAnswers: Boolean(exam.shuffle_answers),
+    passingCriteriaType: exam.passing_criteria_type,
+    passingThreshold: exam.passing_threshold,
     createdAt: exam.created_at,
     class: async () => toClass(await findClass(db, exam.class_id)),
     questions: async () =>

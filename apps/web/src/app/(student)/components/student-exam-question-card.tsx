@@ -64,7 +64,7 @@ export function StudentExamQuestionCard({
 
         {isShortAnswer ? <input className="h-12 w-full rounded-[14px] border border-[#D0D5DD] px-4 text-[14px] outline-none focus:border-[#2466D0]" disabled={!isInProgress} onChange={(event) => onChange(event.target.value)} placeholder="Хариултаа оруулна уу" type="text" value={draftValue} /> : null}
         {isEssay ? <textarea className="min-h-[140px] w-full rounded-[14px] border border-[#D0D5DD] px-4 py-3 text-[14px] outline-none focus:border-[#2466D0]" disabled={!isInProgress} onChange={(event) => onChange(event.target.value)} placeholder="Дэлгэрэнгүй хариултаа энд бичнэ үү" value={draftValue} /> : null}
-        {isImageUpload ? <div className="rounded-[14px] border border-dashed border-[#D0D5DD] bg-[#F8FAFF] px-4 py-5 text-[14px] leading-6 text-[#667085]">Зураг upload төрлийн асуултын UI энэ MVP-д хараахан холбогдоогүй. Хэрэв ийм асуулт байвал дараагийн алхмаар file upload route холбоно.</div> : null}
+        {isImageUpload ? <div className="rounded-[14px] border border-dashed border-[#D0D5DD] bg-[#F8FAFF] px-4 py-5 text-[14px] leading-6 text-[#667085]">Зураг оруулах төрлийн асуултын хэсэг энэ MVP-д хараахан холбогдоогүй. Хэрэв ийм асуулт байвал дараагийн алхмаар файл оруулах урсгалыг холбоно.</div> : null}
       </div>
 
       {!isImageUpload ? <SaveStatus isDirty={isDirty} isInProgress={isInProgress} isSaving={isSaving} saveError={saveError} savedValue={savedValue} /> : null}

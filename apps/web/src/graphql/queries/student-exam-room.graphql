@@ -12,6 +12,10 @@ query StudentExamRoom($id: ID!) {
     startedAt
     endsAt
     scheduledFor
+    shuffleQuestions
+    shuffleAnswers
+    passingCriteriaType
+    passingThreshold
     createdAt
     class {
       id

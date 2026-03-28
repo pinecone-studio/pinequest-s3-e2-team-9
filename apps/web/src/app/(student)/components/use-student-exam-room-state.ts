@@ -13,6 +13,7 @@ import {
 import { formatRemaining, getExamEnd, getExamStart, parseDate } from "./student-home-time";
 import { useStudentExamAutoSave } from "./use-student-exam-auto-save";
 import { useLiveExamEvents } from "./use-live-exam-events";
+import { applyStudentExamShuffle } from "./student-exam-shuffle";
 import type { StudentExamRoomState } from "./student-exam-room-types";
 
 export function useStudentExamRoomState(examId: string): StudentExamRoomState {
@@ -35,7 +36,7 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const exam = query.data?.exam ?? null;
+  const exam = query.data?.exam ? applyStudentExamShuffle(query.data.exam) : null;
   const viewer = query.data?.me ?? null;
   const currentAttempt = query.data?.attempts.find((attempt) => attempt.exam.id === examId) ?? null;
   const basePersistedAnswers = Object.fromEntries(

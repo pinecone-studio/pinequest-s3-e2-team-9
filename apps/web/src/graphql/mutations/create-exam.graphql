@@ -5,6 +5,10 @@ mutation CreateExam(
   $mode: ExamMode!
   $durationMinutes: Int!
   $scheduledFor: String
+  $shuffleQuestions: Boolean!
+  $shuffleAnswers: Boolean!
+  $passingCriteriaType: PassingCriteriaType!
+  $passingThreshold: Int!
 ) {
   createExam(
     classId: $classId
@@ -13,6 +17,10 @@ mutation CreateExam(
     mode: $mode
     durationMinutes: $durationMinutes
     scheduledFor: $scheduledFor
+    shuffleQuestions: $shuffleQuestions
+    shuffleAnswers: $shuffleAnswers
+    passingCriteriaType: $passingCriteriaType
+    passingThreshold: $passingThreshold
   ) {
     id
     title
@@ -20,6 +28,10 @@ mutation CreateExam(
     mode
     durationMinutes
     scheduledFor
+    shuffleQuestions
+    shuffleAnswers
+    passingCriteriaType
+    passingThreshold
     createdAt
     class {
       id

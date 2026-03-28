@@ -33,7 +33,7 @@ export function CreateExamAnswerOptionRow({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         disabled={disabled}
-        placeholder={`Option ${String.fromCharCode(65 + index)}`}
+        placeholder={`Сонголт ${String.fromCharCode(65 + index)}`}
         className="h-8 flex-1 rounded-[6px] border border-[#DFE1E5] bg-white px-[11.8px] text-[14px] leading-[18px] text-[#101828] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] outline-none placeholder:text-[#52555B]"
       />
       <button
@@ -41,7 +41,7 @@ export function CreateExamAnswerOptionRow({
         className="flex h-8 w-8 items-center justify-center rounded-[6px] text-[#52555B] disabled:opacity-50"
         onClick={onRemove}
         disabled={disabled}
-        aria-label={`Remove option ${String.fromCharCode(65 + index)}`}
+        aria-label={`Сонголт ${String.fromCharCode(65 + index)} устгах`}
       >
         <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
           <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="1.333" strokeLinecap="round" />

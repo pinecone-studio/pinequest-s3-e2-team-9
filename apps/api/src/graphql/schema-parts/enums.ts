@@ -46,4 +46,9 @@ export const schemaEnums = /* GraphQL */ `
     IN_PROGRESS
     COMPLETED
   }
+
+  enum PassingCriteriaType {
+    PERCENTAGE
+    POINTS
+  }
 `;

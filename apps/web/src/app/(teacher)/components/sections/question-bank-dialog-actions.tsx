@@ -46,6 +46,7 @@ type FooterProps = {
   loading?: boolean;
   showLibraryAction?: boolean;
   submitLabel?: string;
+  cancelLabel?: string;
   onCancel: () => void;
   onSubmit: () => void;
 };
@@ -55,6 +56,7 @@ export function QuestionBankDialogFooter({
   loading,
   showLibraryAction = true,
   submitLabel = "Асуулт нэмэх",
+  cancelLabel = "Буцах",
   onCancel,
   onSubmit,
 }: FooterProps) {
@@ -76,7 +78,7 @@ export function QuestionBankDialogFooter({
           className="inline-flex h-8 items-center justify-center rounded-md px-3 text-[14px] font-medium text-[#0F1216]"
           onClick={onCancel}
         >
-          Цуцлах
+          {cancelLabel}
         </button>
         <button
           type="button"

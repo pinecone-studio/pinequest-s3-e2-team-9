@@ -1,6 +1,9 @@
+/* eslint-disable max-lines */
 "use client";
 
+import { useState } from "react";
 import { CloseIcon, DetailsIcon } from "../icons";
+import { ExamResultsAnalyticsView } from "./exam-results-analytics-view";
 import { buildReportRows, downloadExamReportCsv, truncate } from "./exam-results-report-utils";
 import type { MyExamView } from "./my-exams-types";
 
@@ -15,6 +18,8 @@ export function ExamResultsReportDialog({
   open,
   onClose,
 }: ExamResultsReportDialogProps) {
+  const [activeTab, setActiveTab] = useState<"analytics" | "table">("analytics");
+
   if (!open || !exam) {
     return null;
   }
@@ -58,104 +63,133 @@ export function ExamResultsReportDialog({
               </button>
             </div>
             <p className="text-[14px] text-[#52555B]">
-              Excel маягийн preview. Доорх хүснэгтийг `.csv` файлаар татаж аваад Excel дээр нээж болно.
+              Ерөнхий дүгнэлт, сэдэв болон асуултын гүйцэтгэлийг нэг дор харуулна.
             </p>
           </div>
 
-          <div className="rounded-lg border border-[#DFE1E5] bg-white">
-            <div className="overflow-x-auto">
-              <table className="min-w-full border-collapse text-left text-[14px]">
-                <thead className="sticky top-0 z-10 bg-[#F8FAFC]">
-                  <tr className="border-b border-[#DFE1E5]">
-                    <th className="sticky left-0 min-w-[320px] bg-[#F8FAFC] px-4 py-3 font-semibold text-[#0F1216]">
-                      Асуулт
-                    </th>
-                    {exam.students.map((student) => (
-                      <th
-                        key={student.id}
-                        className="min-w-[140px] px-4 py-3 text-center font-semibold text-[#0F1216]"
-                        title={student.name}
-                      >
-                        {truncate(student.name, 18)}
+          <div className="flex w-full items-center rounded-lg bg-[#F0F2F5] p-[3px]">
+            <button
+              type="button"
+              onClick={() => setActiveTab("analytics")}
+              className={`flex-1 rounded-md px-4 py-1.5 text-[14px] font-medium text-[#0F1216] ${
+                activeTab === "analytics"
+                  ? "bg-[#FAFAFA] shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
+                  : ""
+              }`}
+            >
+              Дүн шинжилгээ
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("table")}
+              className={`flex-1 rounded-md px-4 py-1.5 text-[14px] font-medium text-[#0F1216] ${
+                activeTab === "table"
+                  ? "bg-[#FAFAFA] shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
+                  : ""
+              }`}
+            >
+              Хүснэгт
+            </button>
+          </div>
+
+          {activeTab === "analytics" ? (
+            <ExamResultsAnalyticsView exam={exam} />
+          ) : (
+            <div className="rounded-lg border border-[#DFE1E5] bg-white">
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse text-left text-[14px]">
+                  <thead className="sticky top-0 z-10 bg-[#F8FAFC]">
+                    <tr className="border-b border-[#DFE1E5]">
+                      <th className="sticky left-0 min-w-[320px] bg-[#F8FAFC] px-4 py-3 font-semibold text-[#0F1216]">
+                        Асуулт
                       </th>
-                    ))}
-                    <th className="min-w-[140px] px-4 py-3 text-center font-semibold text-[#0F1216]">
-                      Нийт оноо
-                    </th>
-                    <th className="min-w-[110px] px-4 py-3 text-center font-semibold text-[#0F1216]">
-                      Хувь
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, index) => (
-                    <tr
-                      key={row.id}
-                      className={index % 2 === 0 ? "bg-white" : "bg-[#FCFCFD]"}
-                    >
-                      <td className="sticky left-0 border-b border-[#EAECF0] bg-inherit px-4 py-3 align-top">
-                        <div className="space-y-1">
-                          <p
-                            className="font-medium leading-6 text-[#0F1216]"
-                            title={row.prompt}
-                          >
-                            {truncate(row.prompt, 88)}
-                          </p>
-                          <span className="text-[12px] text-[#667085]">
-                            Нийт оноо: {row.total}
-                          </span>
-                        </div>
-                      </td>
-                      {row.scores.map((score, scoreIndex) => (
-                        <td
-                          key={`${row.id}-${exam.students[scoreIndex]?.id ?? scoreIndex}`}
-                          className="border-b border-[#EAECF0] px-4 py-3 text-center font-medium text-[#0F1216]"
+                      {exam.students.map((student) => (
+                        <th
+                          key={student.id}
+                          className="min-w-[140px] px-4 py-3 text-center font-semibold text-[#0F1216]"
+                          title={student.name}
                         >
-                          {score}
+                          {truncate(student.name, 18)}
+                        </th>
+                      ))}
+                      <th className="min-w-[140px] px-4 py-3 text-center font-semibold text-[#0F1216]">
+                        Нийт оноо
+                      </th>
+                      <th className="min-w-[110px] px-4 py-3 text-center font-semibold text-[#0F1216]">
+                        Хувь
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row, index) => (
+                      <tr
+                        key={row.id}
+                        className={index % 2 === 0 ? "bg-white" : "bg-[#FCFCFD]"}
+                      >
+                        <td className="sticky left-0 border-b border-[#EAECF0] bg-inherit px-4 py-3 align-top">
+                          <div className="space-y-1">
+                            <p
+                              className="font-medium leading-6 text-[#0F1216]"
+                              title={row.prompt}
+                            >
+                              {truncate(row.prompt, 88)}
+                            </p>
+                            <span className="text-[12px] text-[#667085]">
+                              Нийт оноо: {row.total}
+                            </span>
+                          </div>
+                        </td>
+                        {row.scores.map((score, scoreIndex) => (
+                          <td
+                            key={`${row.id}-${exam.students[scoreIndex]?.id ?? scoreIndex}`}
+                            className="border-b border-[#EAECF0] px-4 py-3 text-center font-medium text-[#0F1216]"
+                          >
+                            {score}
+                          </td>
+                        ))}
+                        <td className="border-b border-[#EAECF0] px-4 py-3 text-center font-semibold text-[#0F1216]">
+                          {row.earnedTotal}/{row.total * exam.students.length}
+                        </td>
+                        <td className="border-b border-[#EAECF0] px-4 py-3 text-center font-semibold text-[#155EEF]">
+                          {row.percent}%
+                        </td>
+                      </tr>
+                    ))}
+                    <tr className="bg-[#F8FAFC]">
+                      <td className="sticky left-0 border-t border-[#D0D5DD] bg-[#F8FAFC] px-4 py-3 font-semibold text-[#0F1216]">
+                        Нийт оноо
+                      </td>
+                      {exam.students.map((student) => (
+                        <td
+                          key={`total-${student.id}`}
+                          className="border-t border-[#D0D5DD] px-4 py-3 text-center font-semibold text-[#0F1216]"
+                        >
+                          {student.score}/{student.total}
                         </td>
                       ))}
-                      <td className="border-b border-[#EAECF0] px-4 py-3 text-center font-semibold text-[#0F1216]">
-                        {row.earnedTotal}/{row.total * exam.students.length}
-                      </td>
-                      <td className="border-b border-[#EAECF0] px-4 py-3 text-center font-semibold text-[#155EEF]">
-                        {row.percent}%
-                      </td>
+                      <td className="border-t border-[#D0D5DD] px-4 py-3" />
+                      <td className="border-t border-[#D0D5DD] px-4 py-3" />
                     </tr>
-                  ))}
-                  <tr className="bg-[#F8FAFC]">
-                    <td className="sticky left-0 border-t border-[#D0D5DD] bg-[#F8FAFC] px-4 py-3 font-semibold text-[#0F1216]">
-                      Нийт оноо
-                    </td>
-                    {exam.students.map((student) => (
-                      <td
-                        key={`total-${student.id}`}
-                        className="border-t border-[#D0D5DD] px-4 py-3 text-center font-semibold text-[#0F1216]"
-                      >
-                        {student.score}/{student.total}
+                    <tr className="bg-[#F8FAFC]">
+                      <td className="sticky left-0 border-t border-[#D0D5DD] bg-[#F8FAFC] px-4 py-3 font-semibold text-[#0F1216]">
+                        Хувь
                       </td>
-                    ))}
-                    <td className="border-t border-[#D0D5DD] px-4 py-3" />
-                    <td className="border-t border-[#D0D5DD] px-4 py-3" />
-                  </tr>
-                  <tr className="bg-[#F8FAFC]">
-                    <td className="sticky left-0 border-t border-[#D0D5DD] bg-[#F8FAFC] px-4 py-3 font-semibold text-[#0F1216]">
-                      Хувь
-                    </td>
-                    {exam.students.map((student) => (
-                      <td
-                        key={`percent-${student.id}`}
-                        className="border-t border-[#D0D5DD] px-4 py-3 text-center font-semibold text-[#155EEF]"
-                      >
-                        {student.percent}%
-                      </td>
-                    ))}
-                    <td className="border-t border-[#D0D5DD] px-4 py-3" />
-                    <td className="border-t border-[#D0D5DD] px-4 py-3" />
-                  </tr>
-                </tbody>
-              </table>
+                      {exam.students.map((student) => (
+                        <td
+                          key={`percent-${student.id}`}
+                          className="border-t border-[#D0D5DD] px-4 py-3 text-center font-semibold text-[#155EEF]"
+                        >
+                          {student.percent}%
+                        </td>
+                      ))}
+                      <td className="border-t border-[#D0D5DD] px-4 py-3" />
+                      <td className="border-t border-[#D0D5DD] px-4 py-3" />
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

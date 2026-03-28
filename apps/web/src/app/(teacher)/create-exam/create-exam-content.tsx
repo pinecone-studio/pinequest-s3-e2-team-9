@@ -7,6 +7,7 @@ import { CreateExamHeader } from "./create-exam-header";
 import { CreateExamQuestionCard } from "./create-exam-question-card";
 import { CreateExamSettingsCard } from "./create-exam-settings-card";
 import { CreateExamSubmitAlert } from "./create-exam-submit-alert";
+import { TeacherBackButton } from "../components/teacher-back-button";
 import { useCreateExamFlow } from "./hooks/use-create-exam-flow";
 
 type CreateExamContentProps = {
@@ -42,9 +43,12 @@ export function CreateExamContent({
     })();
   };
 
+  const backHref = returnTo || (initialBankId ? `/question-bank/${initialBankId}` : "/my-exams");
+
   return (
     <div className="mx-auto w-full max-w-[836px]">
       <form className="space-y-6" onSubmit={handleSubmit}>
+        <TeacherBackButton fallbackHref={backHref} />
         <CreateExamHeader isSubmitting={flow.isSubmitting} disabled={isDisabled} />
         <CreateExamSubmitAlert submitState={flow.submitState} />
 
@@ -84,7 +88,10 @@ export function CreateExamContent({
         />
         <CreateExamSettingsCard
           disabled={isDisabled}
+          values={flow.formValues}
+          errors={flow.errors}
           selectedQuestionPoints={flow.selectedQuestionPoints}
+          onFieldChange={flow.setFieldValue}
         />
         <CreateExamQuestionCard
           questionBankOptions={flow.questionBankOptions}
@@ -96,6 +103,7 @@ export function CreateExamContent({
           onAddQuestion={flow.addQuestion}
           onPointsChange={flow.setQuestionPoints}
           onQuestionsRefresh={flow.refetchOptions}
+          initialBankId={initialBankId}
         />
       </form>
     </div>

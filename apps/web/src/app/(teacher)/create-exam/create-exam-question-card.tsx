@@ -20,6 +20,7 @@ type CreateExamQuestionCardProps = {
   onAddQuestion: (questionId: string) => void;
   onPointsChange: (questionId: string, value: string) => void;
   onQuestionsRefresh: () => Promise<unknown>;
+  initialBankId?: string;
 };
 
 function PlusIcon({ solid = false }: { solid?: boolean }) {
@@ -40,6 +41,7 @@ export function CreateExamQuestionCard({
   onAddQuestion,
   onPointsChange,
   onQuestionsRefresh,
+  initialBankId = "",
 }: CreateExamQuestionCardProps) {
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
@@ -54,7 +56,7 @@ export function CreateExamQuestionCard({
   return (
     <section className="space-y-3">
       <div className="h-5 text-[14px] font-medium leading-5 text-[#52555B]">
-        Questions ({selectedCount})
+        Асуултууд ({selectedCount})
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
@@ -64,7 +66,7 @@ export function CreateExamQuestionCard({
           onClick={() => setIsComposerOpen((current) => !current)}
         >
           <PlusIcon />
-          Create Question
+          Асуулт үүсгэх
         </button>
         <button
           type="button"
@@ -72,7 +74,7 @@ export function CreateExamQuestionCard({
           onClick={openLibrary}
         >
           <PlusIcon solid />
-          Add Question from Bank
+          Сангаас асуулт нэмэх
         </button>
       </div>
 
@@ -84,6 +86,7 @@ export function CreateExamQuestionCard({
         <CreateExamQuestionComposer
           bankOptions={questionBankOptions}
           disabled={disabled}
+          initialBankId={initialBankId}
           onOpenLibrary={openLibrary}
           onQuestionCreated={(questionId, points) => {
             onAddQuestion(questionId);
@@ -106,14 +109,16 @@ export function CreateExamQuestionCard({
 
       <CreateExamQuestionDrawer
         open={isLibraryOpen}
-        title="Add Question from Bank"
-        description="Select questions to include in this exam."
+        title="Сангаас асуулт нэмэх"
+        description="Энэ шалгалтад оруулах асуултуудаа сонгоно уу."
         onClose={() => setIsLibraryOpen(false)}
       >
         <CreateExamQuestionLibrary
+          questionBankOptions={questionBankOptions}
           questionOptions={questionOptions}
           disabled={disabled}
           checkedQuestionIds={drawerSelectedIds}
+          initialBankId={initialBankId}
           onToggleChecked={(questionId) =>
             setDrawerSelectedIds((current) =>
               current.includes(questionId)

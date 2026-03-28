@@ -1,4 +1,4 @@
-import { ExamMode } from "@/graphql/generated";
+import { ExamMode, PassingCriteriaType } from "@/graphql/generated";
 import type {
   CreateExamFieldErrors,
   CreateExamFormValues,
@@ -11,6 +11,10 @@ export const INITIAL_FORM_VALUES: CreateExamFormValues = {
   durationMinutes: "60",
   mode: ExamMode.Scheduled,
   scheduledFor: "",
+  shuffleQuestions: false,
+  shuffleAnswers: false,
+  passingCriteriaType: PassingCriteriaType.Percentage,
+  passingThreshold: "40",
 };
 
 export const EMPTY_ERRORS: CreateExamFieldErrors = {
@@ -23,6 +27,7 @@ export const hasValidationErrors = (errors: CreateExamFieldErrors): boolean =>
       errors.title ||
       errors.durationMinutes ||
       errors.scheduledFor ||
+      errors.passingThreshold ||
       errors.selectedQuestions ||
       Object.keys(errors.pointsByQuestionId).length,
   );

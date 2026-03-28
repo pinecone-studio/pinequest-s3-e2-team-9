@@ -1,3 +1,4 @@
+import type { PassingCriteriaType } from "@/graphql/generated";
 import type { MyExamsQueryQuery } from "@/graphql/generated";
 
 type IconComponent = (props: { className?: string }) => React.JSX.Element;
@@ -21,6 +22,8 @@ export type ExamFooterData =
 export type MyExamQuestionPreview = {
   id: string;
   prompt: string;
+  topic: string;
+  order: number;
   kind: "options" | "text" | "upload";
   points: number;
   typeLabel: string;
@@ -59,9 +62,12 @@ export type MyExamView = {
   title: string;
   subject: string;
   subjectName: string;
+  classGrade: number;
   createdDateLabel: string;
   questionCount: number;
   totalPoints: number;
+  passingCriteriaType: PassingCriteriaType;
+  passingThreshold: number;
   secondaryLabel: string;
   questionCountLabel: string;
   durationLabel: string;

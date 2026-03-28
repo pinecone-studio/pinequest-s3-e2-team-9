@@ -9,6 +9,8 @@ query MyExamsQuery {
     title
     status
     durationMinutes
+    passingCriteriaType
+    passingThreshold
     createdAt
     startedAt
     endsAt
@@ -36,6 +38,10 @@ query MyExamsQuery {
         type
         options
         correctAnswer
+        bank {
+          id
+          topic
+        }
       }
     }
     attempts {

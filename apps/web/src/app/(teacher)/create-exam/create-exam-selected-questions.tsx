@@ -21,10 +21,10 @@ type CreateExamSelectedQuestionsProps = {
 };
 
 const TYPE_LABELS: Record<string, string> = {
-  MCQ: "MCQ",
-  TRUE_FALSE: "True/False",
-  SHORT_ANSWER: "Numeric",
-  ESSAY: "Essay",
+  MCQ: "Олон сонголт",
+  TRUE_FALSE: "Үнэн/Худал",
+  SHORT_ANSWER: "Тоо бодолт",
+  ESSAY: "Задгай",
 };
 
 const DIFFICULTY_STYLES: Record<string, string> = {
@@ -40,7 +40,7 @@ function McqBadge() {
         <path d="M2 6.5 4.2 8.7 10 3" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
         <rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" />
       </svg>
-      MCQ
+      Олон сонголт
     </span>
   );
 }
@@ -74,7 +74,7 @@ export function CreateExamSelectedQuestions({
           <div className="flex-1 space-y-2">
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2 text-[14px] leading-5">
-                <span className="font-medium text-[#0F1216]">Question {index + 1}</span>
+                <span className="font-medium text-[#0F1216]">Асуулт {index + 1}</span>
                 <span className="text-[16px] leading-6 text-[#52555B]">—</span>
                 <label className="inline-flex items-center gap-1 font-semibold text-[#6F90FF]">
                   <input
@@ -85,7 +85,7 @@ export function CreateExamSelectedQuestions({
                     inputMode="numeric"
                     className="w-8 bg-transparent text-right outline-none"
                   />
-                  <span>pts</span>
+                  <span>оноо</span>
                 </label>
               </div>
               <p className="text-[14px] leading-[23px] text-[#52555B]">{promptFor(question)}</p>
@@ -109,7 +109,13 @@ export function CreateExamSelectedQuestions({
                     "border border-[#DFE1E5] bg-white text-[#52555B]",
                 ].join(" ")}
               >
-                {question.difficulty.toLowerCase()}
+                {question.difficulty === "EASY"
+                  ? "Хялбар"
+                  : question.difficulty === "MEDIUM"
+                    ? "Дунд"
+                    : question.difficulty === "HARD"
+                      ? "Хүнд"
+                      : question.difficulty}
               </span>
             </div>
 

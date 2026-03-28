@@ -65,6 +65,109 @@ export const QuestionBankFilterSelect = ({
   </label>
 );
 
+export function QuestionBankTopicGrid({
+  topics,
+  grade,
+  subject,
+  onSelectTopic,
+}: {
+  topics: Array<{
+    name: string;
+    bankCount: number;
+    questionCount: number;
+    subtopics: string[];
+  }>;
+  grade: string;
+  subject: string;
+  onSelectTopic: (topic: string) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <h2 className="text-[18px] font-semibold text-[#101828]">
+          {`${grade}-р анги ${subject}`}
+        </h2>
+        <p className="mt-1 text-[14px] text-[#667085]">
+          Энэ category доторх дэд сэдвүүдээс сонгоод тухайн сэдвийн сангууд руу орно.
+        </p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {topics.map((topic) => (
+          <button
+            key={topic.name}
+            type="button"
+            onClick={() => onSelectTopic(topic.name)}
+            className="rounded-xl border border-[#DFE1E5] bg-white p-5 text-left shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition hover:-translate-y-0.5 hover:shadow-[0px_8px_24px_rgba(15,18,22,0.08)]"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#FFF4ED] text-[#B54708]">
+              <BookIcon className="h-5 w-5" />
+            </div>
+            <h3 className="mt-4 text-[16px] font-medium text-[#0F1216]">{topic.name}</h3>
+            <p className="mt-1 text-[14px] text-[#667085]">
+              {topic.bankCount > 1
+                ? `${topic.bankCount} сан, ${topic.questionCount} асуулт`
+                : `${topic.questionCount} асуулт`}
+            </p>
+            {topic.subtopics.length ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {topic.subtopics.map((subtopic) => (
+                  <span
+                    key={`${topic.name}-${subtopic}`}
+                    className="rounded-full bg-[#F2F4F7] px-2.5 py-1 text-[12px] font-medium text-[#344054]"
+                  >
+                    {subtopic}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            <p className="mt-3 text-[13px] font-medium text-[#175CD3]">
+              Энэ дэд сэдвийг нээх
+            </p>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function QuestionBankBrowseGrid({
+  title,
+  description,
+  items,
+  onSelect,
+}: {
+  title: string;
+  description: string;
+  items: Array<{ key: string; label: string; subtitle: string }>;
+  onSelect: (key: string) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <h2 className="text-[18px] font-semibold text-[#101828]">{title}</h2>
+        <p className="mt-1 text-[14px] text-[#667085]">{description}</p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {items.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => onSelect(item.key)}
+            className="rounded-xl border border-[#DFE1E5] bg-white p-5 text-left shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition hover:-translate-y-0.5 hover:shadow-[0px_8px_24px_rgba(15,18,22,0.08)]"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EEF4FF] text-[#175CD3]">
+              <BookIcon className="h-5 w-5" />
+            </div>
+            <h3 className="mt-4 text-[16px] font-medium text-[#0F1216]">{item.label}</h3>
+            <p className="mt-1 text-[14px] text-[#667085]">{item.subtitle}</p>
+            <p className="mt-3 text-[13px] font-medium text-[#175CD3]">Нээх</p>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function QuestionBankFilterPanel({
   gradeOptions,
   grade,
@@ -187,82 +290,135 @@ export function QuestionBankGrid({
   items,
   loading,
   skeletons,
+  categoryLabel = "",
+  showCategoryContext = false,
+  onSelectItem,
 }: {
   items: QuestionBankItem[];
   loading: boolean;
   skeletons: number[];
+  categoryLabel?: string;
+  showCategoryContext?: boolean;
+  onSelectItem?: (item: QuestionBankItem) => void;
 }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {loading
-        ? skeletons.map((item) => (
-            <div
-              key={item}
-              className="rounded-xl border border-[#DFE1E5] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
-            >
-              <div className="animate-pulse">
-                <div className="flex items-start justify-between">
-                  <div className="h-10 w-10 rounded-lg bg-[#E9EDF3]" />
-                  <div className="h-7 w-24 rounded-md bg-[#E9EDF3]" />
-                </div>
-                <div className="mt-4 h-5 w-2/3 rounded bg-[#E9EDF3]" />
-                <div className="mt-2 h-4 w-full rounded bg-[#E9EDF3]" />
-                <div className="mt-2 h-4 w-5/6 rounded bg-[#E9EDF3]" />
-                <div className="mt-4 h-4 w-1/2 rounded bg-[#E9EDF3]" />
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="h-4 w-20 rounded bg-[#E9EDF3]" />
-                  <div className="h-4 w-24 rounded bg-[#E9EDF3]" />
+    <div className="space-y-4">
+      {showCategoryContext && categoryLabel ? (
+        <div>
+          <h2 className="text-[18px] font-semibold text-[#101828]">{categoryLabel}</h2>
+          <p className="mt-1 text-[14px] text-[#667085]">
+            Энэ category доторх сангууд дэд сэдвээрээ харагдаж байна.
+          </p>
+        </div>
+      ) : null}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {loading
+          ? skeletons.map((item) => (
+              <div
+                key={item}
+                className="rounded-xl border border-[#DFE1E5] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
+              >
+                <div className="animate-pulse">
+                  <div className="flex items-start justify-between">
+                    <div className="h-10 w-10 rounded-lg bg-[#E9EDF3]" />
+                    <div className="h-7 w-24 rounded-md bg-[#E9EDF3]" />
+                  </div>
+                  <div className="mt-4 h-5 w-2/3 rounded bg-[#E9EDF3]" />
+                  <div className="mt-2 h-4 w-full rounded bg-[#E9EDF3]" />
+                  <div className="mt-2 h-4 w-5/6 rounded bg-[#E9EDF3]" />
+                  <div className="mt-4 h-4 w-1/2 rounded bg-[#E9EDF3]" />
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="h-4 w-20 rounded bg-[#E9EDF3]" />
+                    <div className="h-4 w-24 rounded bg-[#E9EDF3]" />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
-        : null}
-      {items.map((item) => (
-        <Link
-          key={item.id}
-          href={`/question-bank/${item.id}`}
-          className="relative block cursor-pointer rounded-xl border border-[#DFE1E5] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition hover:-translate-y-0.5 hover:shadow-[0px_8px_24px_rgba(15,18,22,0.08)]"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1922301A] text-[#192230]">
-              <BookIcon className="h-5 w-5" />
-            </div>
-            <span
-              className={`rounded-md px-2.5 py-1 text-[12px] font-medium ${
-                item.visibility === "PUBLIC"
-                  ? "bg-[#ECFDF3] text-[#027A48]"
-                  : "bg-[#EEF4FF] text-[#175CD3]"
-              }`}
+            ))
+          : null}
+        {items.map((item) => {
+          const content = (
+            <>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1922301A] text-[#192230]">
+                  <BookIcon className="h-5 w-5" />
+                </div>
+                <span
+                  className={`rounded-md px-2.5 py-1 text-[12px] font-medium ${
+                    item.visibility === "PUBLIC"
+                      ? "bg-[#ECFDF3] text-[#027A48]"
+                      : "bg-[#EEF4FF] text-[#175CD3]"
+                  }`}
+                >
+                  {formatVisibilityLabel(item.visibility)}
+                </span>
+              </div>
+              <h3 className="mt-4 text-[16px] font-medium text-[#0F1216]">
+                {showCategoryContext ? item.displayTitle : item.title}
+              </h3>
+              <p className="mt-1 text-[14px] text-[#52555B]">{item.description}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {showCategoryContext ? (
+                  (item.subtopics?.length ? item.subtopics : [item.displayTitle]).map((subtopic) => (
+                    <span
+                      key={`${item.id}-${subtopic}`}
+                      className="rounded-md bg-[#FFF4ED] px-2.5 py-1 text-[12px] font-medium text-[#B54708]"
+                    >
+                      {subtopic}
+                    </span>
+                  ))
+                ) : (
+                  <>
+                    <span className="rounded-md bg-[#F2F4F7] px-2.5 py-1 text-[12px] font-medium text-[#344054]">
+                      {formatGradeLabel(item.grade)}
+                    </span>
+                    <span className="rounded-md bg-[#F2F4F7] px-2.5 py-1 text-[12px] font-medium text-[#344054]">
+                      {item.subject}
+                    </span>
+                    <span className="rounded-md bg-[#FFF4ED] px-2.5 py-1 text-[12px] font-medium text-[#B54708]">
+                      {item.topic !== "Ерөнхий" ? item.topic : item.topics[0] ?? "Ерөнхий сэдэв"}
+                    </span>
+                  </>
+                )}
+              </div>
+              <p className="mt-3 text-[13px] text-[#667085]">
+                {item.visibility === "PUBLIC"
+                  ? `Хуваалцсан багш: ${item.ownerName}`
+                  : "Зөвхөн танд харагдана"}
+              </p>
+              <div className="mt-4 flex items-center justify-between text-[14px] text-[#52555B]">
+                <span>{item.questions}</span>
+                <span>{item.date}</span>
+              </div>
+            </>
+          );
+
+          const className =
+            "relative block cursor-pointer rounded-xl border border-[#DFE1E5] bg-white p-5 text-left shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition hover:-translate-y-0.5 hover:shadow-[0px_8px_24px_rgba(15,18,22,0.08)]";
+
+          if (onSelectItem) {
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onSelectItem(item)}
+                className={className}
+              >
+                {content}
+              </button>
+            );
+          }
+
+          return (
+            <Link
+              key={item.id}
+              href={`/question-bank/${item.id}`}
+              className={className}
             >
-              {formatVisibilityLabel(item.visibility)}
-            </span>
-          </div>
-          <h3 className="mt-4 text-[16px] font-medium text-[#0F1216]">
-            {item.title}
-          </h3>
-          <p className="mt-1 text-[14px] text-[#52555B]">{item.description}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="rounded-md bg-[#F2F4F7] px-2.5 py-1 text-[12px] font-medium text-[#344054]">
-              {formatGradeLabel(item.grade)}
-            </span>
-            <span className="rounded-md bg-[#F2F4F7] px-2.5 py-1 text-[12px] font-medium text-[#344054]">
-              {item.subject}
-            </span>
-            <span className="rounded-md bg-[#FFF4ED] px-2.5 py-1 text-[12px] font-medium text-[#B54708]">
-              {item.topic !== "Ерөнхий" ? item.topic : item.topics[0] ?? "Ерөнхий сэдэв"}
-            </span>
-          </div>
-          <p className="mt-3 text-[13px] text-[#667085]">
-            {item.visibility === "PUBLIC"
-              ? `Хуваалцсан багш: ${item.ownerName}`
-              : "Зөвхөн танд харагдана"}
-          </p>
-          <div className="mt-4 flex items-center justify-between text-[14px] text-[#52555B]">
-            <span>{item.questions}</span>
-            <span>{item.date}</span>
-          </div>
-        </Link>
-      ))}
+              {content}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -146,8 +146,12 @@ export type Exam = {
   id: Scalars['ID']['output'];
   isTemplate: Scalars['Boolean']['output'];
   mode: ExamMode;
+  passingCriteriaType: PassingCriteriaType;
+  passingThreshold: Scalars['Int']['output'];
   questions: Array<ExamQuestion>;
   scheduledFor?: Maybe<Scalars['String']['output']>;
+  shuffleAnswers: Scalars['Boolean']['output'];
+  shuffleQuestions: Scalars['Boolean']['output'];
   sourceExamId?: Maybe<Scalars['ID']['output']>;
   startedAt?: Maybe<Scalars['String']['output']>;
   status: ExamStatus;
@@ -232,7 +236,11 @@ export type MutationCreateExamArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   durationMinutes: Scalars['Int']['input'];
   mode?: InputMaybe<ExamMode>;
+  passingCriteriaType?: InputMaybe<PassingCriteriaType>;
+  passingThreshold?: InputMaybe<Scalars['Int']['input']>;
   scheduledFor?: InputMaybe<Scalars['String']['input']>;
+  shuffleAnswers?: InputMaybe<Scalars['Boolean']['input']>;
+  shuffleQuestions?: InputMaybe<Scalars['Boolean']['input']>;
   title: Scalars['String']['input'];
 };
 
@@ -297,6 +305,11 @@ export type MutationUpdateQuestionArgs = {
   title: Scalars['String']['input'];
   type: QuestionType;
 };
+
+export enum PassingCriteriaType {
+  Percentage = 'PERCENTAGE',
+  Points = 'POINTS'
+}
 
 export type Query = {
   __typename?: 'Query';
@@ -437,10 +450,14 @@ export type CreateExamMutationVariables = Exact<{
   mode: ExamMode;
   durationMinutes: Scalars['Int']['input'];
   scheduledFor?: InputMaybe<Scalars['String']['input']>;
+  shuffleQuestions: Scalars['Boolean']['input'];
+  shuffleAnswers: Scalars['Boolean']['input'];
+  passingCriteriaType: PassingCriteriaType;
+  passingThreshold: Scalars['Int']['input'];
 }>;
 
 
-export type CreateExamMutation = { __typename?: 'Mutation', createExam: { __typename?: 'Exam', id: string, title: string, status: ExamStatus, mode: ExamMode, durationMinutes: number, scheduledFor?: string | null, createdAt: string, class: { __typename?: 'Class', id: string, name: string } } };
+export type CreateExamMutation = { __typename?: 'Mutation', createExam: { __typename?: 'Exam', id: string, title: string, status: ExamStatus, mode: ExamMode, durationMinutes: number, scheduledFor?: string | null, shuffleQuestions: boolean, shuffleAnswers: boolean, passingCriteriaType: PassingCriteriaType, passingThreshold: number, createdAt: string, class: { __typename?: 'Class', id: string, name: string } } };
 
 export type CreateQuestionBankMutationMutationVariables = Exact<{
   title: Scalars['String']['input'];
@@ -535,7 +552,7 @@ export type ClassesListQuery = { __typename?: 'Query', classes: Array<{ __typena
 export type CreateExamOptionsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CreateExamOptionsQuery = { __typename?: 'Query', classes: Array<{ __typename?: 'Class', id: string, name: string }>, questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, subject: string }>, questions: Array<{ __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, difficulty: Difficulty, bank: { __typename?: 'QuestionBank', id: string, title: string, subject: string } }> };
+export type CreateExamOptionsQuery = { __typename?: 'Query', classes: Array<{ __typename?: 'Class', id: string, name: string }>, questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, subject: string, grade: number, topic: string }>, questions: Array<{ __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, difficulty: Difficulty, bank: { __typename?: 'QuestionBank', id: string, title: string, subject: string, grade: number, topic: string } }> };
 
 export type DashboardOverviewQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -550,7 +567,7 @@ export type HealthQueryQuery = { __typename?: 'Query', health: { __typename?: 'H
 export type MyExamsQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MyExamsQueryQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string } | null, exams: Array<{ __typename?: 'Exam', id: string, isTemplate: boolean, sourceExamId?: string | null, title: string, status: ExamStatus, durationMinutes: number, createdAt: string, startedAt?: string | null, endsAt?: string | null, createdBy: { __typename?: 'User', id: string }, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, students: Array<{ __typename?: 'User', id: string, fullName: string }> }, questions: Array<{ __typename?: 'ExamQuestion', id: string, points: number, order: number, question: { __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, options: Array<string>, correctAnswer?: string | null } }>, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, autoScore: number, manualScore: number, totalScore: number, startedAt: string, submittedAt?: string | null, student: { __typename?: 'User', id: string, fullName: string }, answers: Array<{ __typename?: 'Answer', id: string, value: string, autoScore?: number | null, manualScore?: number | null, feedback?: string | null, createdAt: string, question: { __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType } }> }> }> };
+export type MyExamsQueryQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string } | null, exams: Array<{ __typename?: 'Exam', id: string, isTemplate: boolean, sourceExamId?: string | null, title: string, status: ExamStatus, durationMinutes: number, passingCriteriaType: PassingCriteriaType, passingThreshold: number, createdAt: string, startedAt?: string | null, endsAt?: string | null, createdBy: { __typename?: 'User', id: string }, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, students: Array<{ __typename?: 'User', id: string, fullName: string }> }, questions: Array<{ __typename?: 'ExamQuestion', id: string, points: number, order: number, question: { __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, options: Array<string>, correctAnswer?: string | null, bank: { __typename?: 'QuestionBank', id: string, topic: string } } }>, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, autoScore: number, manualScore: number, totalScore: number, startedAt: string, submittedAt?: string | null, student: { __typename?: 'User', id: string, fullName: string }, answers: Array<{ __typename?: 'Answer', id: string, value: string, autoScore?: number | null, manualScore?: number | null, feedback?: string | null, createdAt: string, question: { __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType } }> }> }> };
 
 export type QuestionBankDetailQueryQueryVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -569,7 +586,7 @@ export type StudentExamRoomQueryVariables = Exact<{
 }>;
 
 
-export type StudentExamRoomQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string } | null, exam?: { __typename?: 'Exam', id: string, title: string, description?: string | null, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, order: number, points: number, question: { __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, options: Array<string> } }> } | null, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, startedAt: string, submittedAt?: string | null, exam: { __typename?: 'Exam', id: string }, answers: Array<{ __typename?: 'Answer', id: string, value: string, question: { __typename?: 'Question', id: string } }> }> };
+export type StudentExamRoomQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string } | null, exam?: { __typename?: 'Exam', id: string, title: string, description?: string | null, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, shuffleQuestions: boolean, shuffleAnswers: boolean, passingCriteriaType: PassingCriteriaType, passingThreshold: number, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, order: number, points: number, question: { __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, options: Array<string> } }> } | null, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, startedAt: string, submittedAt?: string | null, exam: { __typename?: 'Exam', id: string }, answers: Array<{ __typename?: 'Answer', id: string, value: string, question: { __typename?: 'Question', id: string } }> }> };
 
 export type StudentHomeQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -695,7 +712,7 @@ export type CloseExamMutationHookResult = ReturnType<typeof useCloseExamMutation
 export type CloseExamMutationResult = ApolloReactCommon.MutationResult<CloseExamMutation>;
 export type CloseExamMutationOptions = ApolloReactCommon.BaseMutationOptions<CloseExamMutation, CloseExamMutationVariables>;
 export const CreateExamDocument = gql`
-    mutation CreateExam($classId: ID!, $title: String!, $description: String, $mode: ExamMode!, $durationMinutes: Int!, $scheduledFor: String) {
+    mutation CreateExam($classId: ID!, $title: String!, $description: String, $mode: ExamMode!, $durationMinutes: Int!, $scheduledFor: String, $shuffleQuestions: Boolean!, $shuffleAnswers: Boolean!, $passingCriteriaType: PassingCriteriaType!, $passingThreshold: Int!) {
   createExam(
     classId: $classId
     title: $title
@@ -703,6 +720,10 @@ export const CreateExamDocument = gql`
     mode: $mode
     durationMinutes: $durationMinutes
     scheduledFor: $scheduledFor
+    shuffleQuestions: $shuffleQuestions
+    shuffleAnswers: $shuffleAnswers
+    passingCriteriaType: $passingCriteriaType
+    passingThreshold: $passingThreshold
   ) {
     id
     title
@@ -710,6 +731,10 @@ export const CreateExamDocument = gql`
     mode
     durationMinutes
     scheduledFor
+    shuffleQuestions
+    shuffleAnswers
+    passingCriteriaType
+    passingThreshold
     createdAt
     class {
       id
@@ -739,6 +764,10 @@ export type CreateExamMutationFn = ApolloReactCommon.MutationFunction<CreateExam
  *      mode: // value for 'mode'
  *      durationMinutes: // value for 'durationMinutes'
  *      scheduledFor: // value for 'scheduledFor'
+ *      shuffleQuestions: // value for 'shuffleQuestions'
+ *      shuffleAnswers: // value for 'shuffleAnswers'
+ *      passingCriteriaType: // value for 'passingCriteriaType'
+ *      passingThreshold: // value for 'passingThreshold'
  *   },
  * });
  */
@@ -1232,6 +1261,8 @@ export const CreateExamOptionsDocument = gql`
     id
     title
     subject
+    grade
+    topic
   }
   questions {
     id
@@ -1243,6 +1274,8 @@ export const CreateExamOptionsDocument = gql`
       id
       title
       subject
+      grade
+      topic
     }
   }
 }
@@ -1401,6 +1434,8 @@ export const MyExamsQueryDocument = gql`
     title
     status
     durationMinutes
+    passingCriteriaType
+    passingThreshold
     createdAt
     startedAt
     endsAt
@@ -1428,6 +1463,10 @@ export const MyExamsQueryDocument = gql`
         type
         options
         correctAnswer
+        bank {
+          id
+          topic
+        }
       }
     }
     attempts {
@@ -1636,6 +1675,10 @@ export const StudentExamRoomDocument = gql`
     startedAt
     endsAt
     scheduledFor
+    shuffleQuestions
+    shuffleAnswers
+    passingCriteriaType
+    passingThreshold
     createdAt
     class {
       id

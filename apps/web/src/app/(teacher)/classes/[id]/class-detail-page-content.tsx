@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowRightIcon, ClipboardIcon } from "../../components/icons";
+import { ClipboardIcon } from "../../components/icons";
+import { TeacherBackButton } from "../../components/teacher-back-button";
 import { TEACHER_COMMON_TEXT } from "../../components/teacher-ui";
 import { ClassesSearchInput } from "../components/classes-search-input";
 import { ClassesStatePanel } from "../components/classes-state-panel";
@@ -68,12 +68,9 @@ export function ClassDetailPageContent({
     <section className="mx-auto w-full max-w-[1120px] space-y-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-start gap-4">
-          <Link
-            href="/classes"
-            className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-[#0F1216]"
-          >
-            <ArrowRightIcon className="h-4 w-4 rotate-180" />
-          </Link>
+          <div className="mt-0.5">
+            <TeacherBackButton fallbackHref="/classes" />
+          </div>
           <div>
             <h1 className="text-[24px] font-semibold text-[#0F1216]">
               {viewModel.name}

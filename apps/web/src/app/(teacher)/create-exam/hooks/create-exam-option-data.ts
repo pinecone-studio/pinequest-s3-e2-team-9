@@ -8,6 +8,8 @@ export const getQuestionBankOptions = (
     id: bank.id,
     title: bank.title,
     subject: bank.subject,
+    grade: bank.grade,
+    topic: bank.topic,
   }));
 
   if (!initialBankId.trim()) {
@@ -31,6 +33,8 @@ export const getQuestionOptions = (
     bankId: question.bank.id,
     bankTitle: question.bank.title,
     bankSubject: question.bank.subject,
+    bankGrade: question.bank.grade,
+    bankTopic: question.bank.topic,
   }));
 
   if (!initialBankId.trim()) {
@@ -40,3 +44,10 @@ export const getQuestionOptions = (
   const filtered = options.filter((question) => question.bankId === initialBankId);
   return filtered.length ? filtered : options;
 };
+
+export const formatQuestionBankLabel = (
+  bank: Pick<
+    CreateExamOptionsQuery["questionBanks"][number],
+    "grade" | "subject" | "topic" | "title"
+  >,
+) => `${bank.grade}-р анги · ${bank.subject} · ${bank.topic || bank.title}`;

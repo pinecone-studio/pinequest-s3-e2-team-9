@@ -30,6 +30,10 @@ const examSelectFields = `id,
       ends_at,
       created_by_id,
       scheduled_for,
+      shuffle_questions,
+      shuffle_answers,
+      passing_criteria_type,
+      passing_threshold,
       created_at`;
 
 const getExamEndTimestamp = (startedAt: string, durationMinutes: number): string => {
@@ -159,6 +163,10 @@ export const createExamQueriesAndMutations = ({
       mode,
       durationMinutes,
       scheduledFor,
+      shuffleQuestions,
+      shuffleAnswers,
+      passingCriteriaType,
+      passingThreshold,
     }: CreateExamArgs,
     context: RequestContext,
   ) => {
@@ -189,9 +197,13 @@ export const createExamQueriesAndMutations = ({
         ends_at,
         created_by_id,
         scheduled_for,
+        shuffle_questions,
+        shuffle_answers,
+        passing_criteria_type,
+        passing_threshold,
         created_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         classId,
@@ -206,6 +218,10 @@ export const createExamQueriesAndMutations = ({
         null,
         actor.id,
         scheduledFor ?? createdAt,
+        shuffleQuestions ? 1 : 0,
+        shuffleAnswers ? 1 : 0,
+        passingCriteriaType ?? "PERCENTAGE",
+        passingThreshold ?? 40,
         createdAt,
       ],
     );
@@ -253,9 +269,13 @@ export const createExamQueriesAndMutations = ({
         ends_at,
         created_by_id,
         scheduled_for,
+        shuffle_questions,
+        shuffle_answers,
+        passing_criteria_type,
+        passing_threshold,
         created_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         nextExamId,
         classId,
@@ -270,6 +290,10 @@ export const createExamQueriesAndMutations = ({
         null,
         actor.id,
         sourceExam.scheduled_for,
+        sourceExam.shuffle_questions,
+        sourceExam.shuffle_answers,
+        sourceExam.passing_criteria_type,
+        sourceExam.passing_threshold,
         createdAt,
       ],
     );

@@ -1,11 +1,14 @@
 export type QuestionBankItem = {
   id: string;
   title: string;
+  displayTitle: string;
   description: string;
   grade: number;
   subject: string;
   topic: string;
+  categoryLabel: string;
   topics: string[];
+  subtopics?: string[];
   visibility: "PRIVATE" | "PUBLIC";
   ownerId: string;
   ownerName: string;

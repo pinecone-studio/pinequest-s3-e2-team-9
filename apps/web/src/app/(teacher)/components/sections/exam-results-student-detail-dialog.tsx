@@ -1,11 +1,13 @@
 "use client";
 
 import { CloseIcon } from "../icons";
-import type { MyExamStudentAnswer, MyExamStudentRow } from "./my-exams-types";
+import { getStudentWeakTopics } from "./exam-results-analytics";
+import type { MyExamStudentAnswer, MyExamStudentRow, MyExamView } from "./my-exams-types";
 
 type ExamResultsStudentDetailDialogProps = {
   open: boolean;
   student: MyExamStudentRow | null;
+  exam: MyExamView | null;
   onClose: () => void;
 };
 
@@ -44,11 +46,14 @@ function AnswerValue({ answer }: { answer: MyExamStudentAnswer }) {
 export function ExamResultsStudentDetailDialog({
   open,
   student,
+  exam,
   onClose,
 }: ExamResultsStudentDetailDialogProps) {
-  if (!open || !student) {
+  if (!open || !student || !exam) {
     return null;
   }
+
+  const weakTopics = getStudentWeakTopics(exam, student.id);
 
   return (
     <div
@@ -101,6 +106,24 @@ export function ExamResultsStudentDetailDialog({
               Илгээсэн: {student.submitted}
             </span>
           </div>
+
+          {weakTopics.length ? (
+            <div className="rounded-lg border border-[#FEDF89] bg-[#FFFAEB] p-4">
+              <h4 className="text-[14px] font-semibold text-[#101828]">
+                Анхаарах сэдвүүд
+              </h4>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {weakTopics.map((topic) => (
+                  <span
+                    key={`${student.id}-${topic.topic}`}
+                    className="rounded-full bg-white px-3 py-1 text-[13px] font-medium text-[#946200]"
+                  >
+                    {topic.topic} · {topic.percent}%
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="space-y-4">
             {student.answers.map((answer, index) => (

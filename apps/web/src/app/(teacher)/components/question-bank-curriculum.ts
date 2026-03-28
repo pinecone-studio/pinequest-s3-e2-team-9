@@ -1,4 +1,10 @@
+/* eslint-disable max-lines */
 export type CurriculumSubject = {
+  name: string;
+  topics: string[];
+};
+
+export type CurriculumTopicGroup = {
   name: string;
   topics: string[];
 };
@@ -70,6 +76,71 @@ const TENTH_GRADE_TOPIC_OVERRIDES: Record<string, string[]> = {
   ],
 };
 
+const TENTH_GRADE_TOPIC_GROUPS: Record<string, CurriculumTopicGroup[]> = {
+  Математик: [
+    {
+      name: "Алгебр ба илэрхийлэл",
+      topics: ["Алгебр", "Илэрхийлэл"],
+    },
+    {
+      name: "Тэгшитгэл",
+      topics: ["Тэгшитгэл", "Тэгшитгэлийн систем", "Тэгш бус"],
+    },
+    {
+      name: "Функц",
+      topics: ["Функц", "Дараалал"],
+    },
+    {
+      name: "Геометр ба тригонометр",
+      topics: ["Геометр", "Тригонометр", "Вектор"],
+    },
+    {
+      name: "Магадлал ба статистик",
+      topics: ["Магадлал", "Статистик", "Процент", "Харьцаа"],
+    },
+    {
+      name: "Логарифм",
+      topics: ["Логарифм"],
+    },
+  ],
+  "Монгол хэл": [
+    {
+      name: "Хэл зүй",
+      topics: ["Үг зүй", "Өгүүлбэр зүй", "Үг бүтэх ёс", "Цэг таслал", "Утга зүй"],
+    },
+    {
+      name: "Найруулга ба эх",
+      topics: ["Найруулга", "Эхийн бүтэц", "Эхийн уялдаа", "Ярианы соёл"],
+    },
+    {
+      name: "Уншлага ба уран зохиол",
+      topics: ["Уншлага", "Уран зохиол", "Яруу найраг"],
+    },
+  ],
+  Физик: [
+    {
+      name: "Механик",
+      topics: ["Механик", "Динамик", "Хүч", "Импульс", "Даралт", "Нягт"],
+    },
+    {
+      name: "Дулаан",
+      topics: ["Дулаан", "Энерги", "Ажил", "Чадал"],
+    },
+    {
+      name: "Цахилгаан",
+      topics: ["Цахилгаан", "Хэлхээ", "Соронзон орон"],
+    },
+    {
+      name: "Гэрэл ба долгион",
+      topics: ["Гэрэл", "Долгион"],
+    },
+    {
+      name: "Ерөнхий бодлого",
+      topics: ["Ерөнхий сэдэв"],
+    },
+  ],
+};
+
 const buildGradeSubjects = (grade: number): CurriculumSubject[] =>
   SHARED_SUBJECTS.map((subject) => ({
     name: subject,
@@ -95,3 +166,27 @@ export const getCurriculumSubjects = (grade: number) =>
 
 export const getCurriculumTopics = (grade: number, subject: string) =>
   getCurriculumSubjects(grade).find((entry) => entry.name === subject)?.topics ?? [];
+
+export const getCurriculumTopicGroups = (
+  grade: number,
+  subject: string,
+): CurriculumTopicGroup[] => {
+  const grouped = grade === 10 ? TENTH_GRADE_TOPIC_GROUPS[subject] : undefined;
+
+  if (grouped?.length) {
+    return grouped;
+  }
+
+  return getCurriculumTopics(grade, subject).map((topic) => ({
+    name: topic,
+    topics: [topic],
+  }));
+};
+
+export const getCurriculumTopicGroupName = (
+  grade: number,
+  subject: string,
+  topic: string,
+) =>
+  getCurriculumTopicGroups(grade, subject).find((entry) => entry.topics.includes(topic))?.name ??
+  topic;

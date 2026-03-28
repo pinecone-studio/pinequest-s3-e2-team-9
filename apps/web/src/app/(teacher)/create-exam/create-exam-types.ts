@@ -1,4 +1,4 @@
-import type { ExamMode } from "@/graphql/generated";
+import type { ExamMode, PassingCriteriaType } from "@/graphql/generated";
 
 export type CreateExamFormValues = {
   classId: string;
@@ -7,6 +7,10 @@ export type CreateExamFormValues = {
   durationMinutes: string;
   mode: ExamMode;
   scheduledFor: string;
+  shuffleQuestions: boolean;
+  shuffleAnswers: boolean;
+  passingCriteriaType: PassingCriteriaType;
+  passingThreshold: string;
 };
 
 export type SelectedQuestionPoints = Record<string, string>;
@@ -16,6 +20,7 @@ export type CreateExamFieldErrors = {
   title?: string;
   durationMinutes?: string;
   scheduledFor?: string;
+  passingThreshold?: string;
   selectedQuestions?: string;
   pointsByQuestionId: Record<string, string>;
 };
@@ -34,12 +39,16 @@ export type CreateExamQuestionOption = {
   bankId: string;
   bankTitle: string;
   bankSubject: string;
+  bankGrade: number;
+  bankTopic: string;
 };
 
 export type CreateExamQuestionBankOption = {
   id: string;
   title: string;
   subject: string;
+  grade: number;
+  topic: string;
 };
 
 export type CreateExamSubmitState =
