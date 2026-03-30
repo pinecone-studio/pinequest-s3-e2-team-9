@@ -50,6 +50,15 @@ export type CreateQuestionVariantsArgs = {
   totalVariants: number;
 };
 
+export type CreateExamDraftVariantsArgs = {
+  sourceQuestionId: string;
+  totalVariants: number;
+};
+
+export type GroupQuestionsAsVariantsArgs = {
+  questionIds: string[];
+};
+
 export type CreateExamArgs = {
   classId: string;
   title: string;

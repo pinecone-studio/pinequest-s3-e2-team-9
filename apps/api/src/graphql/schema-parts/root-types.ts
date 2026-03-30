@@ -55,6 +55,8 @@ export const schemaRootTypes = /* GraphQL */ `
       tags: [String!]
     ): Question!
     createQuestionVariants(sourceQuestionId: ID!, totalVariants: Int! = 4): [Question!]!
+    createExamDraftVariants(sourceQuestionId: ID!, totalVariants: Int! = 4): [Question!]!
+    groupQuestionsAsVariants(questionIds: [ID!]!): [Question!]!
     deleteQuestion(id: ID!): Boolean!
     createExam(
       classId: ID!

@@ -118,7 +118,9 @@ export const buildQuestionBankRows = (
   questions: RawQuestion[],
   usageStats: QuestionUsageStats = {},
 ): QuestionBankQuestionRow[] =>
-  questions.map((question) => {
+  questions
+  .filter((question) => !question.tags.includes("variant_draft:true"))
+  .map((question) => {
     const variantGroupId = getVariantTagValue(question.tags, "variant_group:");
     const variantLabel = getVariantTagValue(question.tags, "variant_label:");
     const variantCountValue = getVariantTagValue(question.tags, "variant_count:");

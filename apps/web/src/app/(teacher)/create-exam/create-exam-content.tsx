@@ -102,6 +102,7 @@ export function CreateExamContent({
           errors={flow.errors}
           disabled={isDisabled}
           onToggleQuestion={flow.toggleQuestion}
+          onReplaceSelectedQuestions={flow.replaceSelectedQuestions}
           onAddQuestion={flow.addQuestion}
           onPointsChange={flow.setQuestionPoints}
           onAddGenerationRule={flow.addGenerationRule}

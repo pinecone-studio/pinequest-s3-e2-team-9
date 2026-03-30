@@ -43,9 +43,9 @@ type ClerkUserLike = {
 type ClerkClientLike = ReturnType<typeof createClerkClient>;
 
 const LOCAL_AUTH_EMAIL_ALIASES: Record<string, string> = {
-  "admin@test.com": "admin@pinequest.dev",
-  "teacher@test.com": "togtuun@pinequest.dev",
-  "student@test.com": "john.doe@example.com",
+  "admin@test.com": "admin+clerk_test@test.com",
+  "teacher@test.com": "teacher+clerk_test@test.com",
+  "student@test.com": "student+clerk_test@test.com",
 };
 
 const stripClerkTestSuffix = (email: string): string => {
@@ -61,6 +61,14 @@ const stripClerkTestSuffix = (email: string): string => {
 const normalizeEmail = (email: string) => {
   const normalized = stripClerkTestSuffix(email.trim().toLowerCase());
   return LOCAL_AUTH_EMAIL_ALIASES[normalized] ?? normalized;
+};
+
+const getEmailCandidates = (email: string): string[] => {
+  const raw = email.trim().toLowerCase();
+  const stripped = stripClerkTestSuffix(raw);
+  const normalized = LOCAL_AUTH_EMAIL_ALIASES[stripped] ?? stripped;
+
+  return [...new Set([raw, stripped, normalized])];
 };
 
 const getBearerToken = (authorizationHeader: string | null): string | null => {
@@ -96,7 +104,7 @@ const resolvePrimaryEmail = (clerkUser: ClerkUserLike): string | null => {
     clerkUser.emailAddresses?.[0]?.emailAddress ??
     null;
 
-  return primaryEmail ? normalizeEmail(primaryEmail) : null;
+  return primaryEmail ? primaryEmail.trim().toLowerCase() : null;
 };
 
 export const findUserByEmail = async (
@@ -105,8 +113,20 @@ export const findUserByEmail = async (
 ): Promise<UserRow | null> =>
   first<UserRow>(
     db,
-    "SELECT id, full_name, email, role, created_at FROM users WHERE lower(email) = ?",
-    [normalizeEmail(email)],
+    `SELECT id, full_name, email, role, created_at
+     FROM users
+     WHERE lower(email) IN (${getEmailCandidates(email).map(() => "?").join(", ")})
+     ORDER BY CASE
+       WHEN lower(email) = ? THEN 0
+       WHEN lower(email) = ? THEN 1
+       ELSE 2
+     END
+     LIMIT 1`,
+    [
+      ...getEmailCandidates(email),
+      email.trim().toLowerCase(),
+      normalizeEmail(email),
+    ],
   );
 
 export const defaultRedirectPathForRole = (role: Role): string => {
@@ -160,7 +180,7 @@ const findClerkUserByEmail = async (
   email: string,
 ): Promise<ClerkUserLike | null> => {
   const response = await clerkClient.users.getUserList({
-    emailAddress: [normalizeEmail(email)],
+    emailAddress: getEmailCandidates(email),
     limit: 1,
   });
 
@@ -182,7 +202,7 @@ export const ensureClerkUserForAppUser = async (
 
   try {
     await clerkClient.users.createUser({
-      emailAddress: [normalizeEmail(user.email)],
+      emailAddress: [user.email.trim().toLowerCase()],
       firstName,
       lastName,
       skipPasswordRequirement: true,

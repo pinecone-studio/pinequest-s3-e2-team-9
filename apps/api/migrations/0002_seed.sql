@@ -1,7 +1,7 @@
 INSERT OR IGNORE INTO users (id, full_name, email, role, created_at) VALUES
-  ('user_admin_001', 'PineQuest Admin', 'admin@pinequest.dev', 'ADMIN', '2026-03-24T00:00:00.000Z'),
-  ('user_teacher_001', 'Тогтуун', 'togtuun@pinequest.dev', 'TEACHER', '2026-03-24T00:01:00.000Z'),
-  ('user_teacher_002', 'Саруул', 'saruul@pinequest.dev', 'TEACHER', '2026-03-24T00:02:00.000Z');
+  ('user_admin_001', 'PineQuest Admin', 'admin+clerk_test@test.com', 'ADMIN', '2026-03-24T00:00:00.000Z'),
+  ('user_teacher_001', 'Тогтуун', 'teacher+clerk_test@test.com', 'TEACHER', '2026-03-24T00:01:00.000Z'),
+  ('user_teacher_002', 'Саруул', 'teacher2+clerk_test@test.com', 'TEACHER', '2026-03-24T00:02:00.000Z');
 
 WITH RECURSIVE seq(n) AS (
   SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < 104
@@ -16,10 +16,8 @@ SELECT
     ELSE printf('Student %03d', n)
   END,
   CASE n
-    WHEN 1 THEN 'john.doe@example.com'
-    WHEN 2 THEN 'jane.smith@example.com'
-    WHEN 3 THEN 'mike.johnson@example.com'
-    ELSE printf('student%03d@pinequest.dev', n)
+    WHEN 1 THEN 'student+clerk_test@test.com'
+    ELSE printf('student%03d+clerk_test@test.com', n)
   END,
   'STUDENT',
   printf('2026-03-24T01:%02d:00.000Z', (n - 1) % 60)

@@ -6,6 +6,7 @@ import { useMutation } from "@apollo/client/react";
 import {
   CreateQuestionVariantsMutationDocument,
   DeleteQuestionMutationDocument,
+  GroupQuestionsAsVariantsMutationDocument,
   QuestionBankDetailQueryDocument,
 } from "@/graphql/generated";
 import type { QuestionBankQuestionRow } from "../question-bank-utils";
@@ -36,8 +37,10 @@ export function QuestionBankDetailTable({
   );
   const [editingRow, setEditingRow] = useState<QuestionBankQuestionRow | null>(null);
   const [generatingRowId, setGeneratingRowId] = useState<string | null>(null);
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
   const [deleteQuestion] = useMutation(DeleteQuestionMutationDocument);
   const [createQuestionVariants] = useMutation(CreateQuestionVariantsMutationDocument);
+  const [groupQuestionsAsVariants] = useMutation(GroupQuestionsAsVariantsMutationDocument);
 
   const handleDelete = async (row: QuestionBankQuestionRow) => {
     try {
@@ -87,6 +90,37 @@ export function QuestionBankDetailTable({
     }
   };
 
+  const handleToggleSelectedQuestion = (questionId: string) => {
+    setSelectedQuestionIds((current) =>
+      current.includes(questionId)
+        ? current.filter((item) => item !== questionId)
+        : [...current, questionId],
+    );
+  };
+
+  const handleGroupSelectedQuestions = async () => {
+    try {
+      const accepted = window.confirm(
+        "Сонгосон асуултуудыг хувилбарын нэг бүлэг болгох уу? Эдгээрт A, B, C, D тэмдэглэгээ автоматаар өгөгдөнө.",
+      );
+      if (!accepted) {
+        return;
+      }
+
+      await groupQuestionsAsVariants({
+        variables: { questionIds: selectedQuestionIds },
+        refetchQueries: [{ query: QuestionBankDetailQueryDocument, variables: { id: bankId } }],
+        awaitRefetchQueries: true,
+      });
+
+      setSelectedQuestionIds([]);
+      window.alert("Хувилбарын бүлэг амжилттай үүслээ.");
+    } catch (error) {
+      console.error("Failed to group questions as variants", error);
+      window.alert("Хувилбарын бүлэг үүсгэх үед алдаа гарлаа.");
+    }
+  };
+
   const formatPreviewText = (text: string) =>
     text.length > 78 ? `${text.slice(0, 75)}...` : text;
 
@@ -94,10 +128,49 @@ export function QuestionBankDetailTable({
     row.rawType !== "ESSAY" &&
     row.rawType !== "IMAGE_UPLOAD" &&
     row.variantLabel === null;
+  const selectedRows = rows.filter((row) => selectedQuestionIds.includes(row.id));
+  const selectedTypes = new Set(selectedRows.map((row) => row.rawType));
+  const canGroupSelectedQuestions =
+    editable &&
+    (selectedQuestionIds.length === 2 || selectedQuestionIds.length === 4) &&
+    selectedTypes.size <= 1;
 
   return (
     <>
       <div className="overflow-hidden rounded-xl border border-[#DFE1E5] bg-white shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+        {editable ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#DFE1E5] bg-[#F8FAFC] px-4 py-3">
+            <div className="space-y-1">
+              <p className="text-[13px] font-medium text-[#0F1216]">
+                {selectedQuestionIds.length
+                  ? `${selectedQuestionIds.length} асуулт сонгогдсон`
+                  : "2 эсвэл 4 асуулт сонгоод хувилбарын бүлэг үүсгэнэ"}
+              </p>
+              <p className="text-[12px] text-[#52555B]">
+                Ижил төрлийн асуултуудыг сонгоод нэг variant group болгон холбоно.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {selectedQuestionIds.length ? (
+                <button
+                  type="button"
+                  className="rounded-md px-3 py-2 text-[13px] font-medium text-[#52555B] hover:bg-[#EEF2F6]"
+                  onClick={() => setSelectedQuestionIds([])}
+                >
+                  Цэвэрлэх
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="rounded-md bg-[#6F90FF] px-3 py-2 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:bg-[#D0D5DD]"
+                disabled={!canGroupSelectedQuestions}
+                onClick={() => void handleGroupSelectedQuestions()}
+              >
+                Хувилбарын бүлэг болгох
+              </button>
+            </div>
+          </div>
+        ) : null}
         {errorMessage ? <p className="p-5 text-[14px] text-[#B42318]">{errorMessage}</p> : null}
         {loading ? (
           <div className="animate-pulse p-4">
@@ -127,6 +200,7 @@ export function QuestionBankDetailTable({
           <div className="overflow-x-auto">
             <table className="w-full table-fixed text-left">
               <colgroup>
+                <col className="w-[4%]" />
                 <col className="w-[47%]" />
                 <col className="w-[18%]" />
                 <col className="w-[12%]" />
@@ -136,6 +210,18 @@ export function QuestionBankDetailTable({
               </colgroup>
               <thead className="border-b border-[#DFE1E5] text-[14px] font-medium text-[#0F1216]">
                 <tr>
+                  <th className="px-4 py-3 text-center">
+                    {editable ? (
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border border-[#D0D5DD]"
+                        checked={rows.length > 0 && selectedQuestionIds.length === rows.length}
+                        onChange={(event) =>
+                          setSelectedQuestionIds(event.target.checked ? rows.map((row) => row.id) : [])
+                        }
+                      />
+                    ) : null}
+                  </th>
                   <th className="px-4 py-3">Асуулт</th>
                   <th className="px-4 py-3 whitespace-nowrap">Төрөл</th>
                   <th className="px-4 py-3 whitespace-nowrap">Түвшин</th>
@@ -147,6 +233,16 @@ export function QuestionBankDetailTable({
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id} className="border-b border-[#DFE1E5] last:border-b-0">
+                    <td className="px-4 py-4 text-center">
+                      {editable ? (
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border border-[#D0D5DD]"
+                          checked={selectedQuestionIds.includes(row.id)}
+                          onChange={() => handleToggleSelectedQuestion(row.id)}
+                        />
+                      ) : null}
+                    </td>
                     <td className="px-4 py-4 text-[14px] text-[#0F1216]">
                       <div className="space-y-2">
                         <button

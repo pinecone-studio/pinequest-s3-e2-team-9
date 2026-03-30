@@ -1,0 +1,18 @@
+mutation CreateExamDraftVariantsMutation(
+  $sourceQuestionId: ID!
+  $totalVariants: Int!
+) {
+  createExamDraftVariants(
+    sourceQuestionId: $sourceQuestionId
+    totalVariants: $totalVariants
+  ) {
+    id
+    title
+    prompt
+    type
+    difficulty
+    options
+    correctAnswer
+    tags
+  }
+}
