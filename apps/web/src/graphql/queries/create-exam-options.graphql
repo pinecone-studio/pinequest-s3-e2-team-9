@@ -1,4 +1,7 @@
 query CreateExamOptions {
+  me {
+    id
+  }
   classes {
     id
     name

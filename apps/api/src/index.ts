@@ -11,7 +11,12 @@ import { first, type D1DatabaseLike } from "./lib/d1";
 import { createRootValue } from "./graphql/root-value";
 import { schemaSource } from "./graphql/schema";
 import type { Role } from "./graphql/types";
-import { connectLiveExamEvents, type LiveExamEventsEnv } from "./live-exam-events";
+import {
+  connectLiveExamEvents,
+  connectPublicQuestionBankEvents,
+  connectTeacherQuestionBankEvents,
+  type LiveExamEventsEnv,
+} from "./live-exam-events";
 
 const corsHeaders = {
   "access-control-allow-origin": "*",
@@ -51,6 +56,8 @@ const empty = (init?: ResponseInit): Response =>
 
 const schema = buildSchema(schemaSource);
 const classExamEventsPathPattern = /^\/events\/classes\/([^/]+)\/exams$/;
+const teacherQuestionBankEventsPathPattern = /^\/events\/teachers\/([^/]+)\/question-banks$/;
+const publicQuestionBankEventsPath = "/events/question-banks/public";
 
 type Env = {
   DB: D1DatabaseLike;
@@ -350,6 +357,75 @@ const handleClassExamEvents = async (
   }
 };
 
+const canActorAccessTeacherQuestionBankEvents = (
+  actorId: string,
+  role: Role,
+  teacherId: string,
+): boolean => role === "ADMIN" || (role === "TEACHER" && actorId === teacherId);
+
+const handleTeacherQuestionBankEvents = async (
+  request: Request,
+  env: Env,
+  teacherId: string,
+): Promise<Response> => {
+  if (request.method !== "GET") {
+    return json({ error: "Method Not Allowed" }, { status: 405 });
+  }
+
+  try {
+    const actor = await authenticateActor(request, env.DB, env);
+
+    if (!actor) {
+      throw new ApiAuthError(401, "Authentication required.");
+    }
+
+    if (!canActorAccessTeacherQuestionBankEvents(actor.user.id, actor.user.role, teacherId)) {
+      throw new ApiAuthError(403, "You do not have access to this teacher event stream.");
+    }
+
+    return connectTeacherQuestionBankEvents(env, teacherId, {
+      actorId: actor.user.id,
+    });
+  } catch (error) {
+    const status = error instanceof ApiAuthError ? error.status : 500;
+    const message =
+      error instanceof Error ? error.message : "Unable to connect to question bank events.";
+
+    return json({ error: message }, { status });
+  }
+};
+
+const handlePublicQuestionBankEvents = async (
+  request: Request,
+  env: Env,
+): Promise<Response> => {
+  if (request.method !== "GET") {
+    return json({ error: "Method Not Allowed" }, { status: 405 });
+  }
+
+  try {
+    const actor = await authenticateActor(request, env.DB, env);
+
+    if (!actor) {
+      throw new ApiAuthError(401, "Authentication required.");
+    }
+
+    if (actor.user.role !== "ADMIN" && actor.user.role !== "TEACHER") {
+      throw new ApiAuthError(403, "You do not have access to public question bank events.");
+    }
+
+    return connectPublicQuestionBankEvents(env, {
+      actorId: actor.user.id,
+    });
+  } catch (error) {
+    const status = error instanceof ApiAuthError ? error.status : 500;
+    const message =
+      error instanceof Error ? error.message : "Unable to connect to public question bank events.";
+
+    return json({ error: message }, { status });
+  }
+};
+
 type EmailAccessRequestBody = {
   email?: string;
 };
@@ -480,6 +556,8 @@ export default {
           loginEligibility: "/auth/login-eligibility",
           session: "/auth/session",
           classExamEvents: "/events/classes/:classId/exams",
+          teacherQuestionBankEvents: "/events/teachers/:teacherId/question-banks",
+          publicQuestionBankEvents: publicQuestionBankEventsPath,
           graphql: "/graphql",
         },
       });
@@ -518,6 +596,21 @@ export default {
         env,
         decodeURIComponent(classExamEventsMatch[1]),
       );
+    }
+
+    const teacherQuestionBankEventsMatch = pathname.match(
+      teacherQuestionBankEventsPathPattern,
+    );
+    if (teacherQuestionBankEventsMatch) {
+      return handleTeacherQuestionBankEvents(
+        request,
+        env,
+        decodeURIComponent(teacherQuestionBankEventsMatch[1]),
+      );
+    }
+
+    if (pathname === publicQuestionBankEventsPath) {
+      return handlePublicQuestionBankEvents(request, env);
     }
 
     return json(

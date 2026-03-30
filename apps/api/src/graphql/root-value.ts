@@ -4,7 +4,11 @@ import { getClassSelectFields, insertClassRow } from "./class-schema";
 import { createAttemptMutations } from "./modules/attempts";
 import { closeExpiredExams, createExamQueriesAndMutations, findExamById } from "./modules/exams";
 import { createDashboardOverviewQuery } from "./modules/dashboard";
-import { publishLiveExamEvent, type LiveExamEventsEnv } from "../live-exam-events";
+import {
+  publishLiveExamEvent,
+  publishQuestionBankEvent,
+  type LiveExamEventsEnv,
+} from "../live-exam-events";
 import {
   createQuestionQueriesAndMutations,
   findQuestionBankById,
@@ -211,6 +215,7 @@ export const createRootValue = ({ db, env }: CreateRootValueArgs) => {
       findExam: findExamById,
       findUser,
       findQuestion: findQuestionById,
+      publishLiveEvent: async (event) => publishLiveExamEvent(env, event),
       toAttempt: (_, attempt) => toAttempt(attempt),
     }),
     ...createExamQueriesAndMutations({
@@ -224,6 +229,7 @@ export const createRootValue = ({ db, env }: CreateRootValueArgs) => {
     ...createQuestionQueriesAndMutations({
       db,
       requireActor,
+      publishQuestionBankEvent: async (event) => publishQuestionBankEvent(env, event),
       toQuestionBank: (_, bank) => toQuestionBank(bank),
       toQuestion: (_, question) => toQuestion(question),
     }),

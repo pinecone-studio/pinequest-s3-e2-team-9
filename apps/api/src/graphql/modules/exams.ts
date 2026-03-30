@@ -468,7 +468,19 @@ export const createExamQueriesAndMutations = ({
       );
     }
 
-    return toExam(db, await findExamById(db, nextExamId));
+    const assignedExam = await findExamById(db, nextExamId);
+    await publishLiveEvent?.({
+      type: "exam_assigned",
+      classId,
+      endsAt: null,
+      emittedAt: now(),
+      examId: assignedExam.id,
+      startedAt: null,
+      status: "DRAFT",
+      title: assignedExam.title,
+    });
+
+    return toExam(db, assignedExam);
   },
   addQuestionToExam: async (
     { examId, questionId, points }: AddQuestionToExamArgs,

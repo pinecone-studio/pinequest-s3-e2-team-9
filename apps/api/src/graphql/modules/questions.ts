@@ -1,5 +1,6 @@
 import { all, first, invariant, run, type D1DatabaseLike } from "../../lib/d1";
 import type { RequestContext } from "../../auth";
+import type { QuestionBankMutationEvent } from "../../live-exam-events";
 import {
   type CreateQuestionVariantsArgs,
   type DeleteQuestionArgs,
@@ -137,6 +138,7 @@ const questionBankSelectFields =
 type QuestionModuleDependencies = {
   db: D1DatabaseLike;
   requireActor: (context: RequestContext, roles: Role[]) => Promise<UserRow>;
+  publishQuestionBankEvent?: (event: QuestionBankMutationEvent) => Promise<void>;
   toQuestionBank: (db: D1DatabaseLike, bank: QuestionBankRow) => unknown;
   toQuestion: (db: D1DatabaseLike, question: QuestionRow) => unknown;
 };
@@ -144,6 +146,7 @@ type QuestionModuleDependencies = {
 export const createQuestionQueriesAndMutations = ({
   db,
   requireActor,
+  publishQuestionBankEvent,
   toQuestionBank,
   toQuestion,
 }: QuestionModuleDependencies) => ({
@@ -296,7 +299,18 @@ export const createQuestionQueriesAndMutations = ({
       ],
     );
 
-    return toQuestionBank(db, await findQuestionBankById(db, id));
+    const createdBank = await findQuestionBankById(db, id);
+    await publishQuestionBankEvent?.({
+      type: "question_bank_updated",
+      bankId: createdBank.id,
+      change: "CREATED",
+      emittedAt: now(),
+      ownerId: createdBank.owner_id,
+      questionId: null,
+      visibility: createdBank.visibility,
+    });
+
+    return toQuestionBank(db, createdBank);
   },
   createQuestion: async (
     {
@@ -351,7 +365,18 @@ export const createQuestionQueriesAndMutations = ({
       ],
     );
 
-    return toQuestion(db, await findQuestionById(db, id));
+    const createdQuestion = await findQuestionById(db, id);
+    await publishQuestionBankEvent?.({
+      type: "question_bank_updated",
+      bankId: bank.id,
+      change: "CREATED",
+      emittedAt: now(),
+      ownerId: bank.owner_id,
+      questionId: createdQuestion.id,
+      visibility: bank.visibility,
+    });
+
+    return toQuestion(db, createdQuestion);
   },
   createQuestionVariants: async (
     { sourceQuestionId, totalVariants }: CreateQuestionVariantsArgs,
@@ -434,6 +459,16 @@ export const createQuestionQueriesAndMutations = ({
       createdIds.push(nextId);
     }
 
+    await publishQuestionBankEvent?.({
+      type: "question_bank_updated",
+      bankId: bank.id,
+      change: "VARIANTS_CREATED",
+      emittedAt: now(),
+      ownerId: bank.owner_id,
+      questionId: sourceQuestionId,
+      visibility: bank.visibility,
+    });
+
     return Promise.all(createdIds.map(async (id) => toQuestion(db, await findQuestionById(db, id))));
   },
   updateQuestion: async (
@@ -451,8 +486,8 @@ export const createQuestionQueriesAndMutations = ({
   ) => {
     const question = await findQuestionById(db, id);
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const bank = await findQuestionBankById(db, question.bank_id);
     if (actor.role === "TEACHER") {
-      const bank = await findQuestionBankById(db, question.bank_id);
       invariant(bank.owner_id === actor.id, "You can only update questions in your own question banks.");
     }
 
@@ -473,16 +508,36 @@ export const createQuestionQueriesAndMutations = ({
       ],
     );
 
-    return toQuestion(db, await findQuestionById(db, id));
+    const updatedQuestion = await findQuestionById(db, id);
+    await publishQuestionBankEvent?.({
+      type: "question_bank_updated",
+      bankId: bank.id,
+      change: "UPDATED",
+      emittedAt: now(),
+      ownerId: bank.owner_id,
+      questionId: updatedQuestion.id,
+      visibility: bank.visibility,
+    });
+
+    return toQuestion(db, updatedQuestion);
   },
   deleteQuestion: async ({ id }: DeleteQuestionArgs, context: RequestContext) => {
     const question = await findQuestionById(db, id);
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const bank = await findQuestionBankById(db, question.bank_id);
     if (actor.role === "TEACHER") {
-      const bank = await findQuestionBankById(db, question.bank_id);
       invariant(bank.owner_id === actor.id, "You can only delete questions in your own question banks.");
     }
     await run(db, "DELETE FROM questions WHERE id = ?", [id]);
+    await publishQuestionBankEvent?.({
+      type: "question_bank_updated",
+      bankId: bank.id,
+      change: "DELETED",
+      emittedAt: now(),
+      ownerId: bank.owner_id,
+      questionId: id,
+      visibility: bank.visibility,
+    });
     return true;
   },
 });

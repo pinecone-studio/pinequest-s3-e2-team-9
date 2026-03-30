@@ -2,6 +2,7 @@
 
 import { useDeferredValue, useMemo, useState } from "react";
 import { useClassesListQuery } from "@/graphql/generated";
+import { useLiveExamEvents } from "@/lib/use-live-exam-events";
 import { buildClassesListViewModel } from "./classes-view-model";
 
 export function useClassesList() {
@@ -10,6 +11,14 @@ export function useClassesList() {
   const query = useClassesListQuery({
     ssr: false,
     notifyOnNetworkStatusChange: true,
+  });
+
+  useLiveExamEvents({
+    classIds: query.data?.classes.map((classroom) => classroom.id) ?? [],
+    enabled: Boolean(query.data),
+    onEvent: () => {
+      void query.refetch();
+    },
   });
 
   const classes = useMemo(() => {

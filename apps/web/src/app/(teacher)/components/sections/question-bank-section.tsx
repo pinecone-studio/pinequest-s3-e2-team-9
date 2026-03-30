@@ -3,6 +3,7 @@
 
 import { useMemo, useState } from "react";
 import { useQuestionBanksQueryQuery } from "@/graphql/generated";
+import { useLiveQuestionBankEvents } from "@/lib/use-live-question-bank-events";
 import { PlusIcon } from "../icons";
 import {
   getCurriculumGrades,
@@ -72,8 +73,16 @@ export function QuestionBankSection() {
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
-  const { data, loading, error } = useQuestionBanksQueryQuery({
+  const { data, loading, error, refetch } = useQuestionBanksQueryQuery({
     fetchPolicy: "cache-and-network",
+  });
+  useLiveQuestionBankEvents({
+    teacherId: data?.me?.id ?? null,
+    includePublic: true,
+    enabled: Boolean(data?.me),
+    onEvent: () => {
+      void refetch();
+    },
   });
 
   const viewerId = data?.me?.id ?? null;
