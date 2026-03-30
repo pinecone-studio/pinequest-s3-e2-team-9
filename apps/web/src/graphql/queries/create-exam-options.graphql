@@ -16,6 +16,9 @@ query CreateExamOptions {
     prompt
     type
     difficulty
+    options
+    correctAnswer
+    tags
     bank {
       id
       title

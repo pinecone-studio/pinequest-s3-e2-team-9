@@ -177,6 +177,15 @@ export const useCreateExamFlow = (
     setErrors((previous) => ({ ...previous, selectedQuestions: undefined }));
     setSubmitState({ status: "idle" });
   };
+  const replaceSelectedQuestions = (questionIds: string[]) => {
+    const nextPoints: SelectedQuestionPoints = {};
+    for (const questionId of questionIds) {
+      nextPoints[questionId] = selectedQuestionPoints[questionId] ?? "1";
+    }
+    setSelectedQuestionPoints(nextPoints);
+    setErrors((previous) => ({ ...previous, selectedQuestions: undefined }));
+    setSubmitState({ status: "idle" });
+  };
   const setQuestionPoints = (questionId: string, value: string) => {
     setSelectedQuestionPoints((previous) => ({ ...previous, [questionId]: value }));
     setErrors((previous) => {
@@ -348,6 +357,7 @@ export const useCreateExamFlow = (
     setFieldValue,
     toggleQuestion,
     addQuestion,
+    replaceSelectedQuestions,
     setQuestionPoints,
     addGenerationRule,
     removeGenerationRule,

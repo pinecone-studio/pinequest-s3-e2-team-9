@@ -1,8 +1,10 @@
 import { all, first, invariant, run, type D1DatabaseLike } from "../../lib/d1";
 import type { RequestContext } from "../../auth";
 import {
+  type CreateExamDraftVariantsArgs,
   type CreateQuestionVariantsArgs,
   type DeleteQuestionArgs,
+  type GroupQuestionsAsVariantsArgs,
   makeId,
   now,
   parseJsonArray,
@@ -67,6 +69,7 @@ const VARIANT_LABELS = ["A", "B", "C", "D"];
 const VARIANT_GROUP_TAG = "variant_group:";
 const VARIANT_LABEL_TAG = "variant_label:";
 const VARIANT_COUNT_TAG = "variant_count:";
+const DRAFT_VARIANT_TAG = "variant_draft:true";
 
 const stripVariantTags = (tags: string[]) =>
   tags.filter(
@@ -82,6 +85,13 @@ const toVariantTags = (tags: string[], groupId: string, label: string, totalVari
   `${VARIANT_LABEL_TAG}${label}`,
   `${VARIANT_COUNT_TAG}${totalVariants}`,
 ];
+
+const toDraftVariantTags = (
+  tags: string[],
+  groupId: string,
+  label: string,
+  totalVariants: number,
+) => [...toVariantTags(tags, groupId, label, totalVariants), DRAFT_VARIANT_TAG];
 
 const toVariantTitle = (value: string, label: string) =>
   `${value.replace(/\s+\([A-D]\)$/u, "").trim()} (${label})`;
@@ -129,6 +139,43 @@ const buildVariantDraft = (
         ? nextOptions[correctIndex]
         : question.correct_answer,
   };
+};
+
+const normalizeVariantSelection = (
+  questions: QuestionRow[],
+): Array<{
+  question: QuestionRow;
+  tags: string[];
+}> => {
+  invariant(
+    questions.length === 2 || questions.length === 4,
+    "Хувилбарын бүлэгт 2 эсвэл 4 асуулт сонгоно.",
+  );
+
+  const [firstQuestion] = questions;
+  invariant(Boolean(firstQuestion), "Дор хаяж нэг асуулт сонгоно.");
+
+  const uniqueQuestionIds = new Set(questions.map((question) => question.id));
+  invariant(
+    uniqueQuestionIds.size === questions.length,
+    "Нэг асуултыг давхар сонгох боломжгүй.",
+  );
+
+  return questions.map((question) => {
+    invariant(
+      question.bank_id === firstQuestion.bank_id,
+      "Хувилбарын бүлгийн асуултууд нэг сангаас байна.",
+    );
+    invariant(
+      question.type === firstQuestion.type,
+      "Хувилбарын бүлгийн бүх асуулт ижил төрөлтэй байна.",
+    );
+
+    return {
+      question,
+      tags: parseJsonArray(question.tags_json),
+    };
+  });
 };
 
 const questionBankSelectFields =
@@ -435,6 +482,125 @@ export const createQuestionQueriesAndMutations = ({
     }
 
     return Promise.all(createdIds.map(async (id) => toQuestion(db, await findQuestionById(db, id))));
+  },
+  createExamDraftVariants: async (
+    { sourceQuestionId, totalVariants }: CreateExamDraftVariantsArgs,
+    context: RequestContext,
+  ) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    invariant(
+      Number.isInteger(totalVariants) && totalVariants >= 2 && totalVariants <= 4,
+      "Variant тоо 2-4 хооронд байна.",
+    );
+
+    const question = await findQuestionById(db, sourceQuestionId);
+    const bank = await findQuestionBankById(db, question.bank_id);
+    if (actor.role === "TEACHER") {
+      invariant(
+        bank.visibility === "PUBLIC" || bank.owner_id === actor.id,
+        "Зөвхөн өөрийн эсвэл нээлттэй сангаас draft variant үүсгэнэ.",
+      );
+    }
+
+    invariant(
+      question.type !== "ESSAY" && question.type !== "IMAGE_UPLOAD",
+      "Энэ төрлийн асуултад draft variant автоматаар үүсгэх боломжгүй.",
+    );
+
+    const existingTags = parseJsonArray(question.tags_json);
+    const groupId = makeId("variant_group");
+    const createdIds: string[] = [];
+
+    for (let index = 0; index < totalVariants; index += 1) {
+      const label = VARIANT_LABELS[index] ?? `V${index + 1}`;
+      const nextId = makeId("question");
+      const draft =
+        index === 0
+          ? {
+              title: toVariantTitle(question.title.trim() || question.prompt.trim(), label),
+              prompt: question.prompt,
+              options: parseJsonArray(question.options_json),
+              correctAnswer: question.correct_answer,
+            }
+          : buildVariantDraft(question, label, index * 2);
+
+      await run(
+        db,
+        `INSERT INTO questions (
+          id,
+          bank_id,
+          type,
+          title,
+          prompt,
+          options_json,
+          correct_answer,
+          difficulty,
+          tags_json,
+          created_by_id,
+          created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          nextId,
+          question.bank_id,
+          question.type,
+          draft.title,
+          draft.prompt,
+          toJsonArray(normalizeQuestionOptions(question.type, draft.options)),
+          draft.correctAnswer ?? null,
+          question.difficulty,
+          toJsonArray(toDraftVariantTags(existingTags, groupId, label, totalVariants)),
+          actor.id,
+          now(),
+        ],
+      );
+      createdIds.push(nextId);
+    }
+
+    return Promise.all(
+      createdIds.map(async (id) => toQuestion(db, await findQuestionById(db, id))),
+    );
+  },
+  groupQuestionsAsVariants: async (
+    { questionIds }: GroupQuestionsAsVariantsArgs,
+    context: RequestContext,
+  ) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const selectedQuestions = await Promise.all(
+      questionIds.map(async (id) => findQuestionById(db, id)),
+    );
+    const normalizedQuestions = normalizeVariantSelection(selectedQuestions);
+    const bank = await findQuestionBankById(db, normalizedQuestions[0].question.bank_id);
+
+    if (actor.role === "TEACHER") {
+      invariant(
+        bank.owner_id === actor.id,
+        "You can only group questions from your own question banks.",
+      );
+    }
+
+    const groupId = makeId("variant_group");
+    const totalVariants = normalizedQuestions.length;
+
+    for (const [index, item] of normalizedQuestions.entries()) {
+      const label = VARIANT_LABELS[index] ?? `V${index + 1}`;
+      await run(
+        db,
+        `UPDATE questions
+         SET tags_json = ?
+         WHERE id = ?`,
+        [
+          toJsonArray(toVariantTags(item.tags, groupId, label, totalVariants)),
+          item.question.id,
+        ],
+      );
+    }
+
+    return Promise.all(
+      normalizedQuestions.map(async ({ question }) =>
+        toQuestion(db, await findQuestionById(db, question.id)),
+      ),
+    );
   },
   updateQuestion: async (
     {

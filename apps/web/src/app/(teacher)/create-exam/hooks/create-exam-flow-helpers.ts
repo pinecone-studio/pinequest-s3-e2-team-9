@@ -29,6 +29,7 @@ export const INITIAL_FORM_VALUES: CreateExamFormValues = {
   scheduledFor: "",
   shuffleQuestions: false,
   shuffleAnswers: false,
+  variantCount: 1,
   generationMode: ExamGenerationMode.Manual,
   generationRules: [],
   passingCriteriaType: PassingCriteriaType.Percentage,

@@ -221,10 +221,12 @@ export type Mutation = {
   closeExam: Exam;
   createClass: Class;
   createExam: Exam;
+  createExamDraftVariants: Array<Question>;
   createQuestion: Question;
   createQuestionBank: QuestionBank;
   createQuestionVariants: Array<Question>;
   deleteQuestion: Scalars['Boolean']['output'];
+  groupQuestionsAsVariants: Array<Question>;
   publishExam: Exam;
   saveAnswer: Attempt;
   startAttempt: Attempt;
@@ -273,6 +275,12 @@ export type MutationCreateExamArgs = {
 };
 
 
+export type MutationCreateExamDraftVariantsArgs = {
+  sourceQuestionId: Scalars['ID']['input'];
+  totalVariants?: Scalars['Int']['input'];
+};
+
+
 export type MutationCreateQuestionArgs = {
   bankId: Scalars['ID']['input'];
   correctAnswer?: InputMaybe<Scalars['String']['input']>;
@@ -303,6 +311,11 @@ export type MutationCreateQuestionVariantsArgs = {
 
 export type MutationDeleteQuestionArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationGroupQuestionsAsVariantsArgs = {
+  questionIds: Array<Scalars['ID']['input']>;
 };
 
 
@@ -477,6 +490,14 @@ export type CloseExamMutationVariables = Exact<{
 
 export type CloseExamMutation = { __typename?: 'Mutation', closeExam: { __typename?: 'Exam', id: string, status: ExamStatus } };
 
+export type CreateExamDraftVariantsMutationMutationVariables = Exact<{
+  sourceQuestionId: Scalars['ID']['input'];
+  totalVariants: Scalars['Int']['input'];
+}>;
+
+
+export type CreateExamDraftVariantsMutationMutation = { __typename?: 'Mutation', createExamDraftVariants: Array<{ __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, difficulty: Difficulty, options: Array<string>, correctAnswer?: string | null, tags: Array<string> }> };
+
 export type CreateExamMutationVariables = Exact<{
   classId: Scalars['ID']['input'];
   title: Scalars['String']['input'];
@@ -535,6 +556,13 @@ export type DeleteQuestionMutationMutationVariables = Exact<{
 
 
 export type DeleteQuestionMutationMutation = { __typename?: 'Mutation', deleteQuestion: boolean };
+
+export type GroupQuestionsAsVariantsMutationMutationVariables = Exact<{
+  questionIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
+}>;
+
+
+export type GroupQuestionsAsVariantsMutationMutation = { __typename?: 'Mutation', groupQuestionsAsVariants: Array<{ __typename?: 'Question', id: string }> };
 
 export type PublishExamMutationVariables = Exact<{
   examId: Scalars['ID']['input'];
@@ -596,7 +624,7 @@ export type ClassesListQuery = { __typename?: 'Query', classes: Array<{ __typena
 export type CreateExamOptionsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CreateExamOptionsQuery = { __typename?: 'Query', classes: Array<{ __typename?: 'Class', id: string, name: string }>, questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, subject: string, grade: number, topic: string }>, questions: Array<{ __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, difficulty: Difficulty, bank: { __typename?: 'QuestionBank', id: string, title: string, subject: string, grade: number, topic: string } }> };
+export type CreateExamOptionsQuery = { __typename?: 'Query', classes: Array<{ __typename?: 'Class', id: string, name: string }>, questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, subject: string, grade: number, topic: string }>, questions: Array<{ __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, difficulty: Difficulty, options: Array<string>, correctAnswer?: string | null, tags: Array<string>, bank: { __typename?: 'QuestionBank', id: string, title: string, subject: string, grade: number, topic: string } }> };
 
 export type DashboardOverviewQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -755,6 +783,50 @@ export function useCloseExamMutation(baseOptions?: ApolloReactHooks.MutationHook
 export type CloseExamMutationHookResult = ReturnType<typeof useCloseExamMutation>;
 export type CloseExamMutationResult = ApolloReactCommon.MutationResult<CloseExamMutation>;
 export type CloseExamMutationOptions = ApolloReactCommon.BaseMutationOptions<CloseExamMutation, CloseExamMutationVariables>;
+export const CreateExamDraftVariantsMutationDocument = gql`
+    mutation CreateExamDraftVariantsMutation($sourceQuestionId: ID!, $totalVariants: Int!) {
+  createExamDraftVariants(
+    sourceQuestionId: $sourceQuestionId
+    totalVariants: $totalVariants
+  ) {
+    id
+    title
+    prompt
+    type
+    difficulty
+    options
+    correctAnswer
+    tags
+  }
+}
+    `;
+export type CreateExamDraftVariantsMutationMutationFn = ApolloReactCommon.MutationFunction<CreateExamDraftVariantsMutationMutation, CreateExamDraftVariantsMutationMutationVariables>;
+
+/**
+ * __useCreateExamDraftVariantsMutationMutation__
+ *
+ * To run a mutation, you first call `useCreateExamDraftVariantsMutationMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateExamDraftVariantsMutationMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createExamDraftVariantsMutationMutation, { data, loading, error }] = useCreateExamDraftVariantsMutationMutation({
+ *   variables: {
+ *      sourceQuestionId: // value for 'sourceQuestionId'
+ *      totalVariants: // value for 'totalVariants'
+ *   },
+ * });
+ */
+export function useCreateExamDraftVariantsMutationMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreateExamDraftVariantsMutationMutation, CreateExamDraftVariantsMutationMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<CreateExamDraftVariantsMutationMutation, CreateExamDraftVariantsMutationMutationVariables>(CreateExamDraftVariantsMutationDocument, options);
+      }
+export type CreateExamDraftVariantsMutationMutationHookResult = ReturnType<typeof useCreateExamDraftVariantsMutationMutation>;
+export type CreateExamDraftVariantsMutationMutationResult = ApolloReactCommon.MutationResult<CreateExamDraftVariantsMutationMutation>;
+export type CreateExamDraftVariantsMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateExamDraftVariantsMutationMutation, CreateExamDraftVariantsMutationMutationVariables>;
 export const CreateExamDocument = gql`
     mutation CreateExam($classId: ID!, $title: String!, $description: String, $mode: ExamMode!, $durationMinutes: Int!, $scheduledFor: String, $shuffleQuestions: Boolean!, $shuffleAnswers: Boolean!, $generationMode: ExamGenerationMode!, $rules: [ExamGenerationRuleInput!], $passingCriteriaType: PassingCriteriaType!, $passingThreshold: Int!) {
   createExam(
@@ -1001,6 +1073,39 @@ export function useDeleteQuestionMutationMutation(baseOptions?: ApolloReactHooks
 export type DeleteQuestionMutationMutationHookResult = ReturnType<typeof useDeleteQuestionMutationMutation>;
 export type DeleteQuestionMutationMutationResult = ApolloReactCommon.MutationResult<DeleteQuestionMutationMutation>;
 export type DeleteQuestionMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<DeleteQuestionMutationMutation, DeleteQuestionMutationMutationVariables>;
+export const GroupQuestionsAsVariantsMutationDocument = gql`
+    mutation GroupQuestionsAsVariantsMutation($questionIds: [ID!]!) {
+  groupQuestionsAsVariants(questionIds: $questionIds) {
+    id
+  }
+}
+    `;
+export type GroupQuestionsAsVariantsMutationMutationFn = ApolloReactCommon.MutationFunction<GroupQuestionsAsVariantsMutationMutation, GroupQuestionsAsVariantsMutationMutationVariables>;
+
+/**
+ * __useGroupQuestionsAsVariantsMutationMutation__
+ *
+ * To run a mutation, you first call `useGroupQuestionsAsVariantsMutationMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useGroupQuestionsAsVariantsMutationMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [groupQuestionsAsVariantsMutationMutation, { data, loading, error }] = useGroupQuestionsAsVariantsMutationMutation({
+ *   variables: {
+ *      questionIds: // value for 'questionIds'
+ *   },
+ * });
+ */
+export function useGroupQuestionsAsVariantsMutationMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<GroupQuestionsAsVariantsMutationMutation, GroupQuestionsAsVariantsMutationMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<GroupQuestionsAsVariantsMutationMutation, GroupQuestionsAsVariantsMutationMutationVariables>(GroupQuestionsAsVariantsMutationDocument, options);
+      }
+export type GroupQuestionsAsVariantsMutationMutationHookResult = ReturnType<typeof useGroupQuestionsAsVariantsMutationMutation>;
+export type GroupQuestionsAsVariantsMutationMutationResult = ApolloReactCommon.MutationResult<GroupQuestionsAsVariantsMutationMutation>;
+export type GroupQuestionsAsVariantsMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<GroupQuestionsAsVariantsMutationMutation, GroupQuestionsAsVariantsMutationMutationVariables>;
 export const PublishExamDocument = gql`
     mutation PublishExam($examId: ID!) {
   publishExam(examId: $examId) {
@@ -1363,6 +1468,9 @@ export const CreateExamOptionsDocument = gql`
     prompt
     type
     difficulty
+    options
+    correctAnswer
+    tags
     bank {
       id
       title

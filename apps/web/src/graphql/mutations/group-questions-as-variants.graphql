@@ -1,0 +1,5 @@
+mutation GroupQuestionsAsVariantsMutation($questionIds: [ID!]!) {
+  groupQuestionsAsVariants(questionIds: $questionIds) {
+    id
+  }
+}

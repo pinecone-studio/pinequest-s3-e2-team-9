@@ -22,6 +22,7 @@ export type CreateExamFormValues = {
   scheduledFor: string;
   shuffleQuestions: boolean;
   shuffleAnswers: boolean;
+  variantCount: 1 | 2 | 4;
   generationMode: ExamGenerationMode;
   generationRules: CreateExamGenerationRule[];
   passingCriteriaType: PassingCriteriaType;
@@ -52,6 +53,9 @@ export type CreateExamQuestionOption = {
   prompt: string;
   type: string;
   difficulty: string;
+  options: string[];
+  correctAnswer?: string | null;
+  tags: string[];
   bankId: string;
   bankTitle: string;
   bankSubject: string;
