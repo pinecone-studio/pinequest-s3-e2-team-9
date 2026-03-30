@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { CalendarsIcon, CheckExamIcon } from "../../components/icons";
+import CastForEducationIcon from "../../components/icons/CastForEducationIcon";
+import { ClassManagementIcon } from "../../components/icons";
 
 type ClassCardProps = {
   href: string;
@@ -19,32 +20,26 @@ export function ClassCard({
   completedLabel,
 }: ClassCardProps) {
   return (
-    <article className="rounded-xl border border-[#DFE1E5] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="text-[16px] font-medium text-[#0F1216]">{name}</h2>
-          <p className="text-[14px] text-[#52555B]">{meta}</p>
+    <article className="flex h-[182px] w-[352px] flex-col items-center gap-3 rounded-[16px] border border-[#F1F2F3] bg-white p-[10px] pb-4 shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)]">
+      <div className="flex w-full flex-col items-start gap-2 rounded-[16px] rounded-b-[4px] bg-[#6F90FF] px-[14px] py-[18px]">
+        <h2 className="text-[18px] font-bold leading-5 text-white">{name}</h2>
+        <div className="flex items-center gap-1.5 text-[14px] leading-4 text-[#F5F5F5]">
+          <CastForEducationIcon className="h-4 w-4" />
+          <span>{meta}</span>
         </div>
-        <span className="rounded-md bg-[#F2F4F7] px-2 py-1 text-[12px] font-medium text-[#344054]">
-          {studentCountLabel}
-        </span>
-      </div>
-      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[14px] text-[#52555B]">
-        <span className="inline-flex items-center gap-2">
-          <CalendarsIcon className="h-4 w-4" />
-          {upcomingLabel}
-        </span>
-        <span className="inline-flex items-center gap-2">
-          <CheckExamIcon className="h-4 w-4" />
-          {completedLabel}
-        </span>
+        <div className="flex items-center gap-1.5 text-[14px] leading-4 text-[#F5F5F5]">
+          <ClassManagementIcon className="h-4 w-4" />
+          <span>{studentCountLabel}</span>
+        </div>
       </div>
       <Link
         href={href}
-        className="mt-4 inline-flex h-8 w-full items-center justify-center rounded-md border border-[#DFE1E5] bg-[#FAFAFA] px-3 text-[14px] font-medium text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)]"
+        className="inline-flex h-9 w-full items-center justify-center rounded-[8px] border border-[#52555B] bg-white text-[12px] font-semibold leading-5 text-[#52555B]"
       >
         Ангийг харах
       </Link>
+      <span className="sr-only">{upcomingLabel}</span>
+      <span className="sr-only">{completedLabel}</span>
     </article>
   );
 }

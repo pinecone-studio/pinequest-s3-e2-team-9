@@ -2,14 +2,17 @@ import type { ReactElement } from "react";
 import type { IconProps } from "./icons";
 import {
   BookIcon,
-  CheckIcon,
-  CheckCircleIcon,
-  ClipboardIcon,
-  GlobeIcon,
-  HomeIcon,
   PlusIcon,
   UsersIcon,
 } from "./icons";
+import {
+  ClassesSideBarIcon,
+  CheckIcon,
+  GlobalIcon,
+  HomeIcon,
+  MyExamsIcon,
+  QuestionBoxIcon,
+} from "./icons-svg";
 import { TEACHER_COMMON_TEXT } from "./teacher-ui";
 type IconComponent = (props: IconProps) => ReactElement;
 
@@ -27,11 +30,11 @@ export type QuickAction = {
 
 export const navItems: NavItem[] = [
   { label: "Нүүр", href: "/", icon: HomeIcon },
-  { label: "Миний шалгалтууд", href: "/my-exams", icon: ClipboardIcon },
-  { label: "Ангиуд", href: "/classes", icon: UsersIcon },
-  { label: "Асуултын сан", href: "/question-bank", icon: BookIcon },
-  { label: TEACHER_COMMON_TEXT.community, href: "/community", icon: GlobeIcon },
-  { label: "Үнэлгээ", href: "/evaluation", icon: CheckCircleIcon },
+  { label: "Миний шалгалтууд", href: "/my-exams", icon: MyExamsIcon },
+  { label: "Ангиуд", href: "/classes", icon: ClassesSideBarIcon },
+  { label: "Асуултын сан", href: "/question-bank", icon: QuestionBoxIcon },
+  { label: TEACHER_COMMON_TEXT.community, href: "/community", icon: GlobalIcon },
+  { label: "Үнэлгээ", href: "/evaluation", icon: CheckIcon },
 ];
 
 export const quickActions: QuickAction[] = [
