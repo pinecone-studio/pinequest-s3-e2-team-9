@@ -11,6 +11,7 @@ import {
   useEditExamDraftQuery,
   useUpdateExamDraftMutation,
 } from "@/graphql/generated";
+import { useLiveQuestionBankEvents } from "@/lib/use-live-question-bank-events";
 import type { Difficulty } from "@/graphql/generated";
 import {
   parseDurationMinutes,
@@ -60,6 +61,14 @@ export const useCreateExamFlow = (
     fetchPolicy: "cache-and-network",
     ssr: false,
     skip: !isEditMode,
+  });
+  useLiveQuestionBankEvents({
+    teacherId: optionsQuery.data?.me?.id ?? null,
+    includePublic: true,
+    enabled: Boolean(optionsQuery.data?.me),
+    onEvent: () => {
+      void optionsQuery.refetch();
+    },
   });
   const [runCreateExam, createExamState] = useCreateExamMutation();
   const [runUpdateExamDraft, updateExamDraftState] = useUpdateExamDraftMutation();

@@ -7,6 +7,7 @@ import {
   useMyExamsQueryQuery,
   useQuestionBankDetailQueryQuery,
 } from "@/graphql/generated";
+import { useLiveQuestionBankEvents } from "@/lib/use-live-question-bank-events";
 import { PlusIcon } from "../icons";
 import { TeacherBackButton } from "../teacher-back-button";
 import { QuestionBankDetailTable } from "./question-bank-detail-table";
@@ -42,15 +43,29 @@ export function QuestionBankDetailSection({
   const [difficulty, setDifficulty] = useState("Бүх түвшин");
   const [type, setType] = useState("Бүх төрөл");
   const [activeTab, setActiveTab] = useState<DetailTab>("questions");
-  const { data, loading, error } = useQuestionBankDetailQueryQuery({
+  const { data, loading, error, refetch: refetchDetail } = useQuestionBankDetailQueryQuery({
     variables: { id: bankId },
     fetchPolicy: "cache-and-network",
   });
   const examsQuery = useMyExamsQueryQuery({
     fetchPolicy: "cache-and-network",
   });
-
   const bank = data?.questionBank ?? null;
+  const viewerId = data?.me?.id ?? null;
+  const isOwnedBank = Boolean(bank && viewerId && bank.owner.id === viewerId);
+
+  useLiveQuestionBankEvents({
+    teacherId: isOwnedBank ? viewerId : null,
+    includePublic: Boolean(bank?.visibility === "PUBLIC" && !isOwnedBank),
+    enabled: Boolean(viewerId && bank),
+    onEvent: (event) => {
+      if (event.bankId !== bankId) {
+        return;
+      }
+
+      void refetchDetail();
+    },
+  });
   const questionUsageStats = useMemo(
     () => getQuestionUsageStats(bank?.questions, examsQuery.data?.exams),
     [bank?.questions, examsQuery.data?.exams],
@@ -86,8 +101,7 @@ export function QuestionBankDetailSection({
     }
   }, [bank?.subject, onSubjectChange]);
 
-  const viewerId = data?.me?.id ?? null;
-  const isEditable = Boolean(bank && viewerId && bank.owner.id === viewerId);
+  const isEditable = isOwnedBank;
 
   const filteredRows = useMemo(() => {
     try {

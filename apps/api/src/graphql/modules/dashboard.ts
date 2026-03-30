@@ -3,6 +3,7 @@ import type { RequestContext } from "../../auth";
 import type { Role, UserRow } from "../types";
 
 type CountRow = { count: number | null };
+type ClassIdRow = { id: string };
 type UpcomingExamRow = {
   id: string;
   title: string;
@@ -35,8 +36,24 @@ export const createDashboardOverviewQuery = ({
     const teacherId = actor.id;
     const nowIso = new Date().toISOString();
 
-    const [pendingReview, draftExam, ongoingExam, scheduledExam, upcomingExams, recentResults] =
+    const [
+      classRows,
+      pendingReview,
+      draftExam,
+      ongoingExam,
+      scheduledExam,
+      upcomingExams,
+      recentResults,
+    ] =
       await Promise.all([
+        all<ClassIdRow>(
+          db,
+          `SELECT id
+           FROM classes
+           WHERE teacher_id = ?
+           ORDER BY created_at DESC`,
+          [teacherId],
+        ),
         first<CountRow>(
           db,
           `SELECT COUNT(*) AS count
@@ -153,6 +170,7 @@ export const createDashboardOverviewQuery = ({
 
     return {
       teacherName: actor.full_name,
+      classIds: classRows.map((classroom) => classroom.id),
       summary: {
         pendingReviewCount: toSafeCount(pendingReview?.count),
         draftExamCount: toSafeCount(draftExam?.count),

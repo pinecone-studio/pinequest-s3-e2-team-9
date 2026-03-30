@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import { ExamStatus, MyExamsQueryDocument, type MyExamsQueryQuery } from "@/graphql/generated";
+import { useLiveExamEvents } from "@/lib/use-live-exam-events";
 import { ExamPreviewDialog } from "./exam-preview-dialog";
 import { MyExamsLoadingList } from "./my-exams-loading-list";
 import { ExamResultsDialog } from "./exam-results-dialog";
@@ -25,10 +26,18 @@ export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isResultsOpen, setIsResultsOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState<MyExamView | null>(null);
-  const { data, loading, error } = useQuery<MyExamsQueryQuery>(MyExamsQueryDocument, {
+  const { data, loading, error, refetch } = useQuery<MyExamsQueryQuery>(MyExamsQueryDocument, {
     fetchPolicy: "network-only",
     nextFetchPolicy: "cache-first",
     notifyOnNetworkStatusChange: true,
+  });
+
+  useLiveExamEvents({
+    classIds: data?.me?.classes.map((classroom) => classroom.id) ?? [],
+    enabled: Boolean(data?.me),
+    onEvent: () => {
+      void refetch();
+    },
   });
 
   const { exams, errorMessage } = useMemo(() => {

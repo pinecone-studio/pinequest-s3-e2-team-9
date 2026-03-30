@@ -2,6 +2,7 @@
 
 import { useDeferredValue, useMemo, useState } from "react";
 import { useClassDetailQuery } from "@/graphql/generated";
+import { useLiveExamEvents } from "@/lib/use-live-exam-events";
 import { buildClassDetailViewModel } from "../classes-view-model";
 
 export function useClassDetail(id: string) {
@@ -11,6 +12,13 @@ export function useClassDetail(id: string) {
     variables: { id },
     ssr: false,
     notifyOnNetworkStatusChange: true,
+  });
+
+  useLiveExamEvents({
+    classIds: [id],
+    onEvent: () => {
+      void query.refetch();
+    },
   });
 
   const viewModel = useMemo(

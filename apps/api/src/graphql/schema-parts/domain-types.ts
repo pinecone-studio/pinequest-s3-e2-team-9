@@ -98,6 +98,7 @@ export const schemaDomainTypes = /* GraphQL */ `
 
   type DashboardOverview {
     teacherName: String!
+    classIds: [ID!]!
     summary: DashboardMetricSummary!
     upcomingExams: [DashboardUpcomingExam!]!
     recentResults: [DashboardRecentResult!]!

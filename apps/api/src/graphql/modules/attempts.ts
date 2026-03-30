@@ -1,6 +1,7 @@
 import { all, first, invariant, run, type D1DatabaseLike } from "../../lib/d1";
 import { closeExpiredExams } from "./exams";
 import type { RequestContext } from "../../auth";
+import type { LiveExamMutationEvent } from "../../live-exam-events";
 import {
   makeId,
   normalize,
@@ -125,6 +126,7 @@ type AttemptMutationDependencies = {
   findExam: (db: D1DatabaseLike, id: string) => Promise<ExamRow>;
   findUser: (db: D1DatabaseLike, id: string) => Promise<UserRow>;
   findQuestion: (db: D1DatabaseLike, id: string) => Promise<QuestionRow>;
+  publishLiveEvent?: (event: LiveExamMutationEvent) => Promise<void>;
   toAttempt: (db: D1DatabaseLike, attempt: AttemptRow) => unknown;
 };
 
@@ -134,6 +136,7 @@ export const createAttemptMutations = ({
   findExam,
   findUser,
   findQuestion,
+  publishLiveEvent,
   toAttempt,
 }: AttemptMutationDependencies) => ({
   startAttempt: async (
@@ -197,7 +200,20 @@ export const createAttemptMutations = ({
       ],
     );
 
-    return toAttempt(db, await findAttemptById(db, id));
+    const createdAttempt = await findAttemptById(db, id);
+    await publishLiveEvent?.({
+      type: "attempt_started",
+      attemptId: createdAttempt.id,
+      classId: exam.class_id,
+      emittedAt: now(),
+      examId,
+      startedAt: createdAttempt.started_at,
+      status: "IN_PROGRESS",
+      studentId: effectiveStudentId,
+      submittedAt: null,
+    });
+
+    return toAttempt(db, createdAttempt);
   },
   saveAnswer: async (
     { attemptId, questionId, value }: SaveAnswerArgs,
@@ -299,6 +315,21 @@ export const createAttemptMutations = ({
        WHERE id = ?`,
       [now(), attemptId],
     );
-    return toAttempt(db, await findAttemptById(db, attemptId));
+    const submittedAttempt = await findAttemptById(db, attemptId);
+    const exam = await findExam(db, submittedAttempt.exam_id);
+
+    await publishLiveEvent?.({
+      type: "attempt_submitted",
+      attemptId: submittedAttempt.id,
+      classId: exam.class_id,
+      emittedAt: now(),
+      examId: submittedAttempt.exam_id,
+      startedAt: submittedAttempt.started_at,
+      status: "SUBMITTED",
+      studentId: submittedAttempt.student_id,
+      submittedAt: submittedAttempt.submitted_at ?? now(),
+    });
+
+    return toAttempt(db, submittedAttempt);
   },
 });

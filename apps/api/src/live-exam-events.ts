@@ -22,6 +22,38 @@ type DurableObjectNamespaceLike = {
 
 export type LiveExamMutationEvent =
   | {
+      type: "exam_assigned";
+      classId: string;
+      endsAt: null;
+      emittedAt: string;
+      examId: string;
+      startedAt: null;
+      status: "DRAFT";
+      title: string;
+    }
+  | {
+      type: "attempt_started";
+      attemptId: string;
+      classId: string;
+      emittedAt: string;
+      examId: string;
+      startedAt: string;
+      status: "IN_PROGRESS";
+      studentId: string;
+      submittedAt: null;
+    }
+  | {
+      type: "attempt_submitted";
+      attemptId: string;
+      classId: string;
+      emittedAt: string;
+      examId: string;
+      startedAt: string;
+      status: "SUBMITTED";
+      studentId: string;
+      submittedAt: string;
+    }
+  | {
       type: "exam_published";
       classId: string;
       endsAt: string | null;
@@ -42,6 +74,20 @@ export type LiveExamMutationEvent =
       title: string;
     };
 
+export type QuestionBankMutationEvent = {
+  type: "question_bank_updated";
+  bankId: string;
+  change: "CREATED" | "UPDATED" | "DELETED" | "VARIANTS_CREATED";
+  emittedAt: string;
+  ownerId: string;
+  questionId: string | null;
+  visibility: "PRIVATE" | "PUBLIC";
+};
+
+export type LiveMutationEvent =
+  | LiveExamMutationEvent
+  | QuestionBankMutationEvent;
+
 export type LiveExamEvent =
   | {
       type: "connected";
@@ -52,7 +98,7 @@ export type LiveExamEvent =
       type: "heartbeat";
       emittedAt: string;
     }
-  | LiveExamMutationEvent;
+  | LiveMutationEvent;
 
 export type LiveExamEventsEnv = {
   LIVE_EXAM_EVENTS?: DurableObjectNamespaceLike;
@@ -80,7 +126,7 @@ const createJsonResponse = (
 
 const getRoomStub = (
   env: LiveExamEventsEnv,
-  classId: string,
+  roomKey: string,
 ): DurableObjectStubLike => {
   const namespace = env.LIVE_EXAM_EVENTS;
 
@@ -88,15 +134,15 @@ const getRoomStub = (
     throw new Error("LIVE_EXAM_EVENTS binding is not configured.");
   }
 
-  return namespace.get(namespace.idFromName(`class:${classId}`));
+  return namespace.get(namespace.idFromName(roomKey));
 };
 
-export const connectLiveExamEvents = async (
+const connectLiveRoom = async (
   env: LiveExamEventsEnv,
-  classId: string,
+  roomKey: string,
   metadata: LiveExamConnectionMetadata,
 ): Promise<Response> =>
-  getRoomStub(env, classId).fetch("https://live-exam-events/connect", {
+  getRoomStub(env, roomKey).fetch("https://live-exam-events/connect", {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -104,21 +150,60 @@ export const connectLiveExamEvents = async (
     body: JSON.stringify(metadata),
   });
 
-export const publishLiveExamEvent = async (
+const publishLiveRoomEvent = async (
   env: LiveExamEventsEnv,
-  event: LiveExamMutationEvent,
+  roomKey: string,
+  event: LiveMutationEvent,
 ): Promise<void> => {
   if (!env.LIVE_EXAM_EVENTS) {
     return;
   }
 
-  await getRoomStub(env, event.classId).fetch("https://live-exam-events/publish", {
+  await getRoomStub(env, roomKey).fetch("https://live-exam-events/publish", {
     method: "POST",
     headers: {
       "content-type": "application/json",
     },
     body: JSON.stringify(event),
   });
+};
+
+export const connectLiveExamEvents = async (
+  env: LiveExamEventsEnv,
+  classId: string,
+  metadata: LiveExamConnectionMetadata,
+): Promise<Response> =>
+  connectLiveRoom(env, `class:${classId}`, metadata);
+
+export const connectTeacherQuestionBankEvents = async (
+  env: LiveExamEventsEnv,
+  teacherId: string,
+  metadata: LiveExamConnectionMetadata,
+): Promise<Response> =>
+  connectLiveRoom(env, `teacher:${teacherId}:question-banks`, metadata);
+
+export const connectPublicQuestionBankEvents = async (
+  env: LiveExamEventsEnv,
+  metadata: LiveExamConnectionMetadata,
+): Promise<Response> =>
+  connectLiveRoom(env, "question-banks:public", metadata);
+
+export const publishLiveExamEvent = async (
+  env: LiveExamEventsEnv,
+  event: LiveExamMutationEvent,
+): Promise<void> => {
+  await publishLiveRoomEvent(env, `class:${event.classId}`, event);
+};
+
+export const publishQuestionBankEvent = async (
+  env: LiveExamEventsEnv,
+  event: QuestionBankMutationEvent,
+): Promise<void> => {
+  await publishLiveRoomEvent(env, `teacher:${event.ownerId}:question-banks`, event);
+
+  if (event.visibility === "PUBLIC") {
+    await publishLiveRoomEvent(env, "question-banks:public", event);
+  }
 };
 
 export class LiveExamEvents {
@@ -198,11 +283,9 @@ export class LiveExamEvents {
   }
 
   private async handlePublish(request: Request): Promise<Response> {
-    const payload = (await request.json().catch(() => null)) as
-      | LiveExamMutationEvent
-      | null;
+    const payload = (await request.json().catch(() => null)) as LiveMutationEvent | null;
 
-    if (!payload?.type || !payload.classId || !payload.examId) {
+    if (!payload?.type) {
       return createJsonResponse({ error: "Invalid SSE payload" }, { status: 400 });
     }
 

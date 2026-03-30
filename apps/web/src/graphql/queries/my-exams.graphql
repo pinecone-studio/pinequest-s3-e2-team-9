@@ -1,6 +1,9 @@
 query MyExamsQuery {
   me {
     id
+    classes {
+      id
+    }
   }
   exams {
     id
