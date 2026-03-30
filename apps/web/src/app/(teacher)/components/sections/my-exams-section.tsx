@@ -135,13 +135,20 @@ export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
       <ExamPreviewDialog
         exam={selectedExam}
         open={isPreviewOpen}
-        onClose={() => setIsPreviewOpen(false)}
+        onClose={() => {
+          setIsPreviewOpen(false);
+          setSelectedExam(null);
+        }}
       />
       <ExamResultsDialog
         exam={selectedExam}
         key={isResultsOpen ? "results-open" : "results-closed"}
         open={isResultsOpen}
-        onClose={() => setIsResultsOpen(false)}
+        onClose={() => {
+          setIsResultsOpen(false);
+          setSelectedExam(null);
+        }}
+        onReviewSaved={() => refetch()}
       />
     </section>
   );

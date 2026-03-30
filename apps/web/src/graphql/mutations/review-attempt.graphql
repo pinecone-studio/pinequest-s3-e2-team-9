@@ -1,0 +1,16 @@
+mutation ReviewAttempt($attemptId: ID!, $answers: [AttemptReviewAnswerInput!]!) {
+  reviewAttempt(attemptId: $attemptId, answers: $answers) {
+    id
+    status
+    autoScore
+    manualScore
+    totalScore
+    submittedAt
+    answers {
+      id
+      autoScore
+      manualScore
+      feedback
+    }
+  }
+}

@@ -41,6 +41,9 @@ export type MyExamStudentAnswer = {
   value: string;
   displayValue: string;
   type: string;
+  autoScore: number | null;
+  manualScore: number | null;
+  requiresReview: boolean;
   score: number;
   total: number;
   feedback: string | null;

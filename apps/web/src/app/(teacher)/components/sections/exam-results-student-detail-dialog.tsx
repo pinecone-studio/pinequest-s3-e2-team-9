@@ -1,8 +1,8 @@
 /* eslint-disable max-lines, @next/next/no-img-element, react-hooks/set-state-in-effect */
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useReviewAnswerMutation } from "@/graphql/generated";
+import { useEffect, useState } from "react";
+import { useReviewAttemptMutation } from "@/graphql/generated";
 import { isDirectImageSource, useProtectedImageSource } from "@/lib/image-answer";
 import { CloseIcon } from "../icons";
 import { getStudentWeakTopics } from "./exam-results-analytics";
@@ -14,6 +14,12 @@ type ExamResultsStudentDetailDialogProps = {
   student: MyExamStudentRow | null;
   exam: MyExamView | null;
   onClose: () => void;
+  onReviewSaved: () => Promise<unknown>;
+};
+
+type ReviewDraft = {
+  manualScore: string;
+  feedback: string;
 };
 
 const questionTypeLabel = (type: string) => {
@@ -26,15 +32,23 @@ const questionTypeLabel = (type: string) => {
 };
 
 const isUrl = (value: string) => /^https?:\/\//i.test(value);
-const isReviewable = (type: string) => type === "ESSAY" || type === "IMAGE_UPLOAD";
 
-type ReviewDraft = {
-  manualScore: string;
-  feedback: string;
-  saving: boolean;
-  saved: boolean;
-  error: string | null;
-};
+const allowsManualScore = (answer: MyExamStudentAnswer) =>
+  answer.requiresReview || answer.manualScore !== null;
+
+const getMaxManualScore = (answer: MyExamStudentAnswer) =>
+  Math.max(answer.total - (answer.autoScore ?? 0), 0);
+
+const createInitialDrafts = (student: MyExamStudentRow | null) =>
+  Object.fromEntries(
+    (student?.answers ?? []).map((answer) => [
+      answer.id,
+      {
+        manualScore: answer.manualScore === null ? "" : String(answer.manualScore),
+        feedback: answer.feedback ?? "",
+      } satisfies ReviewDraft,
+    ]),
+  ) as Record<string, ReviewDraft>;
 
 function AnswerValue({ answer }: { answer: MyExamStudentAnswer }) {
   const { error, isLoading, src } = useProtectedImageSource(answer.value);
@@ -64,19 +78,11 @@ function AnswerValue({ answer }: { answer: MyExamStudentAnswer }) {
   }
 
   if (isLoading) {
-    return (
-      <p className="text-[13px] text-[#667085]">
-        Зургийг ачаалж байна...
-      </p>
-    );
+    return <p className="text-[13px] text-[#667085]">Зургийг ачаалж байна...</p>;
   }
 
   if (error) {
-    return (
-      <p className="text-[13px] font-medium text-[#B42318]">
-        {error}
-      </p>
-    );
+    return <p className="text-[13px] font-medium text-[#B42318]">{error}</p>;
   }
 
   if (isUrl(answer.value)) {
@@ -104,83 +110,50 @@ export function ExamResultsStudentDetailDialog({
   student,
   exam,
   onClose,
+  onReviewSaved,
 }: ExamResultsStudentDetailDialogProps) {
-  const [reviewAnswer, reviewAnswerState] = useReviewAnswerMutation();
-  const [localAnswers, setLocalAnswers] = useState<MyExamStudentAnswer[]>([]);
-  const [reviewDrafts, setReviewDrafts] = useState<Record<string, ReviewDraft>>({});
-  const weakTopics = useMemo(
-    () => (exam && student ? getStudentWeakTopics(exam, student.id) : []),
-    [exam, student],
-  );
-  const localScore = useMemo(
-    () => localAnswers.reduce((sum, answer) => sum + answer.score, 0),
-    [localAnswers],
-  );
-  const localPercent =
-    (student?.total ?? 0) > 0 ? Math.round((localScore / (student?.total ?? 1)) * 100) : 0;
-  const hasUnsavedReviews = useMemo(
-    () =>
-      localAnswers.some((answer) => {
-        if (!isReviewable(answer.type)) {
-          return false;
-        }
-
-        const draft = reviewDrafts[answer.id];
-        if (!draft) {
-          return false;
-        }
-
-        return (
-          draft.manualScore.trim() !== String(answer.score) ||
-          draft.feedback.trim() !== (answer.feedback ?? "").trim()
-        );
-      }),
-    [localAnswers, reviewDrafts],
-  );
+  const [drafts, setDrafts] = useState<Record<string, ReviewDraft>>({});
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [reviewAttempt, reviewAttemptState] = useReviewAttemptMutation();
 
   useEffect(() => {
-    if (!student) {
-      setLocalAnswers([]);
-      setReviewDrafts({});
+    if (!open) {
       return;
     }
 
-    setLocalAnswers(student.answers);
-    setReviewDrafts(
-      Object.fromEntries(
-        student.answers
-          .filter((answer) => isReviewable(answer.type))
-          .map((answer) => [
-            answer.id,
-            {
-              manualScore: String(answer.score),
-              feedback: answer.feedback ?? "",
-              saving: false,
-              saved: false,
-              error: null,
-            },
-          ]),
-      ),
-    );
-  }, [student]);
+    setDrafts(createInitialDrafts(student));
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  }, [open, student]);
 
-  const handleReviewDraftChange = (
-    answerId: string,
-    updater: (previous: ReviewDraft) => ReviewDraft,
-  ) => {
-    setReviewDrafts((current) => ({
-      ...current,
-      [answerId]: updater(
-        current[answerId] ?? {
-          manualScore: "0",
-          feedback: "",
-          saving: false,
-          saved: false,
-          error: null,
-        },
-      ),
-    }));
-  };
+  if (!open || !student || !exam) {
+    return null;
+  }
+
+  const weakTopics = getStudentWeakTopics(exam, student.id);
+  const manualReviewCount = student.answers.filter(
+    (answer) => answer.requiresReview,
+  ).length;
+  const hasUnsavedReviews = student.answers.some((answer) => {
+    const draft = drafts[answer.id];
+    if (!draft) {
+      return false;
+    }
+
+    const feedbackChanged = draft.feedback.trim() !== (answer.feedback ?? "").trim();
+    const manualScoreChanged =
+      allowsManualScore(answer) &&
+      draft.manualScore.trim() !==
+        (answer.manualScore === null ? "" : String(answer.manualScore));
+
+    return feedbackChanged || manualScoreChanged;
+  });
+  const saveLabel = manualReviewCount
+    ? student.statusLabel === "Шалгасан"
+      ? "Review шинэчлэх"
+      : "Review хадгалах"
+    : "Feedback хадгалах";
 
   const requestClose = () => {
     if (
@@ -193,82 +166,90 @@ export function ExamResultsStudentDetailDialog({
     onClose();
   };
 
-  const handleSaveReview = async (answer: MyExamStudentAnswer) => {
-    const draft = reviewDrafts[answer.id];
-    if (!draft) {
-      return;
-    }
+  const handleDraftChange = (
+    answerId: string,
+    field: keyof ReviewDraft,
+    value: string,
+  ) => {
+    setDrafts((current) => ({
+      ...current,
+      [answerId]: {
+        manualScore: current[answerId]?.manualScore ?? "",
+        feedback: current[answerId]?.feedback ?? "",
+        [field]: value,
+      },
+    }));
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  };
 
-    const nextScore = Number(draft.manualScore);
-    const roundedScore = Math.round(nextScore * 10) / 10;
+  const handleSaveReview = async () => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
 
-    if (!Number.isFinite(nextScore) || roundedScore < 0 || roundedScore > answer.total) {
-      handleReviewDraftChange(answer.id, (previous) => ({
-        ...previous,
-        error: `Оноо 0-${answer.total} хооронд байна.`,
-      }));
-      return;
-    }
+    const reviewAnswers: {
+      answerId: string;
+      feedback: string | null;
+      manualScore: number | null;
+    }[] = [];
 
-    if (Math.abs(nextScore - roundedScore) > 0.000001) {
-      handleReviewDraftChange(answer.id, (previous) => ({
-        ...previous,
-        error: "Оноог хамгийн ихдээ нэг орны нарийвчлалтай оруулна уу.",
-      }));
-      return;
+    for (const answer of student.answers) {
+      const draft = drafts[answer.id] ?? {
+        manualScore: answer.manualScore === null ? "" : String(answer.manualScore),
+        feedback: answer.feedback ?? "",
+      };
+      const nextFeedback = draft.feedback.trim();
+      let nextManualScore: number | null = null;
+
+      if (allowsManualScore(answer)) {
+        const rawScore = draft.manualScore.trim();
+        if (!rawScore) {
+          setErrorMessage(`"${answer.prompt}" асуултад оноо оруулна уу.`);
+          return;
+        }
+
+        const parsedScore = Number(rawScore);
+        const roundedScore = Math.round(parsedScore * 10) / 10;
+        const maxManualScore = getMaxManualScore(answer);
+
+        if (!Number.isFinite(parsedScore) || roundedScore < 0 || roundedScore > maxManualScore) {
+          setErrorMessage(
+            `"${answer.prompt}" асуултын оноо 0-${maxManualScore} хооронд байх ёстой.`,
+          );
+          return;
+        }
+
+        if (Math.abs(parsedScore - roundedScore) > 0.000001) {
+          setErrorMessage(
+            `"${answer.prompt}" асуултын оноог хамгийн ихдээ нэг орны нарийвчлалтай оруулна уу.`,
+          );
+          return;
+        }
+
+        nextManualScore = roundedScore;
+      }
+
+      reviewAnswers.push({
+        answerId: answer.id,
+        feedback: nextFeedback || null,
+        manualScore: nextManualScore,
+      });
     }
 
     try {
-      handleReviewDraftChange(answer.id, (previous) => ({
-        ...previous,
-        saving: true,
-        error: null,
-      }));
-
-      const result = await reviewAnswer({
+      await reviewAttempt({
         variables: {
-          answerId: answer.id,
-          manualScore: roundedScore,
-          feedback: draft.feedback.trim() || null,
+          attemptId: student.id,
+          answers: reviewAnswers,
         },
       });
-
-      const savedScore = result.data?.reviewAnswer?.manualScore ?? roundedScore;
-      const savedFeedback = result.data?.reviewAnswer?.feedback ?? draft.feedback.trim();
-
-      setLocalAnswers((current) =>
-        current.map((item) =>
-          item.id === answer.id
-            ? {
-                ...item,
-                score: savedScore,
-                feedback: savedFeedback,
-              }
-            : item,
-        ),
-      );
-      handleReviewDraftChange(answer.id, (previous) => ({
-        ...previous,
-        manualScore: String(savedScore),
-        feedback: savedFeedback ?? "",
-        saving: false,
-        saved: true,
-        error: null,
-      }));
+      await onReviewSaved();
+      setSuccessMessage("Review амжилттай хадгалагдлаа.");
     } catch (error) {
-      console.error("Failed to review answer", error);
-      handleReviewDraftChange(answer.id, (previous) => ({
-        ...previous,
-        saving: false,
-        saved: false,
-        error: "Үнэлгээ хадгалах үед алдаа гарлаа.",
-      }));
+      console.error("Failed to review attempt", error);
+      setErrorMessage("Review хадгалах үед алдаа гарлаа.");
     }
   };
-
-  if (!open || !student || !exam) {
-    return null;
-  }
 
   return (
     <div
@@ -307,7 +288,7 @@ export function ExamResultsStudentDetailDialog({
           {hasUnsavedReviews ? (
             <div className="rounded-lg border border-[#FEDF89] bg-[#FFFAEB] px-4 py-3 text-[13px] text-[#946200]">
               Хадгалаагүй үнэлгээ байна. Оноо эсвэл тайлбараа өөрчилсөн бол
-              <span className="font-semibold"> Үнэлгээ хадгалах </span>
+              <span className="font-semibold"> Review хадгалах </span>
               товч дарж байж дүн шинэчлэгдэнэ.
             </div>
           ) : null}
@@ -317,10 +298,10 @@ export function ExamResultsStudentDetailDialog({
               {student.subject}
             </span>
             <span className="rounded-md bg-[#EEF4FF] px-3 py-1 text-[#1D4ED8]">
-              Оноо: {formatScore(localScore)} / {formatScore(student.total)}
+              Оноо: {formatScore(student.score)} / {formatScore(student.total)}
             </span>
             <span className="rounded-md bg-[#F4F3FF] px-3 py-1 text-[#5925DC]">
-              Хувь: {localPercent}%
+              Хувь: {student.percent}%
             </span>
             <span className={`rounded-md border px-3 py-1 ${student.statusTone}`}>
               {student.statusLabel}
@@ -329,6 +310,12 @@ export function ExamResultsStudentDetailDialog({
               Илгээсэн: {student.submitted}
             </span>
           </div>
+
+          {manualReviewCount ? (
+            <div className="rounded-lg border border-[#B2DDFF] bg-[#EFF8FF] p-4 text-[14px] text-[#175CD3]">
+              Энэ оролдлогод manual review шаардлагатай {manualReviewCount} хариулт байна.
+            </div>
+          ) : null}
 
           {weakTopics.length ? (
             <div className="rounded-lg border border-[#FEDF89] bg-[#FFFAEB] p-4">
@@ -349,7 +336,7 @@ export function ExamResultsStudentDetailDialog({
           ) : null}
 
           <div className="space-y-4">
-            {localAnswers.map((answer, index) => (
+            {student.answers.map((answer, index) => (
               <article
                 key={answer.id}
                 className="rounded-lg border border-[#DFE1E5] bg-white p-4 shadow-[0px_1px_2px_rgba(0,0,0,0.05)]"
@@ -381,71 +368,60 @@ export function ExamResultsStudentDetailDialog({
 
                   <AnswerValue answer={answer} />
 
-                  {isReviewable(answer.type) ? (
-                    <div className="space-y-3 rounded-md border border-[#D0D5DD] bg-[#F8FAFC] p-3">
-                      <div className="flex flex-col gap-3 sm:flex-row">
-                        <label className="flex-1 text-[12px] text-[#475467]">
-                          Оруулах оноо
+                  <div className="grid gap-3 rounded-lg border border-[#E4E7EC] bg-[#F8FAFC] p-3 lg:grid-cols-[160px_minmax(0,1fr)]">
+                    <div className="space-y-2">
+                      <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#475467]">
+                        Оноо
+                      </p>
+                      <div className="rounded-md border border-[#D5D9E0] bg-white px-3 py-2 text-[13px] text-[#344054]">
+                        Автомат: {formatScore(answer.autoScore ?? 0)} / {formatScore(answer.total)}
+                      </div>
+                      {allowsManualScore(answer) ? (
+                        <label className="block space-y-1">
+                          <span className="text-[12px] font-medium text-[#475467]">
+                            Manual оноо
+                          </span>
                           <input
                             type="number"
+                            inputMode="decimal"
                             min={0}
-                            max={answer.total}
+                            max={getMaxManualScore(answer)}
                             step="0.1"
-                            value={reviewDrafts[answer.id]?.manualScore ?? ""}
+                            value={drafts[answer.id]?.manualScore ?? ""}
                             onChange={(event) =>
-                              handleReviewDraftChange(answer.id, (previous) => ({
-                                ...previous,
-                                manualScore: event.target.value,
-                                saved: false,
-                              }))
+                              handleDraftChange(answer.id, "manualScore", event.target.value)
                             }
-                            className="mt-1 h-10 w-full rounded-md border border-[#D0D5DD] bg-white px-3 text-[14px] text-[#0F1216]"
+                            className="w-full rounded-md border border-[#D0D5DD] bg-white px-3 py-2 text-[14px] text-[#0F1216] outline-none transition focus:border-[#2466D0]"
                           />
+                          <p className="text-[12px] text-[#667085]">
+                            0-{formatScore(getMaxManualScore(answer))} оноо
+                          </p>
                         </label>
-                        <div className="flex items-end">
-                          <button
-                            type="button"
-                            className="h-10 rounded-md bg-[#163D99] px-4 text-[13px] font-medium text-white disabled:opacity-60"
-                            disabled={reviewDrafts[answer.id]?.saving || reviewAnswerState.loading}
-                            onClick={() => void handleSaveReview(answer)}
-                          >
-                            {reviewDrafts[answer.id]?.saving ? "Хадгалж байна..." : "Үнэлгээ хадгалах"}
-                          </button>
+                      ) : (
+                        <div className="rounded-md border border-[#D5D9E0] bg-white px-3 py-2 text-[13px] text-[#344054]">
+                          Нэмэлт оноо шаардлагагүй
                         </div>
-                      </div>
-                      <label className="block text-[12px] text-[#475467]">
-                        Багшийн тайлбар
-                        <textarea
-                          value={reviewDrafts[answer.id]?.feedback ?? ""}
-                          onChange={(event) =>
-                            handleReviewDraftChange(answer.id, (previous) => ({
-                              ...previous,
-                              feedback: event.target.value,
-                              saved: false,
-                            }))
-                          }
-                          className="mt-1 min-h-20 w-full rounded-md border border-[#D0D5DD] bg-white px-3 py-2 text-[14px] text-[#0F1216]"
-                          placeholder="Сурагчид харагдах тайлбар, зөвлөмж..."
-                        />
-                      </label>
-                      {reviewDrafts[answer.id]?.saved ? (
-                        <p className="text-[12px] font-medium text-[#027A48]">
-                          Үнэлгээ хадгалагдлаа.
-                        </p>
-                      ) : null}
-                      {reviewDrafts[answer.id]?.error ? (
-                        <p className="text-[12px] font-medium text-[#B42318]">
-                          {reviewDrafts[answer.id]?.error}
-                        </p>
-                      ) : null}
+                      )}
                     </div>
-                  ) : null}
 
-                  {answer.feedback ? (
-                    <div className="rounded-md border border-[#FEDF89] bg-[#FFFAEB] px-3 py-2 text-[13px] text-[#946200]">
-                      Тайлбар: {answer.feedback}
-                    </div>
-                  ) : null}
+                    <label className="block space-y-1">
+                      <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#475467]">
+                        Feedback
+                      </span>
+                      <textarea
+                        rows={4}
+                        value={drafts[answer.id]?.feedback ?? ""}
+                        onChange={(event) =>
+                          handleDraftChange(answer.id, "feedback", event.target.value)
+                        }
+                        placeholder="Student-д харагдах тайлбар оруулна уу..."
+                        className="min-h-[120px] w-full rounded-md border border-[#D0D5DD] bg-white px-3 py-2 text-[14px] leading-6 text-[#0F1216] outline-none transition focus:border-[#2466D0]"
+                      />
+                      <p className="text-[12px] text-[#667085]">
+                        Одоогийн нийт оноо: {formatScore(answer.score)} / {formatScore(answer.total)}
+                      </p>
+                    </label>
+                  </div>
                 </div>
               </article>
             ))}
@@ -455,6 +431,34 @@ export function ExamResultsStudentDetailDialog({
                 Энэ сурагч одоогоор хариулт эсвэл материал илгээгээгүй байна.
               </div>
             ) : null}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E4E7EC] pt-4">
+            <div className="space-y-1 text-[13px]">
+              {errorMessage ? (
+                <p className="font-medium text-[#B42318]">{errorMessage}</p>
+              ) : null}
+              {successMessage ? (
+                <p className="font-medium text-[#027A48]">{successMessage}</p>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={requestClose}
+                className="inline-flex h-10 items-center justify-center rounded-md border border-[#D0D5DD] bg-white px-4 text-[14px] font-medium text-[#344054]"
+              >
+                Хаах
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSaveReview()}
+                disabled={reviewAttemptState.loading || !student.answers.length}
+                className="inline-flex h-10 items-center justify-center rounded-md bg-[#2466D0] px-4 text-[14px] font-semibold text-white transition hover:bg-[#1E56B2] disabled:cursor-not-allowed disabled:bg-[#9DB8E8]"
+              >
+                {reviewAttemptState.loading ? "Хадгалж байна..." : saveLabel}
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -162,13 +162,13 @@ export function CompletedExamCard({ card }: { card: CompletedExamCardData }) {
           <span className={`text-[14px] font-bold leading-5 ${card.scoreTone}`}>{card.scoreLabel}</span>
         </div>
 
-        <button
+        <Link
           className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-[6px] border border-[#DFE1E5] bg-[#FAFAFA] text-[14px] font-medium leading-5 text-[#0F1216] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
-          type="button"
+          href={`/student/exams/${card.id}`}
         >
           <ResultIcon className="h-4 w-4 text-[#0F1216]" />
           View Result
-        </button>
+        </Link>
       </div>
     </article>
   );

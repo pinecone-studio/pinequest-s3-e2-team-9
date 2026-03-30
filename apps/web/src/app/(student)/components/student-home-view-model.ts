@@ -116,24 +116,33 @@ export const buildStudentHomeViewModel = (data: StudentHomeQuery): StudentHomeVi
         new Date(b.submittedAt ?? b.startedAt).getTime() -
         new Date(a.submittedAt ?? a.startedAt).getTime(),
     )
-    .map((attempt) => ({
-      id: attempt.id,
-      scoreLabel:
-        attempt.status === AttemptStatus.Graded
-          ? `${formatScore(attempt.totalScore)} оноо`
-          : "Pending",
-      scoreTone:
-        attempt.status === AttemptStatus.Graded ? "text-[#31AA40]" : "text-[#E17100]",
-      searchText: `${attempt.exam.title} ${attempt.exam.class.subject} ${attempt.exam.class.teacher.fullName}`.toLowerCase(),
-      statusLabel:
-        attempt.status === AttemptStatus.Graded ? "Graded" : "Pending Review",
-      statusTone:
-        attempt.status === AttemptStatus.Graded
-          ? "border-[#31AA4033] bg-[#31AA401A] text-[#31AA40]"
-          : "border-[rgba(254,154,0,0.3)] bg-[rgba(254,154,0,0.1)] text-[#E17100]",
-      subject: attempt.exam.class.subject || attempt.exam.class.name,
-      title: attempt.exam.title,
-    }));
+    .map((attempt) => {
+      const totalPoints = attempt.exam.questions.reduce(
+        (sum, question) => sum + question.points,
+        0,
+      );
+
+      return {
+        id: attempt.exam.id,
+        scoreLabel:
+          attempt.status === AttemptStatus.Graded
+            ? `${formatScore(attempt.totalScore)} / ${formatScore(totalPoints)} оноо`
+            : "Pending",
+        scoreTone:
+          attempt.status === AttemptStatus.Graded
+            ? "text-[#31AA40]"
+            : "text-[#E17100]",
+        searchText: `${attempt.exam.title} ${attempt.exam.class.subject} ${attempt.exam.class.teacher.fullName}`.toLowerCase(),
+        statusLabel:
+          attempt.status === AttemptStatus.Graded ? "Reviewed" : "Pending Review",
+        statusTone:
+          attempt.status === AttemptStatus.Graded
+            ? "border-[#31AA4033] bg-[#31AA401A] text-[#31AA40]"
+            : "border-[rgba(254,154,0,0.3)] bg-[rgba(254,154,0,0.1)] text-[#E17100]",
+        subject: attempt.exam.class.subject || attempt.exam.class.name,
+        title: attempt.exam.title,
+      };
+    });
 
   return {
     availableExams,

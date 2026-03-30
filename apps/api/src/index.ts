@@ -22,7 +22,7 @@ const corsHeaders = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, OPTIONS",
   "access-control-allow-headers":
-    "authorization, content-type, apollo-require-preflight",
+    "accept, authorization, cache-control, content-type, pragma, apollo-require-preflight",
 } satisfies Record<string, string>;
 
 const json = (payload: unknown, init?: ResponseInit): Response =>

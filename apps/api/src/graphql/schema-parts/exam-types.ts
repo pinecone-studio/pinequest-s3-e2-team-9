@@ -1,4 +1,10 @@
 export const schemaExamTypes = /* GraphQL */ `
+  input AttemptReviewAnswerInput {
+    answerId: ID!
+    manualScore: Float
+    feedback: String
+  }
+
   type ExamGenerationRule {
     label: String!
     bankIds: [ID!]!

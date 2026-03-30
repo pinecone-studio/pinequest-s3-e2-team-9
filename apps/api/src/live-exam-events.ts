@@ -2,7 +2,7 @@ const sseHeaders = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, OPTIONS",
   "access-control-allow-headers":
-    "authorization, content-type, apollo-require-preflight",
+    "accept, authorization, cache-control, content-type, pragma, apollo-require-preflight",
   "cache-control": "no-store, no-transform",
   connection: "keep-alive",
   "content-type": "text/event-stream; charset=utf-8",
@@ -50,6 +50,17 @@ export type LiveExamMutationEvent =
       examId: string;
       startedAt: string;
       status: "SUBMITTED";
+      studentId: string;
+      submittedAt: string;
+    }
+  | {
+      type: "attempt_reviewed";
+      attemptId: string;
+      classId: string;
+      emittedAt: string;
+      examId: string;
+      startedAt: string;
+      status: "GRADED";
       studentId: string;
       submittedAt: string;
     }

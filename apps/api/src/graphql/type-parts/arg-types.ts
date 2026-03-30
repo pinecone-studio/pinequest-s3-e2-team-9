@@ -141,5 +141,14 @@ export type ApproveExamImportJobArgs = {
   classId: string;
   questions: ReviewedExamImportQuestionInput[];
 };
+export type ReviewAttemptAnswerInput = {
+  answerId: string;
+  manualScore?: number | null;
+  feedback?: string | null;
+};
+export type ReviewAttemptArgs = {
+  attemptId: string;
+  answers: ReviewAttemptAnswerInput[];
+};
 export type QuestionsArgs = { bankId?: string };
 export type ByIdArgs = { id: string };

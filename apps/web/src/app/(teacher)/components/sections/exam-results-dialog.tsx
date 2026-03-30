@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CloseIcon } from "../icons";
 import { ExamResultsReportDialog } from "./exam-results-report-dialog";
 import { ExamResultsStudentDetailDialog } from "./exam-results-student-detail-dialog";
@@ -13,21 +13,31 @@ type ExamResultsDialogProps = {
   exam: MyExamListView | null;
   open: boolean;
   onClose: () => void;
+  onReviewSaved: () => Promise<unknown>;
 };
 
 export function ExamResultsDialog({
   exam,
   open,
   onClose,
+  onReviewSaved,
 }: ExamResultsDialogProps) {
   const [activeTab, setActiveTab] = useState<"summary" | "students">(
     "summary",
   );
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<MyExamStudentRow | null>(
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(
     null,
   );
   const { detailExam, loading, error } = useMyExamDetail(exam, open);
+
+  const selectedStudent = useMemo<MyExamStudentRow | null>(
+    () =>
+      selectedStudentId
+        ? detailExam?.students.find((student) => student.id === selectedStudentId) ?? null
+        : null,
+    [detailExam, selectedStudentId],
+  );
 
   if (!open || !exam) {
     return null;
@@ -115,7 +125,7 @@ export function ExamResultsDialog({
             ) : (
               <ExamResultsStudents
                 rows={detailExam.students}
-                onSelectStudent={setSelectedStudent}
+                onSelectStudent={(student) => setSelectedStudentId(student.id)}
               />
             )
           ) : null}
@@ -125,7 +135,8 @@ export function ExamResultsDialog({
         open={Boolean(selectedStudent)}
         student={selectedStudent}
         exam={detailExam}
-        onClose={() => setSelectedStudent(null)}
+        onClose={() => setSelectedStudentId(null)}
+        onReviewSaved={onReviewSaved}
       />
       <ExamResultsReportDialog
         open={isReportOpen}

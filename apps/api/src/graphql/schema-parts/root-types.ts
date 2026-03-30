@@ -124,6 +124,7 @@ export const schemaRootTypes = /* GraphQL */ `
     saveAnswer(attemptId: ID!, questionId: ID!, value: String!): Attempt!
     reviewAnswer(answerId: ID!, manualScore: Float!, feedback: String): Answer!
     submitAttempt(attemptId: ID!): Attempt!
+    reviewAttempt(attemptId: ID!, answers: [AttemptReviewAnswerInput!]!): Attempt!
   }
 
   type Health {

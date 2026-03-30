@@ -16,6 +16,7 @@ import {
   type ExamRow,
   type QuestionRow,
   type ReviewAnswerArgs,
+  type ReviewAttemptArgs,
   type SaveAnswerArgs,
   type StartAttemptArgs,
   type SubmitAttemptArgs,
@@ -125,6 +126,76 @@ const buildAttemptSeed = (examId: string, studentId: string) =>
   `${examId}:${studentId}`;
 
 const roundScore = (value: number) => Math.round(value * 10) / 10;
+type ReviewableAnswerRow = AnswerRow & {
+  points: number | null;
+};
+
+const answerNeedsManualReview = (answer: Pick<AnswerRow, "auto_score">) =>
+  answer.auto_score === null;
+
+const normalizeFeedback = (feedback: string | null | undefined) => {
+  const trimmed = feedback?.trim();
+  return trimmed ? trimmed : null;
+};
+
+const hasOwn = <T extends object>(value: T, key: PropertyKey) =>
+  Object.prototype.hasOwnProperty.call(value, key);
+
+const findTeacherIdForAttempt = async (
+  db: D1DatabaseLike,
+  attemptId: string,
+): Promise<string | null> =>
+  (
+    await first<{ teacher_id: string }>(
+      db,
+      `SELECT c.teacher_id AS teacher_id
+       FROM attempts a
+       JOIN exams e ON e.id = a.exam_id
+       JOIN classes c ON c.id = e.class_id
+       WHERE a.id = ?`,
+      [attemptId],
+    )
+  )?.teacher_id ?? null;
+
+const listAttemptAnswersForReview = async (
+  db: D1DatabaseLike,
+  attempt: AttemptRow,
+): Promise<ReviewableAnswerRow[]> =>
+  all<ReviewableAnswerRow>(
+    db,
+    `SELECT
+      ans.id,
+      ans.attempt_id,
+      ans.question_id,
+      ans.value,
+      ans.auto_score,
+      ans.manual_score,
+      ans.feedback,
+      ans.created_at,
+      eq.points
+     FROM answers ans
+     LEFT JOIN exam_questions eq
+       ON eq.exam_id = ? AND eq.question_id = ans.question_id
+     WHERE ans.attempt_id = ?
+     ORDER BY ans.created_at ASC`,
+    [attempt.exam_id, attempt.id],
+  );
+
+const attemptNeedsManualReview = async (
+  db: D1DatabaseLike,
+  attemptId: string,
+): Promise<boolean> => {
+  const aggregate =
+    await first<{ review_count: number }>(
+      db,
+      `SELECT COUNT(*) AS review_count
+       FROM answers
+       WHERE attempt_id = ? AND auto_score IS NULL`,
+      [attemptId],
+    );
+
+  return (aggregate?.review_count ?? 0) > 0;
+};
 
 export const recalculateAttemptScores = async (
   db: D1DatabaseLike,
@@ -422,28 +493,168 @@ export const createAttemptMutations = ({
     );
 
     await recalculateAttemptScores(db, attemptId);
+    const requiresReview = await attemptNeedsManualReview(db, attemptId);
+    const submittedAt = now();
     await run(
       db,
       `UPDATE attempts
-       SET status = 'SUBMITTED', submitted_at = ?
+       SET status = ?, submitted_at = ?
        WHERE id = ?`,
-      [now(), attemptId],
+      [requiresReview ? "SUBMITTED" : "GRADED", submittedAt, attemptId],
     );
     const submittedAttempt = await findAttemptById(db, attemptId);
     const exam = await findExam(db, submittedAttempt.exam_id);
+    const emittedAt = now();
 
-    await publishLiveEvent?.({
-      type: "attempt_submitted",
-      attemptId: submittedAttempt.id,
-      classId: exam.class_id,
-      emittedAt: now(),
-      examId: submittedAttempt.exam_id,
-      startedAt: submittedAttempt.started_at,
-      status: "SUBMITTED",
-      studentId: submittedAttempt.student_id,
-      submittedAt: submittedAttempt.submitted_at ?? now(),
-    });
+    if (requiresReview) {
+      await publishLiveEvent?.({
+        type: "attempt_submitted",
+        attemptId: submittedAttempt.id,
+        classId: exam.class_id,
+        emittedAt,
+        examId: submittedAttempt.exam_id,
+        startedAt: submittedAttempt.started_at,
+        status: "SUBMITTED",
+        studentId: submittedAttempt.student_id,
+        submittedAt: submittedAttempt.submitted_at ?? submittedAt,
+      });
+    } else {
+      await publishLiveEvent?.({
+        type: "attempt_reviewed",
+        attemptId: submittedAttempt.id,
+        classId: exam.class_id,
+        emittedAt,
+        examId: submittedAttempt.exam_id,
+        startedAt: submittedAttempt.started_at,
+        status: "GRADED",
+        studentId: submittedAttempt.student_id,
+        submittedAt: submittedAttempt.submitted_at ?? submittedAt,
+      });
+    }
 
     return toAttempt(db, submittedAttempt);
+  },
+  reviewAttempt: async (
+    { attemptId, answers }: ReviewAttemptArgs,
+    context: RequestContext,
+  ) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const attempt = await findAttemptById(db, attemptId);
+
+    invariant(
+      attempt.status === "SUBMITTED" || attempt.status === "GRADED",
+      "Only submitted attempts can be reviewed.",
+    );
+
+    if (actor.role === "TEACHER") {
+      const teacherId = await findTeacherIdForAttempt(db, attemptId);
+      invariant(
+        teacherId === actor.id,
+        "Teachers can only review attempts for their own classes.",
+      );
+    }
+
+    const reviewableAnswers = await listAttemptAnswersForReview(db, attempt);
+    const answerById = new Map(
+      reviewableAnswers.map((answer) => [answer.id, answer]),
+    );
+    const updatedAnswerIds = new Set<string>();
+
+    for (const review of answers) {
+      invariant(
+        !updatedAnswerIds.has(review.answerId),
+        `Answer ${review.answerId} was provided more than once.`,
+      );
+      updatedAnswerIds.add(review.answerId);
+
+      const existingAnswer = answerById.get(review.answerId);
+      invariant(existingAnswer, `Answer ${review.answerId} not found.`);
+      invariant(
+        existingAnswer.points !== null,
+        `Answer ${review.answerId} is not attached to a scored exam question.`,
+      );
+
+      const hasManualScore = hasOwn(review, "manualScore");
+      const hasFeedback = hasOwn(review, "feedback");
+
+      if (!hasManualScore && !hasFeedback) {
+        continue;
+      }
+
+      let nextManualScore = existingAnswer.manual_score;
+      if (hasManualScore) {
+        if (review.manualScore === null || review.manualScore === undefined) {
+          nextManualScore = null;
+        } else {
+          const roundedManualScore = roundScore(review.manualScore);
+          invariant(
+            Number.isFinite(review.manualScore),
+            `Manual score for answer ${review.answerId} must be a valid number.`,
+          );
+          invariant(
+            Math.abs(roundedManualScore - review.manualScore) < 0.000001,
+            `Manual score for answer ${review.answerId} must have at most one decimal place.`,
+          );
+          const maxManualScore = Math.max(
+            existingAnswer.points - (existingAnswer.auto_score ?? 0),
+            0,
+          );
+          invariant(
+            roundedManualScore >= 0 && roundedManualScore <= maxManualScore,
+            `Manual score for answer ${review.answerId} must be between 0 and ${maxManualScore}.`,
+          );
+          nextManualScore = roundedManualScore;
+        }
+      }
+
+      const nextFeedback = hasFeedback
+        ? normalizeFeedback(review.feedback)
+        : existingAnswer.feedback;
+
+      await run(
+        db,
+        `UPDATE answers
+         SET manual_score = ?, feedback = ?
+         WHERE id = ?`,
+        [nextManualScore, nextFeedback, existingAnswer.id],
+      );
+
+      existingAnswer.manual_score = nextManualScore;
+      existingAnswer.feedback = nextFeedback;
+    }
+
+    const pendingManualScores = reviewableAnswers.filter(
+      (answer) => answerNeedsManualReview(answer) && answer.manual_score === null,
+    );
+    invariant(
+      pendingManualScores.length === 0,
+      "Provide a manual score for every answer that requires review.",
+    );
+
+    await recalculateAttemptScores(db, attemptId);
+    const reviewedAt = now();
+    await run(
+      db,
+      `UPDATE attempts
+       SET status = 'GRADED', submitted_at = COALESCE(submitted_at, ?)
+       WHERE id = ?`,
+      [reviewedAt, attemptId],
+    );
+    const reviewedAttempt = await findAttemptById(db, attemptId);
+    const exam = await findExam(db, reviewedAttempt.exam_id);
+
+    await publishLiveEvent?.({
+      type: "attempt_reviewed",
+      attemptId: reviewedAttempt.id,
+      classId: exam.class_id,
+      emittedAt: now(),
+      examId: reviewedAttempt.exam_id,
+      startedAt: reviewedAttempt.started_at,
+      status: "GRADED",
+      studentId: reviewedAttempt.student_id,
+      submittedAt: reviewedAttempt.submitted_at ?? reviewedAt,
+    });
+
+    return toAttempt(db, reviewedAttempt);
   },
 });

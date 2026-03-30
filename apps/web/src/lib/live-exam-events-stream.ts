@@ -44,6 +44,17 @@ export type LiveExamEvent =
       submittedAt: string;
     }
   | {
+      type: "attempt_reviewed";
+      attemptId: string;
+      classId: string;
+      emittedAt: string;
+      examId: string;
+      startedAt: string;
+      status: "GRADED";
+      studentId: string;
+      submittedAt: string;
+    }
+  | {
       type: "exam_published" | "exam_closed";
       classId: string;
       endsAt: string | null;

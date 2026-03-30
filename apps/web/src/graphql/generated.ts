@@ -44,6 +44,12 @@ export type Attempt = {
   totalScore: Scalars['Float']['output'];
 };
 
+export type AttemptReviewAnswerInput = {
+  answerId: Scalars['ID']['input'];
+  feedback?: InputMaybe<Scalars['String']['input']>;
+  manualScore?: InputMaybe<Scalars['Float']['input']>;
+};
+
 export enum AttemptStatus {
   Graded = 'GRADED',
   InProgress = 'IN_PROGRESS',
@@ -296,6 +302,7 @@ export type Mutation = {
   groupQuestionsAsVariants: Array<Question>;
   publishExam: Exam;
   reviewAnswer: Answer;
+  reviewAttempt: Attempt;
   saveAnswer: Attempt;
   startAttempt: Attempt;
   submitAttempt: Attempt;
@@ -411,6 +418,12 @@ export type MutationReviewAnswerArgs = {
   answerId: Scalars['ID']['input'];
   feedback?: InputMaybe<Scalars['String']['input']>;
   manualScore: Scalars['Float']['input'];
+};
+
+
+export type MutationReviewAttemptArgs = {
+  answers: Array<AttemptReviewAnswerInput>;
+  attemptId: Scalars['ID']['input'];
 };
 
 
@@ -718,6 +731,14 @@ export type ReviewAnswerMutationVariables = Exact<{
 
 export type ReviewAnswerMutation = { __typename?: 'Mutation', reviewAnswer: { __typename?: 'Answer', id: string, manualScore?: number | null, feedback?: string | null } };
 
+export type ReviewAttemptMutationVariables = Exact<{
+  attemptId: Scalars['ID']['input'];
+  answers: Array<AttemptReviewAnswerInput> | AttemptReviewAnswerInput;
+}>;
+
+
+export type ReviewAttemptMutation = { __typename?: 'Mutation', reviewAttempt: { __typename?: 'Attempt', id: string, status: AttemptStatus, autoScore: number, manualScore: number, totalScore: number, submittedAt?: string | null, answers: Array<{ __typename?: 'Answer', id: string, autoScore?: number | null, manualScore?: number | null, feedback?: string | null }> } };
+
 export type SaveAnswerMutationVariables = Exact<{
   attemptId: Scalars['ID']['input'];
   questionId: Scalars['ID']['input'];
@@ -844,7 +865,7 @@ export type StudentExamRoomQueryVariables = Exact<{
 }>;
 
 
-export type StudentExamRoomQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string } | null, exam?: { __typename?: 'Exam', id: string, title: string, description?: string | null, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, shuffleQuestions: boolean, shuffleAnswers: boolean, passingCriteriaType: PassingCriteriaType, passingThreshold: number, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, order: number, points: number, question: { __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, options: Array<string> } }> } | null, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, generationSeed?: string | null, startedAt: string, submittedAt?: string | null, exam: { __typename?: 'Exam', id: string }, answers: Array<{ __typename?: 'Answer', id: string, value: string, question: { __typename?: 'Question', id: string } }> }> };
+export type StudentExamRoomQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string } | null, exam?: { __typename?: 'Exam', id: string, title: string, description?: string | null, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, shuffleQuestions: boolean, shuffleAnswers: boolean, passingCriteriaType: PassingCriteriaType, passingThreshold: number, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, order: number, points: number, question: { __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, options: Array<string> } }> } | null, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, generationSeed?: string | null, startedAt: string, submittedAt?: string | null, exam: { __typename?: 'Exam', id: string }, answers: Array<{ __typename?: 'Answer', id: string, value: string, autoScore?: number | null, manualScore?: number | null, feedback?: string | null, question: { __typename?: 'Question', id: string } }> }> };
 
 export type StudentHomeQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1500,6 +1521,51 @@ export function useReviewAnswerMutation(baseOptions?: ApolloReactHooks.MutationH
 export type ReviewAnswerMutationHookResult = ReturnType<typeof useReviewAnswerMutation>;
 export type ReviewAnswerMutationResult = ApolloReactCommon.MutationResult<ReviewAnswerMutation>;
 export type ReviewAnswerMutationOptions = ApolloReactCommon.BaseMutationOptions<ReviewAnswerMutation, ReviewAnswerMutationVariables>;
+export const ReviewAttemptDocument = gql`
+    mutation ReviewAttempt($attemptId: ID!, $answers: [AttemptReviewAnswerInput!]!) {
+  reviewAttempt(attemptId: $attemptId, answers: $answers) {
+    id
+    status
+    autoScore
+    manualScore
+    totalScore
+    submittedAt
+    answers {
+      id
+      autoScore
+      manualScore
+      feedback
+    }
+  }
+}
+    `;
+export type ReviewAttemptMutationFn = ApolloReactCommon.MutationFunction<ReviewAttemptMutation, ReviewAttemptMutationVariables>;
+
+/**
+ * __useReviewAttemptMutation__
+ *
+ * To run a mutation, you first call `useReviewAttemptMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useReviewAttemptMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [reviewAttemptMutation, { data, loading, error }] = useReviewAttemptMutation({
+ *   variables: {
+ *      attemptId: // value for 'attemptId'
+ *      answers: // value for 'answers'
+ *   },
+ * });
+ */
+export function useReviewAttemptMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ReviewAttemptMutation, ReviewAttemptMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ReviewAttemptMutation, ReviewAttemptMutationVariables>(ReviewAttemptDocument, options);
+      }
+export type ReviewAttemptMutationHookResult = ReturnType<typeof useReviewAttemptMutation>;
+export type ReviewAttemptMutationResult = ApolloReactCommon.MutationResult<ReviewAttemptMutation>;
+export type ReviewAttemptMutationOptions = ApolloReactCommon.BaseMutationOptions<ReviewAttemptMutation, ReviewAttemptMutationVariables>;
 export const SaveAnswerDocument = gql`
     mutation SaveAnswer($attemptId: ID!, $questionId: ID!, $value: String!) {
   saveAnswer(attemptId: $attemptId, questionId: $questionId, value: $value) {
@@ -2625,6 +2691,9 @@ export const StudentExamRoomDocument = gql`
     answers {
       id
       value
+      autoScore
+      manualScore
+      feedback
       question {
         id
       }

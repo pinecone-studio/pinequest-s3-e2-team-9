@@ -53,6 +53,9 @@ query StudentExamRoom($id: ID!) {
     answers {
       id
       value
+      autoScore
+      manualScore
+      feedback
       question {
         id
       }
