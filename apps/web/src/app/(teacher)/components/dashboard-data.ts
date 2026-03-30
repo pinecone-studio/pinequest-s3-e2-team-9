@@ -2,7 +2,6 @@ import type { ReactElement } from "react";
 import type { IconProps } from "./icons";
 import {
   BookIcon,
-  ClipboardIcon,
   PlusIcon,
   UsersIcon,
 } from "./icons";
