@@ -111,6 +111,11 @@ export type PublishExamArgs = { examId: string };
 export type CloseExamArgs = { examId: string };
 export type StartAttemptArgs = { examId: string; studentId: string };
 export type SaveAnswerArgs = { attemptId: string; questionId: string; value: string };
+export type ReviewAnswerArgs = {
+  answerId: string;
+  manualScore: number;
+  feedback?: string;
+};
 export type SubmitAttemptArgs = { attemptId: string };
 export type CreateExamImportJobArgs = {
   fileName: string;

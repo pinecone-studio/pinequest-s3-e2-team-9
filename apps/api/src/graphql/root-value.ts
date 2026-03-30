@@ -25,7 +25,7 @@ type CreateRootValueArgs = {
 };
 
 export const createRootValue = ({ db, env }: CreateRootValueArgs) => {
-  const { toAttempt, toClass, toExam, toQuestion, toQuestionBank, toUser } =
+  const { toAnswer, toAttempt, toClass, toExam, toQuestion, toQuestionBank, toUser } =
     createEntityMappers({
       db,
       findClass,
@@ -217,6 +217,7 @@ export const createRootValue = ({ db, env }: CreateRootValueArgs) => {
       findUser,
       findQuestion: findQuestionById,
       publishLiveEvent: async (event) => publishLiveExamEvent(env, event),
+      toAnswer,
       toAttempt: (_, attempt) => toAttempt(attempt),
     }),
     ...createExamQueriesAndMutations({

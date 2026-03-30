@@ -9,4 +9,4 @@ Monorepo structure:
 Docs:
 
 - `docs/backend-architecture.md`: backend architecture, D1 tables, submit flow
-- `docs/environment-data-setup.md`: local/preview/prod data strategy and default dev workflow
+- `docs/environment-data-setup.md`: local/preview/prod data strategy, default dev workflow, and required R2 bucket names for image uploads

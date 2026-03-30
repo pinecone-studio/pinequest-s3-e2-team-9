@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   AttemptStatus,
   ExamStatus,
-  QuestionType,
   useSaveAnswerMutation,
   useStartAttemptMutation,
   useStudentExamRoomQuery,
@@ -93,9 +92,7 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
       attemptId: currentAttempt?.id ?? null,
       draftAnswers,
       persistedAnswers,
-      questionIds: exam?.questions
-        .filter((item) => item.question.type !== QuestionType.ImageUpload)
-        .map((item) => item.question.id) ?? [],
+      questionIds: exam?.questions.map((item) => item.question.id) ?? [],
     }),
     onPersistAnswer: async (attemptId, questionId, value) => {
       await saveAnswer({ variables: { attemptId, questionId, value } });

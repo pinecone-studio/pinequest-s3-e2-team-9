@@ -83,7 +83,13 @@ export const formatQuestionAnswer = (row: QuestionBankQuestionRow) => {
     return row.correctAnswer === "True" ? "Үнэн" : "Худал";
   }
   if (row.rawType === "SHORT_ANSWER") {
-    return row.correctAnswer || "Оруулаагүй";
+    return row.correctAnswer
+      ? row.correctAnswer
+          .split(/[\n;；]+/u)
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .join(" / ")
+      : "Оруулаагүй";
   }
   if (row.rawType === "ESSAY") {
     return row.correctAnswer || "Жишиг хариулт оруулаагүй";

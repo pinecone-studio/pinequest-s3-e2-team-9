@@ -1,0 +1,7 @@
+mutation ReviewAnswer($answerId: ID!, $manualScore: Float!, $feedback: String) {
+  reviewAnswer(answerId: $answerId, manualScore: $manualScore, feedback: $feedback) {
+    id
+    manualScore
+    feedback
+  }
+}

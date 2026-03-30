@@ -5,15 +5,15 @@ import { formatTolerance, type QuestionBankQuestionRow } from "../question-bank-
 
 export const getQuestionDialogTitle = (type: QuestionType) => {
   if (type === QuestionType.TrueFalse) {
-    return "True False";
+    return "Үнэн/Худал";
   }
   if (type === QuestionType.ShortAnswer) {
-    return "Numeric";
+    return "Тоо бодолт";
   }
   if (type === QuestionType.Essay) {
-    return "Long answer";
+    return "Задгай хариулт";
   }
-  return "Multiple Choice";
+  return "Олон сонголт";
 };
 
 export const getQuestionDialogSubmitLabel = (editing: boolean) =>

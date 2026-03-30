@@ -39,6 +39,7 @@ export type MyExamStudentAnswer = {
   questionId: string;
   prompt: string;
   value: string;
+  displayValue: string;
   type: string;
   score: number;
   total: number;

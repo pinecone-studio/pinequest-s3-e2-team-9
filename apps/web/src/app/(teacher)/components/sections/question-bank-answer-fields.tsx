@@ -121,7 +121,7 @@ export function QuestionBankNumericFields({
         <input
           value={answer}
           onChange={(event) => onAnswerChange(event.target.value)}
-          placeholder="Зөв хариуг оруулна уу"
+          placeholder="Ж: 1/2 ; 0.5 ; 50%"
           className="h-9 flex-1 rounded-md border border-[#DFE1E5] bg-white px-3 text-[14px] text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#52555B]"
         />
         <input
@@ -132,7 +132,8 @@ export function QuestionBankNumericFields({
         />
       </div>
       <p className="mt-2 text-[11px] text-[#52555B]">
-        Хариунд зөвшөөрөгдөх алдааны хязгаар
+        Олон зөв хариу байвал `;` эсвэл шинэ мөрөөр салгаж оруулж болно. Хариунд
+        зөвшөөрөгдөх алдааны хязгаарыг хүлцлээр өгнө.
       </p>
     </div>
   );

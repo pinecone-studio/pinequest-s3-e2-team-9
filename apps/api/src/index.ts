@@ -58,12 +58,37 @@ const schema = buildSchema(schemaSource);
 const classExamEventsPathPattern = /^\/events\/classes\/([^/]+)\/exams$/;
 const teacherQuestionBankEventsPathPattern = /^\/events\/teachers\/([^/]+)\/question-banks$/;
 const publicQuestionBankEventsPath = "/events/question-banks/public";
+const imageUploadPathPattern = /^\/uploads\/image\/(.+)$/;
+
+type R2HttpMetadata = {
+  contentDisposition?: string;
+  contentType?: string;
+};
+
+type R2ObjectBodyLike = {
+  body: ReadableStream | null;
+  httpMetadata?: R2HttpMetadata;
+  writeHttpMetadata?: (headers: Headers) => void;
+};
+
+type R2BucketLike = {
+  get: (key: string) => Promise<R2ObjectBodyLike | null>;
+  put: (
+    key: string,
+    value: ArrayBuffer | ArrayBufferView | Blob | ReadableStream | string,
+    options?: {
+      customMetadata?: Record<string, string>;
+      httpMetadata?: R2HttpMetadata;
+    },
+  ) => Promise<unknown>;
+};
 
 type Env = {
   DB: D1DatabaseLike;
   CLERK_SECRET_KEY?: string;
   PDF_EXTRACTION_SERVICE_TOKEN?: string;
   PDF_EXTRACTION_SERVICE_URL?: string;
+  IMAGE_UPLOADS?: R2BucketLike;
 } & LiveExamEventsEnv;
 
 type GraphQLRequestBody = {
@@ -696,6 +721,203 @@ const handlePdfExtraction = async (
   }
 };
 
+const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+const getImageExtension = (
+  contentType: string,
+  originalName: string,
+): string => {
+  const normalizedContentType = contentType.trim().toLowerCase();
+
+  if (normalizedContentType === "image/jpeg") {
+    return "jpg";
+  }
+  if (normalizedContentType === "image/png") {
+    return "png";
+  }
+  if (normalizedContentType === "image/webp") {
+    return "webp";
+  }
+  if (normalizedContentType === "image/gif") {
+    return "gif";
+  }
+  if (normalizedContentType === "image/svg+xml") {
+    return "svg";
+  }
+  if (normalizedContentType === "image/bmp") {
+    return "bmp";
+  }
+
+  const [, extension] = originalName.trim().toLowerCase().match(/\.([a-z0-9]+)$/) ?? [];
+  return extension || "bin";
+};
+
+const requireAuthenticatedActor = async (
+  request: Request,
+  env: Env,
+) => {
+  const actor = await authenticateActor(request, env.DB, env);
+
+  if (!actor) {
+    throw new ApiAuthError(401, "Authentication required.");
+  }
+
+  return actor;
+};
+
+const requireImageUploadsBucket = (env: Env): R2BucketLike => {
+  if (!env.IMAGE_UPLOADS) {
+    throw new ApiAuthError(
+      503,
+      "IMAGE_UPLOADS bucket is not configured on the API.",
+    );
+  }
+
+  return env.IMAGE_UPLOADS;
+};
+
+const handleImageUpload = async (
+  request: Request,
+  env: Env,
+): Promise<Response> => {
+  if (request.method === "OPTIONS") {
+    return empty({ status: 204 });
+  }
+
+  if (request.method !== "POST") {
+    return json(
+      {
+        error: "Method Not Allowed",
+      },
+      { status: 405 },
+    );
+  }
+
+  try {
+    const actor = await requireAuthenticatedActor(request, env);
+    const bucket = requireImageUploadsBucket(env);
+    const formData = await request.formData();
+    const file = formData.get("file");
+
+    if (!(file instanceof File)) {
+      return json(
+        {
+          error: "Зураг файл шаардлагатай.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!file.type.trim().toLowerCase().startsWith("image/")) {
+      return json(
+        {
+          error: "Зөвхөн зургийн файл оруулна.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+      return json(
+        {
+          error: "Зургийн хэмжээ 10MB-аас ихгүй байна.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const extension = getImageExtension(file.type, file.name);
+    const key = `answers/${actor.user.role.toLowerCase()}/${actor.user.id}/${crypto.randomUUID()}.${extension}`;
+
+    await bucket.put(key, await file.arrayBuffer(), {
+      httpMetadata: {
+        contentDisposition: `inline; filename="${file.name.replace(/\"/g, "") || "upload"}"`,
+        contentType: file.type,
+      },
+      customMetadata: {
+        actorId: actor.user.id,
+        originalName: file.name,
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+
+    return json({
+      key,
+      value: `r2:${key}`,
+    });
+  } catch (error) {
+    const status = error instanceof ApiAuthError ? error.status : 500;
+    const message =
+      error instanceof Error ? error.message : "Зураг оруулах үед алдаа гарлаа.";
+
+    return json(
+      {
+        error: message,
+      },
+      { status },
+    );
+  }
+};
+
+const handleImageDownload = async (
+  request: Request,
+  env: Env,
+  key: string,
+): Promise<Response> => {
+  if (request.method === "OPTIONS") {
+    return empty({ status: 204 });
+  }
+
+  if (request.method !== "GET") {
+    return json(
+      {
+        error: "Method Not Allowed",
+      },
+      { status: 405 },
+    );
+  }
+
+  try {
+    await requireAuthenticatedActor(request, env);
+    const bucket = requireImageUploadsBucket(env);
+    const object = await bucket.get(key);
+
+    if (!object?.body) {
+      return json(
+        {
+          error: "Зургийг олсонгүй.",
+        },
+        { status: 404 },
+      );
+    }
+
+    const headers = new Headers(corsHeaders);
+    headers.set("cache-control", "no-store");
+
+    if (object.writeHttpMetadata) {
+      object.writeHttpMetadata(headers);
+    } else if (object.httpMetadata?.contentType) {
+      headers.set("content-type", object.httpMetadata.contentType);
+    }
+
+    return new Response(object.body, {
+      headers,
+      status: 200,
+    });
+  } catch (error) {
+    const status = error instanceof ApiAuthError ? error.status : 500;
+    const message =
+      error instanceof Error ? error.message : "Зургийг дуудаж чадсангүй.";
+
+    return json(
+      {
+        error: message,
+      },
+      { status },
+    );
+  }
+};
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(request.url);
@@ -714,6 +936,8 @@ export default {
           hello: "/api/hello",
           loginEligibility: "/auth/login-eligibility",
           session: "/auth/session",
+          imageUpload: "/uploads/image",
+          imageDownload: "/uploads/image/:key",
           classExamEvents: "/events/classes/:classId/exams",
           teacherQuestionBankEvents: "/events/teachers/:teacherId/question-banks",
           publicQuestionBankEvents: publicQuestionBankEventsPath,
@@ -746,6 +970,19 @@ export default {
 
     if (pathname === "/imports/pdf/extract") {
       return handlePdfExtraction(request, env);
+    }
+
+    if (pathname === "/uploads/image") {
+      return handleImageUpload(request, env);
+    }
+
+    const imageUploadMatch = pathname.match(imageUploadPathPattern);
+    if (imageUploadMatch) {
+      return handleImageDownload(
+        request,
+        env,
+        decodeURIComponent(imageUploadMatch[1]),
+      );
     }
 
     if (pathname === "/graphql") {

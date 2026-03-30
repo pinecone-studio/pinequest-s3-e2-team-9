@@ -1,4 +1,15 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable max-lines */
+"use client";
+
+import { useAuth } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
 import { QuestionType } from "@/graphql/generated";
+import {
+  isImageAnswerValue,
+  uploadImageAnswer,
+  useProtectedImageSource,
+} from "@/lib/image-answer";
 import type { StudentExamQuestion } from "./student-exam-room-types";
 
 const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
@@ -32,9 +43,65 @@ export function StudentExamQuestionCard({
   saveError,
   savedValue,
 }: StudentExamQuestionCardProps) {
+  const { getToken } = useAuth();
   const isImageUpload = question.question.type === QuestionType.ImageUpload;
   const isEssay = question.question.type === QuestionType.Essay;
   const isShortAnswer = question.question.type === QuestionType.ShortAnswer;
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+  const currentImageValue = draftValue.trim() || savedValue?.trim() || "";
+  const { error: imageSourceError, isLoading: isImageLoading, src: protectedImageSrc } =
+    useProtectedImageSource(isImageUpload ? currentImageValue : "");
+  const imagePreviewSrc = localPreviewUrl ?? protectedImageSrc;
+  const shouldShowImagePreview = Boolean(imagePreviewSrc);
+
+  useEffect(() => {
+    return () => {
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(localPreviewUrl);
+      }
+    };
+  }, [localPreviewUrl]);
+
+  useEffect(() => {
+    if (!isImageUpload || draftValue.trim().startsWith("r2:")) {
+      return;
+    }
+
+    setLocalPreviewUrl(null);
+  }, [draftValue, isImageUpload]);
+
+  const handleImagePick = async (file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setLocalPreviewUrl((current) => {
+      if (current) {
+        URL.revokeObjectURL(current);
+      }
+      return objectUrl;
+    });
+    setImageUploadError(null);
+    setIsUploadingImage(true);
+
+    try {
+      const storedValue = await uploadImageAnswer(file, getToken);
+      setImageUploadError(null);
+      onChange(storedValue);
+    } catch (error) {
+      console.error("Failed to upload image answer", error);
+      setImageUploadError(
+        error instanceof Error
+          ? error.message
+          : "Зураг оруулах үед алдаа гарлаа.",
+      );
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   return (
     <article className="rounded-[20px] border border-[#E7ECF6] bg-white p-6 shadow-[0_4px_8px_-2px_rgba(0,0,0,0.06)]">
@@ -64,10 +131,78 @@ export function StudentExamQuestionCard({
 
         {isShortAnswer ? <input className="h-12 w-full rounded-[14px] border border-[#D0D5DD] px-4 text-[14px] outline-none focus:border-[#2466D0]" disabled={!isInProgress} onChange={(event) => onChange(event.target.value)} placeholder="Хариултаа оруулна уу" type="text" value={draftValue} /> : null}
         {isEssay ? <textarea className="min-h-[140px] w-full rounded-[14px] border border-[#D0D5DD] px-4 py-3 text-[14px] outline-none focus:border-[#2466D0]" disabled={!isInProgress} onChange={(event) => onChange(event.target.value)} placeholder="Дэлгэрэнгүй хариултаа энд бичнэ үү" value={draftValue} /> : null}
-        {isImageUpload ? <div className="rounded-[14px] border border-dashed border-[#D0D5DD] bg-[#F8FAFF] px-4 py-5 text-[14px] leading-6 text-[#667085]">Зураг оруулах төрлийн асуултын хэсэг энэ MVP-д хараахан холбогдоогүй. Хэрэв ийм асуулт байвал дараагийн алхмаар файл оруулах урсгалыг холбоно.</div> : null}
+        {isImageUpload ? (
+          <div className="space-y-3 rounded-[14px] border border-dashed border-[#D0D5DD] bg-[#F8FAFF] px-4 py-5">
+            <label className="block text-[13px] font-medium text-[#344054]">
+              Зургаа оруулах
+            </label>
+            <input
+              accept="image/*"
+              className="block w-full text-[13px] text-[#475467]"
+              disabled={!isInProgress}
+              onChange={(event) => handleImagePick(event.target.files?.[0] ?? null)}
+              type="file"
+            />
+            <input
+              className="h-11 w-full rounded-[14px] border border-[#D0D5DD] px-4 text-[14px] outline-none focus:border-[#2466D0]"
+              disabled={!isInProgress}
+              onChange={(event) => {
+                setLocalPreviewUrl((current) => {
+                  if (current) {
+                    URL.revokeObjectURL(current);
+                  }
+                  return null;
+                });
+                setImageUploadError(null);
+                onChange(event.target.value);
+              }}
+              placeholder="Эсвэл зургийн холбоос оруулна уу"
+              type="text"
+              value={isImageAnswerValue(draftValue) ? "" : draftValue}
+            />
+            {shouldShowImagePreview ? (
+              <div className="overflow-hidden rounded-[14px] border border-[#D0D5DD] bg-white p-2">
+                <img
+                  alt={`Асуулт ${questionIndex + 1}-ийн оруулсан зураг`}
+                  className="max-h-[280px] w-full rounded-[10px] object-contain"
+                  src={imagePreviewSrc ?? ""}
+                />
+              </div>
+            ) : null}
+            {isUploadingImage ? (
+              <p className="text-[12px] font-medium text-[#2466D0]">
+                Зургийг R2 руу оруулж байна...
+              </p>
+            ) : null}
+            {isImageLoading && !localPreviewUrl ? (
+              <p className="text-[12px] text-[#667085]">
+                Хадгалагдсан зургийг ачаалж байна...
+              </p>
+            ) : null}
+            {imageUploadError ? (
+              <p className="text-[12px] font-medium text-[#B42318]">
+                {imageUploadError}
+              </p>
+            ) : null}
+            {imageSourceError && !imageUploadError ? (
+              <p className="text-[12px] font-medium text-[#B42318]">
+                {imageSourceError}
+              </p>
+            ) : null}
+            <p className="text-[12px] leading-5 text-[#667085]">
+              Энэ төрлийн хариултыг багш гараар шалгана.
+            </p>
+          </div>
+        ) : null}
       </div>
 
-      {!isImageUpload ? <SaveStatus isDirty={isDirty} isInProgress={isInProgress} isSaving={isSaving} saveError={saveError} savedValue={savedValue} /> : null}
+      <SaveStatus
+        isDirty={isDirty}
+        isInProgress={isInProgress}
+        isSaving={isSaving || isUploadingImage}
+        saveError={saveError}
+        savedValue={savedValue}
+      />
     </article>
   );
 }

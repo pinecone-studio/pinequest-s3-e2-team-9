@@ -56,6 +56,9 @@ export const getAttemptLabel = (status: AttemptStatus) =>
 export const calculatePercent = (score: number, total: number) =>
   total > 0 ? Math.round((score / total) * 100) : 0;
 
+export const formatScore = (value: number) =>
+  Number.isInteger(value) ? String(value) : value.toFixed(1);
+
 export const hasPassedExam = (
   score: number,
   total: number,
@@ -69,6 +72,9 @@ export const hasPassedExam = (
 export const formatAnswerValue = (type: QuestionType, value: string) => {
   if (type === QuestionType.TrueFalse) {
     return value === "true" ? "Үнэн" : value === "false" ? "Худал" : value;
+  }
+  if (type === QuestionType.ImageUpload) {
+    return value.trim() ? "Зураг оруулсан" : "Хариулт оруулаагүй";
   }
   return value.trim() || "Хариулт оруулаагүй";
 };

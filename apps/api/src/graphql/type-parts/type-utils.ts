@@ -23,3 +23,55 @@ export const parseJsonArray = (value: string | null | undefined): string[] => {
 
 export const normalize = (value: string): string =>
   value.trim().toLowerCase().replace(/\s+/g, " ");
+
+export const splitAcceptedAnswers = (value: string | null | undefined): string[] =>
+  (value ?? "")
+    .split(/[\n;；]+/u)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const normalizeMathSymbols = (value: string) =>
+  value
+    .replace(/[−–—]/gu, "-")
+    .replace(/²/gu, "^2")
+    .replace(/³/gu, "^3")
+    .replace(/，/gu, ",");
+
+const normalizeEquationSide = (value: string) => {
+  const normalized = normalizeMathSymbols(normalize(value));
+  const match = normalized.match(/^[a-zа-я]\s*=\s*(.+)$/iu);
+  return match?.[1]?.trim() ?? normalized;
+};
+
+const normalizeCompact = (value: string) =>
+  normalizeEquationSide(value).replace(/\s+/gu, "");
+
+export const normalizeShortAnswer = (value: string): string =>
+  normalizeCompact(value);
+
+export const parseNumericAnswer = (value: string): number | null => {
+  const normalized = normalizeCompact(value);
+  if (!normalized) {
+    return null;
+  }
+
+  const percentMatch = normalized.match(/^([+-]?\d+(?:\.\d+)?)%$/u);
+  if (percentMatch) {
+    const parsed = Number(percentMatch[1]);
+    return Number.isFinite(parsed) ? parsed / 100 : null;
+  }
+
+  const fractionMatch = normalized.match(/^([+-]?\d+(?:\.\d+)?)\/([+-]?\d+(?:\.\d+)?)$/u);
+  if (fractionMatch) {
+    const numerator = Number(fractionMatch[1]);
+    const denominator = Number(fractionMatch[2]);
+    if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) {
+      return null;
+    }
+
+    return numerator / denominator;
+  }
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+};

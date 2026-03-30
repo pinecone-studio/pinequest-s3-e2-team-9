@@ -8,6 +8,10 @@ database_name = "pinequest-season2-preview"
 database_id = "f7e393fb-fead-4253-8d0c-f3f234228d3d"
 migrations_dir = "migrations"
 
+[[r2_buckets]]
+binding = "IMAGE_UPLOADS"
+bucket_name = "pinequest-uploads-preview"
+
 [[durable_objects.bindings]]
 name = "LIVE_EXAM_EVENTS"
 class_name = "LiveExamEvents"

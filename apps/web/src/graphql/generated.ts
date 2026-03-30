@@ -295,6 +295,7 @@ export type Mutation = {
   deleteQuestion: Scalars['Boolean']['output'];
   groupQuestionsAsVariants: Array<Question>;
   publishExam: Exam;
+  reviewAnswer: Answer;
   saveAnswer: Attempt;
   startAttempt: Attempt;
   submitAttempt: Attempt;
@@ -403,6 +404,13 @@ export type MutationGroupQuestionsAsVariantsArgs = {
 
 export type MutationPublishExamArgs = {
   examId: Scalars['ID']['input'];
+};
+
+
+export type MutationReviewAnswerArgs = {
+  answerId: Scalars['ID']['input'];
+  feedback?: InputMaybe<Scalars['String']['input']>;
+  manualScore: Scalars['Float']['input'];
 };
 
 
@@ -700,6 +708,15 @@ export type PublishExamMutationVariables = Exact<{
 
 
 export type PublishExamMutation = { __typename?: 'Mutation', publishExam: { __typename?: 'Exam', id: string, status: ExamStatus, startedAt?: string | null, endsAt?: string | null } };
+
+export type ReviewAnswerMutationVariables = Exact<{
+  answerId: Scalars['ID']['input'];
+  manualScore: Scalars['Float']['input'];
+  feedback?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type ReviewAnswerMutation = { __typename?: 'Mutation', reviewAnswer: { __typename?: 'Answer', id: string, manualScore?: number | null, feedback?: string | null } };
 
 export type SaveAnswerMutationVariables = Exact<{
   attemptId: Scalars['ID']['input'];
@@ -1442,6 +1459,47 @@ export function usePublishExamMutation(baseOptions?: ApolloReactHooks.MutationHo
 export type PublishExamMutationHookResult = ReturnType<typeof usePublishExamMutation>;
 export type PublishExamMutationResult = ApolloReactCommon.MutationResult<PublishExamMutation>;
 export type PublishExamMutationOptions = ApolloReactCommon.BaseMutationOptions<PublishExamMutation, PublishExamMutationVariables>;
+export const ReviewAnswerDocument = gql`
+    mutation ReviewAnswer($answerId: ID!, $manualScore: Float!, $feedback: String) {
+  reviewAnswer(
+    answerId: $answerId
+    manualScore: $manualScore
+    feedback: $feedback
+  ) {
+    id
+    manualScore
+    feedback
+  }
+}
+    `;
+export type ReviewAnswerMutationFn = ApolloReactCommon.MutationFunction<ReviewAnswerMutation, ReviewAnswerMutationVariables>;
+
+/**
+ * __useReviewAnswerMutation__
+ *
+ * To run a mutation, you first call `useReviewAnswerMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useReviewAnswerMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [reviewAnswerMutation, { data, loading, error }] = useReviewAnswerMutation({
+ *   variables: {
+ *      answerId: // value for 'answerId'
+ *      manualScore: // value for 'manualScore'
+ *      feedback: // value for 'feedback'
+ *   },
+ * });
+ */
+export function useReviewAnswerMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ReviewAnswerMutation, ReviewAnswerMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ReviewAnswerMutation, ReviewAnswerMutationVariables>(ReviewAnswerDocument, options);
+      }
+export type ReviewAnswerMutationHookResult = ReturnType<typeof useReviewAnswerMutation>;
+export type ReviewAnswerMutationResult = ApolloReactCommon.MutationResult<ReviewAnswerMutation>;
+export type ReviewAnswerMutationOptions = ApolloReactCommon.BaseMutationOptions<ReviewAnswerMutation, ReviewAnswerMutationVariables>;
 export const SaveAnswerDocument = gql`
     mutation SaveAnswer($attemptId: ID!, $questionId: ID!, $value: String!) {
   saveAnswer(attemptId: $attemptId, questionId: $questionId, value: $value) {

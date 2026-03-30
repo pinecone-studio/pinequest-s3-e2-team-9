@@ -12,6 +12,9 @@ import {
 type QueryExam = StudentHomeQuery["exams"][number];
 type QueryAttempt = StudentHomeQuery["attempts"][number];
 
+const formatScore = (value: number) =>
+  Number.isInteger(value) ? String(value) : value.toFixed(1);
+
 export type StudentExamCardView = {
   duration: string;
   endLabel: string;
@@ -117,7 +120,7 @@ export const buildStudentHomeViewModel = (data: StudentHomeQuery): StudentHomeVi
       id: attempt.id,
       scoreLabel:
         attempt.status === AttemptStatus.Graded
-          ? `${attempt.totalScore} оноо`
+          ? `${formatScore(attempt.totalScore)} оноо`
           : "Pending",
       scoreTone:
         attempt.status === AttemptStatus.Graded ? "text-[#31AA40]" : "text-[#E17100]",

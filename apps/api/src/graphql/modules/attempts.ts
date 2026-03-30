@@ -6,11 +6,16 @@ import {
   makeId,
   normalize,
   now,
+  parseJsonArray,
+  parseNumericAnswer,
+  splitAcceptedAnswers,
+  normalizeShortAnswer,
   type AnswerRow,
   type AttemptRow,
   type ExamQuestionRow,
   type ExamRow,
   type QuestionRow,
+  type ReviewAnswerArgs,
   type SaveAnswerArgs,
   type StartAttemptArgs,
   type SubmitAttemptArgs,
@@ -85,6 +90,32 @@ const scoreAnswer = (
     return 0;
   }
 
+  if (question.type === "SHORT_ANSWER") {
+    const toleranceTag = parseJsonArray(question.tags_json).find((tag) =>
+      tag.startsWith("tolerance:"),
+    );
+    const toleranceValue = Number(toleranceTag?.replace("tolerance:", "") ?? "");
+    const tolerance = Number.isFinite(toleranceValue) ? Math.max(0, toleranceValue) : 0;
+    const submittedNormalized = normalizeShortAnswer(value);
+    const submittedNumeric = parseNumericAnswer(value);
+    const acceptedAnswers = splitAcceptedAnswers(question.correct_answer);
+
+    const matches = acceptedAnswers.some((accepted) => {
+      if (normalizeShortAnswer(accepted) === submittedNormalized) {
+        return true;
+      }
+
+      const acceptedNumeric = parseNumericAnswer(accepted);
+      if (acceptedNumeric === null || submittedNumeric === null) {
+        return false;
+      }
+
+      return Math.abs(acceptedNumeric - submittedNumeric) <= tolerance;
+    });
+
+    return matches ? examQuestion.points : 0;
+  }
+
   return normalize(question.correct_answer) === normalize(value)
     ? examQuestion.points
     : 0;
@@ -92,6 +123,8 @@ const scoreAnswer = (
 
 const buildAttemptSeed = (examId: string, studentId: string) =>
   `${examId}:${studentId}`;
+
+const roundScore = (value: number) => Math.round(value * 10) / 10;
 
 export const recalculateAttemptScores = async (
   db: D1DatabaseLike,
@@ -110,14 +143,40 @@ export const recalculateAttemptScores = async (
 
   const autoScore = aggregate.auto_score ?? 0;
   const manualScore = aggregate.manual_score ?? 0;
+  const roundedAutoScore = roundScore(autoScore);
+  const roundedManualScore = roundScore(manualScore);
+  const roundedTotalScore = roundScore(roundedAutoScore + roundedManualScore);
 
   await run(
     db,
     `UPDATE attempts
      SET auto_score = ?, manual_score = ?, total_score = ?
      WHERE id = ?`,
-    [autoScore, manualScore, autoScore + manualScore, attemptId],
+    [roundedAutoScore, roundedManualScore, roundedTotalScore, attemptId],
   );
+};
+
+const findAnswerById = async (
+  db: D1DatabaseLike,
+  id: string,
+): Promise<AnswerRow> => {
+  const answer = await first<AnswerRow>(
+    db,
+    `SELECT
+      id,
+      attempt_id,
+      question_id,
+      value,
+      auto_score,
+      manual_score,
+      feedback,
+      created_at
+     FROM answers
+     WHERE id = ?`,
+    [id],
+  );
+  invariant(answer, `Answer ${id} not found`);
+  return answer;
 };
 
 type AttemptMutationDependencies = {
@@ -128,6 +187,7 @@ type AttemptMutationDependencies = {
   findQuestion: (db: D1DatabaseLike, id: string) => Promise<QuestionRow>;
   publishLiveEvent?: (event: LiveExamMutationEvent) => Promise<void>;
   toAttempt: (db: D1DatabaseLike, attempt: AttemptRow) => unknown;
+  toAnswer: (answer: AnswerRow) => unknown;
 };
 
 export const createAttemptMutations = ({
@@ -138,6 +198,7 @@ export const createAttemptMutations = ({
   findQuestion,
   publishLiveEvent,
   toAttempt,
+  toAnswer,
 }: AttemptMutationDependencies) => ({
   startAttempt: async (
     { examId, studentId }: StartAttemptArgs,
@@ -284,6 +345,59 @@ export const createAttemptMutations = ({
 
     await recalculateAttemptScores(db, attemptId);
     return toAttempt(db, await findAttemptById(db, attemptId));
+  },
+  reviewAnswer: async (
+    { answerId, manualScore, feedback }: ReviewAnswerArgs,
+    context: RequestContext,
+  ) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    invariant(manualScore >= 0, "Оноо 0-ээс багагүй байна.");
+    invariant(
+      Math.abs(roundScore(manualScore) - manualScore) < 0.000001,
+      "Оноог хамгийн ихдээ нэг орны нарийвчлалтай оруулна уу.",
+    );
+
+    const answer = await findAnswerById(db, answerId);
+    const attempt = await findAttemptById(db, answer.attempt_id);
+    const exam = await findExam(db, attempt.exam_id);
+    const examQuestion = await first<ExamQuestionRow>(
+      db,
+      `SELECT id, exam_id, question_id, points, display_order
+       FROM exam_questions
+       WHERE exam_id = ? AND question_id = ?`,
+      [attempt.exam_id, answer.question_id],
+    );
+    invariant(examQuestion, "Энэ хариулт шалгалтын асуулттай таарахгүй байна.");
+
+    if (actor.role === "TEACHER") {
+      const examClass = await first<{ teacher_id: string }>(
+        db,
+        `SELECT teacher_id
+         FROM classes
+         WHERE id = ?`,
+        [exam.class_id],
+      );
+      invariant(
+        examClass?.teacher_id === actor.id,
+        "Зөвхөн өөрийн ангийн хариултыг үнэлнэ.",
+      );
+    }
+
+    invariant(
+      manualScore <= examQuestion.points,
+      `Энэ асуултын оноо ${examQuestion.points}-оос их байж болохгүй.`,
+    );
+
+    await run(
+      db,
+      `UPDATE answers
+       SET manual_score = ?, feedback = ?
+       WHERE id = ?`,
+      [roundScore(manualScore), feedback?.trim() || null, answerId],
+    );
+
+    await recalculateAttemptScores(db, attempt.id);
+    return toAnswer(await findAnswerById(db, answerId));
   },
   submitAttempt: async (
     { attemptId }: SubmitAttemptArgs,

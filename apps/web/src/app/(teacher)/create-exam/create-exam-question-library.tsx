@@ -64,6 +64,12 @@ type DraftEditState = {
   correctAnswer: string | null;
 };
 
+type DraftGenerationResult = {
+  drafts: DraftEditState[];
+  templateLabel: string | null;
+  autoFilled: boolean;
+};
+
 const VARIANT_GROUP_TAG = "variant_group:";
 const VARIANT_LABEL_TAG = "variant_label:";
 const VARIANT_COUNT_TAG = "variant_count:";
@@ -81,7 +87,7 @@ const stripVariantTags = (tags: string[]) =>
 const createClientVariantGroupId = () =>
   `client_variant_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
-const createInitialDrafts = (
+const createManualDrafts = (
   question: CreateExamQuestionOption,
   variantCount: 2 | 4,
 ): DraftEditState[] => {
@@ -104,6 +110,261 @@ const createInitialDrafts = (
           ? "True"
           : null,
   }));
+};
+
+const extractNumericAnswer = (value: string | null | undefined) => {
+  const parsed = Number((value ?? "").trim());
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const buildNumericOptions = (correctValue: number, size: number, seed: number) => {
+  const offsets = [0, 1, -1, 2, -2, 3, -3, 4, -4];
+  const values: number[] = [];
+
+  for (const offset of offsets) {
+    const candidate = correctValue + offset + (offset === 0 ? 0 : seed % 2);
+    if (!values.includes(candidate)) {
+      values.push(candidate);
+    }
+    if (values.length >= Math.max(size, 4)) {
+      break;
+    }
+  }
+
+  const options = values.slice(0, Math.max(size, 4));
+  const correctAnswer = String(correctValue);
+
+  if (!options.includes(correctValue)) {
+    options[0] = correctValue;
+  }
+
+  return {
+    options: options.map(String),
+    correctAnswer,
+  };
+};
+
+const replaceFirstMatch = (source: string, pattern: RegExp, replacement: string) => {
+  const match = source.match(pattern);
+  if (!match || typeof match.index !== "number") {
+    return source;
+  }
+
+  return `${source.slice(0, match.index)}${replacement}${source.slice(match.index + match[0].length)}`;
+};
+
+const buildLinearEquationPrompt = (equation: string, originalPrompt: string) => {
+  if (originalPrompt.includes("=") && /x/i.test(originalPrompt)) {
+    return replaceFirstMatch(originalPrompt, /-?\d*x\s*(?:[+-]\s*\d+)?\s*=\s*-?\d+/i, equation);
+  }
+
+  if (originalPrompt.includes("x хэд")) {
+    return `${equation} үед x хэд вэ?`;
+  }
+
+  if (originalPrompt.includes("ол")) {
+    return `${equation} тэгшитгэлийг бод.`;
+  }
+
+  return `${equation} үед x-ийг ол.`;
+};
+
+const tryBuildLinearEquationDrafts = (
+  question: CreateExamQuestionOption,
+  variantCount: 2 | 4,
+): DraftGenerationResult | null => {
+  if (!["MCQ", "SHORT_ANSWER"].includes(question.type)) {
+    return null;
+  }
+
+  const sourceText = `${question.prompt} ${question.title}`;
+  const equationMatch = sourceText.match(/([+-]?\d*)x\s*([+-]\s*\d+)?\s*=\s*([+-]?\d+)/i);
+  if (!equationMatch) {
+    return null;
+  }
+
+  const coefficientToken = equationMatch[1]?.replace(/\s+/g, "") ?? "";
+  const coefficient =
+    coefficientToken === "" || coefficientToken === "+"
+      ? 1
+      : coefficientToken === "-"
+        ? -1
+        : Number(coefficientToken);
+  const constantTerm = Number((equationMatch[2] ?? "").replace(/\s+/g, "") || "0");
+
+  if (!Number.isFinite(coefficient) || coefficient === 0 || !Number.isFinite(constantTerm)) {
+    return null;
+  }
+
+  const sourceAnswer =
+    extractNumericAnswer(question.correctAnswer) ??
+    (() => {
+      const rhs = Number(equationMatch[3]);
+      const derived = (rhs - constantTerm) / coefficient;
+      return Number.isInteger(derived) ? derived : null;
+    })();
+
+  if (sourceAnswer === null) {
+    return null;
+  }
+
+  const labels = variantCount === 2 ? ["A", "B"] : ["A", "B", "C", "D"];
+  const drafts = createManualDrafts(question, variantCount);
+
+  for (let index = 1; index < labels.length; index += 1) {
+    const nextCoefficient = coefficient + index;
+    const nextAnswer = sourceAnswer + index;
+    const nextRhs = nextCoefficient * nextAnswer + constantTerm;
+    const constantDisplay =
+      constantTerm === 0 ? "" : constantTerm > 0 ? ` + ${constantTerm}` : ` - ${Math.abs(constantTerm)}`;
+    const equation = `${nextCoefficient}x${constantDisplay} = ${nextRhs}`;
+    const prompt = buildLinearEquationPrompt(equation, question.prompt);
+    const nextDraft = drafts[index];
+    if (!nextDraft) {
+      continue;
+    }
+
+    if (question.type === "MCQ") {
+      const mcq = buildNumericOptions(nextAnswer, question.options.length || 4, index);
+      drafts[index] = {
+        ...nextDraft,
+        prompt,
+        options: mcq.options,
+        correctAnswer: mcq.correctAnswer,
+      };
+    } else {
+      drafts[index] = {
+        ...nextDraft,
+        prompt,
+        correctAnswer: String(nextAnswer),
+      };
+    }
+  }
+
+  return {
+    drafts,
+    templateLabel: "Шугаман тэгшитгэл",
+    autoFilled: true,
+  };
+};
+
+const buildBinomialExpansion = (
+  left: string,
+  operator: "+" | "-",
+  right: string,
+  power: 2 | 3,
+) => {
+  if (power === 2) {
+    return operator === "+"
+      ? `${left}^2 + 2${left}${right} + ${right}^2`
+      : `${left}^2 - 2${left}${right} + ${right}^2`;
+  }
+
+  return operator === "+"
+    ? `${left}^3 + 3${left}^2${right} + 3${left}${right}^2 + ${right}^3`
+    : `${left}^3 - 3${left}^2${right} + 3${left}${right}^2 - ${right}^3`;
+};
+
+const tryBuildBinomialIdentityDrafts = (
+  question: CreateExamQuestionOption,
+  variantCount: 2 | 4,
+): DraftGenerationResult | null => {
+  if (!["MCQ", "SHORT_ANSWER"].includes(question.type)) {
+    return null;
+  }
+
+  const sourceText = `${question.prompt} ${question.title}`;
+  const identityMatch = sourceText.match(/\(\s*([a-z])\s*([+-])\s*([a-z])\s*\)\s*\^\s*([23])/i);
+  if (!identityMatch) {
+    return null;
+  }
+
+  const left = identityMatch[1];
+  const right = identityMatch[3];
+  const power = Number(identityMatch[4]) as 2 | 3;
+  const originalFormula = identityMatch[0].replace(/\s+/g, "");
+  const family = [
+    `(${left}+${right})^2`,
+    `(${left}-${right})^2`,
+    `(${left}+${right})^3`,
+    `(${left}-${right})^3`,
+  ];
+  const orderedFormulas = [
+    originalFormula,
+    ...family.filter((entry) => entry !== originalFormula),
+  ].slice(0, variantCount);
+  const drafts = createManualDrafts(question, variantCount);
+
+  for (let index = 1; index < orderedFormulas.length; index += 1) {
+    const formula = orderedFormulas[index] ?? originalFormula;
+    const formulaMatch = formula.match(/\(([a-z])([+-])([a-z])\)\^([23])/i);
+    if (!formulaMatch) {
+      continue;
+    }
+
+    const operator = formulaMatch[2] as "+" | "-";
+    const nextPower = Number(formulaMatch[4]) as 2 | 3;
+    const correctExpansion = buildBinomialExpansion(left, operator, right, nextPower);
+    const prompt = question.prompt.includes(originalFormula)
+      ? replaceFirstMatch(question.prompt, /\(\s*[a-z]\s*[+-]\s*[a-z]\s*\)\s*\^\s*[23]/i, formula)
+      : `${formula} томьёог дэлгэ.`;
+    const nextDraft = drafts[index];
+    if (!nextDraft) {
+      continue;
+    }
+
+    if (question.type === "MCQ") {
+      const distractors = [
+        `${left}^2 + ${right}^2`,
+        buildBinomialExpansion(left, operator === "+" ? "-" : "+", right, nextPower),
+        nextPower === 2
+          ? `${left}^2 ${operator === "+" ? "+" : "-"} ${right}^2`
+          : `${left}^3 + ${right}^3`,
+      ];
+      const options = [correctExpansion, ...distractors]
+        .filter((value, optionIndex, values) => values.indexOf(value) === optionIndex)
+        .slice(0, Math.max(question.options.length, 4));
+      drafts[index] = {
+        ...nextDraft,
+        prompt,
+        options,
+        correctAnswer: correctExpansion,
+      };
+    } else {
+      drafts[index] = {
+        ...nextDraft,
+        prompt,
+        correctAnswer: correctExpansion,
+      };
+    }
+  }
+
+  return {
+    drafts,
+    templateLabel: power === 2 || power === 3 ? "Товчилсон үржвэр" : null,
+    autoFilled: true,
+  };
+};
+
+const createInitialDrafts = (
+  question: CreateExamQuestionOption,
+  variantCount: 2 | 4,
+): DraftGenerationResult => {
+  const binomialDrafts = tryBuildBinomialIdentityDrafts(question, variantCount);
+  if (binomialDrafts) {
+    return binomialDrafts;
+  }
+
+  const linearDrafts = tryBuildLinearEquationDrafts(question, variantCount);
+  if (linearDrafts) {
+    return linearDrafts;
+  }
+
+  return {
+    drafts: createManualDrafts(question, variantCount),
+    templateLabel: null,
+    autoFilled: false,
+  };
 };
 
 const toGraphqlQuestionType = (type: string): GraphqlQuestionType => {
@@ -205,6 +466,8 @@ export function CreateExamQuestionLibrary({
 }: CreateExamQuestionLibraryProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [draftEdits, setDraftEdits] = useState<DraftEditState[]>([]);
+  const [draftTemplateLabel, setDraftTemplateLabel] = useState<string | null>(null);
+  const [draftsAutoFilled, setDraftsAutoFilled] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [createQuestion, { loading: savingDrafts }] =
     useCreateQuestionMutationMutation();
@@ -259,7 +522,10 @@ export function CreateExamQuestionLibrary({
 
     try {
       setGenerateError(null);
-      setDraftEdits(createInitialDrafts(selectedQuestion, variantCount));
+      const result = createInitialDrafts(selectedQuestion, variantCount);
+      setDraftEdits(result.drafts);
+      setDraftTemplateLabel(result.templateLabel);
+      setDraftsAutoFilled(result.autoFilled);
     } catch (error) {
       console.error("Failed to generate draft variants", error);
       setGenerateError("Draft хувилбар үүсгэх үед алдаа гарлаа.");
@@ -268,6 +534,8 @@ export function CreateExamQuestionLibrary({
 
   const handleDiscardGeneratedDrafts = () => {
     setDraftEdits([]);
+    setDraftTemplateLabel(null);
+    setDraftsAutoFilled(false);
     setGenerateError(null);
   };
 
@@ -317,6 +585,8 @@ export function CreateExamQuestionLibrary({
       await onQuestionsRefresh();
       onReplaceChecked(createdIds);
       setDraftEdits([]);
+      setDraftTemplateLabel(null);
+      setDraftsAutoFilled(false);
     } catch (error) {
       console.error("Failed to save draft variants", error);
       setGenerateError("Draft хувилбар хадгалах үед алдаа гарлаа.");
@@ -410,7 +680,8 @@ export function CreateExamQuestionLibrary({
                 Draft хувилбар үүсгэх
               </p>
               <p className="mt-1 text-[12px] text-[#52555B]">
-                1 эх асуулт сонгоод {variantCount} хувилбарын draft form бэлдэнэ.
+                1 эх асуулт сонгоод {variantCount} хувилбарын draft бэлдэнэ. Танигдсан math
+                template байвал system утгатай хувилбаруудыг урьдчилж бөглөнө.
               </p>
             </div>
             <button
@@ -431,6 +702,19 @@ export function CreateExamQuestionLibrary({
             <p className="mt-3 text-[12px] text-[#52555B]">
               Эдгээр нь одоогоор зөвхөн create exam доторх local draft байна. Батлах хүртэл санд
               хадгалагдахгүй.
+            </p>
+          ) : null}
+          {draftEdits.length && draftTemplateLabel ? (
+            <p className="mt-3 text-[12px] text-[#163D99]">
+              Илэрсэн template: <span className="font-medium">{draftTemplateLabel}</span>.{" "}
+              {draftsAutoFilled
+                ? "B/C/D хувилбаруудыг system урьдчилж бөглөсөн, review хийгээд батална."
+                : "Template танигдсан ч гар аргаар нэмж засварлана."}
+            </p>
+          ) : null}
+          {draftEdits.length && !draftTemplateLabel ? (
+            <p className="mt-3 text-[12px] text-[#52555B]">
+              Энэ асуултад найдвартай template танигдаагүй тул хоосон draft form гаргалаа.
             </p>
           ) : null}
           {generateError ? (

@@ -66,3 +66,12 @@ This is intentional. It gives the team stable parity between:
 - shared review data
 
 Production remains isolated and should not be used as a development data source.
+
+## R2 image uploads
+
+The API now expects private R2 buckets for image-answer uploads:
+
+- `pinequest-uploads` for production
+- `pinequest-uploads-preview` for shared dev / preview
+
+Before using image upload locally or in preview, create those buckets in Cloudflare R2. The API stores only the R2 object key in D1, and the web app fetches the image back through authenticated API routes.
