@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import Link from "next/link";
 import { AttemptStatus } from "@/graphql/generated";
 import type { StudentExamAttempt, StudentExamData } from "./student-exam-room-types";
