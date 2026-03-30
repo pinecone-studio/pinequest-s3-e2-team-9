@@ -102,4 +102,38 @@ export const schemaDomainTypes = /* GraphQL */ `
     upcomingExams: [DashboardUpcomingExam!]!
     recentResults: [DashboardRecentResult!]!
   }
+
+  type ExamImportQuestion {
+    id: ID!
+    order: Int!
+    type: QuestionType!
+    title: String!
+    prompt: String!
+    options: [String!]!
+    answers: [String!]!
+    score: Int!
+    difficulty: Difficulty!
+    sourcePage: Int
+    confidence: Float!
+    needsReview: Boolean!
+    createdAt: String!
+  }
+
+  type ExamImportJob {
+    id: ID!
+    fileName: String!
+    fileSizeBytes: Int!
+    sourceType: ExamImportSourceType!
+    status: ExamImportJobStatus!
+    title: String!
+    extractedText: String
+    errorMessage: String
+    totalQuestions: Int!
+    reviewCount: Int!
+    questionBank: QuestionBank
+    createdBy: User!
+    questions: [ExamImportQuestion!]!
+    createdAt: String!
+    updatedAt: String!
+  }
 `;

@@ -183,6 +183,53 @@ export type ExamGenerationRuleInput = {
   points: Scalars['Int']['input'];
 };
 
+export type ExamImportJob = {
+  __typename?: 'ExamImportJob';
+  createdAt: Scalars['String']['output'];
+  createdBy: User;
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  extractedText?: Maybe<Scalars['String']['output']>;
+  fileName: Scalars['String']['output'];
+  fileSizeBytes: Scalars['Int']['output'];
+  id: Scalars['ID']['output'];
+  questionBank?: Maybe<QuestionBank>;
+  questions: Array<ExamImportQuestion>;
+  reviewCount: Scalars['Int']['output'];
+  sourceType: ExamImportSourceType;
+  status: ExamImportJobStatus;
+  title: Scalars['String']['output'];
+  totalQuestions: Scalars['Int']['output'];
+  updatedAt: Scalars['String']['output'];
+};
+
+export enum ExamImportJobStatus {
+  Approved = 'APPROVED',
+  Failed = 'FAILED',
+  Review = 'REVIEW',
+  Uploaded = 'UPLOADED'
+}
+
+export type ExamImportQuestion = {
+  __typename?: 'ExamImportQuestion';
+  answers: Array<Scalars['String']['output']>;
+  confidence: Scalars['Float']['output'];
+  createdAt: Scalars['String']['output'];
+  difficulty: Difficulty;
+  id: Scalars['ID']['output'];
+  needsReview: Scalars['Boolean']['output'];
+  options: Array<Scalars['String']['output']>;
+  order: Scalars['Int']['output'];
+  prompt: Scalars['String']['output'];
+  score: Scalars['Int']['output'];
+  sourcePage?: Maybe<Scalars['Int']['output']>;
+  title: Scalars['String']['output'];
+  type: QuestionType;
+};
+
+export enum ExamImportSourceType {
+  Pdf = 'PDF'
+}
+
 export enum ExamMode {
   OpenWindow = 'OPEN_WINDOW',
   Scheduled = 'SCHEDULED'
@@ -217,11 +264,13 @@ export type Hello = {
 export type Mutation = {
   __typename?: 'Mutation';
   addQuestionToExam: Exam;
+  approveExamImportJob: ExamImportJob;
   assignExamToClass: Exam;
   closeExam: Exam;
   createClass: Class;
   createExam: Exam;
   createExamDraftVariants: Array<Question>;
+  createExamImportJob: ExamImportJob;
   createQuestion: Question;
   createQuestionBank: QuestionBank;
   createQuestionVariants: Array<Question>;
@@ -239,6 +288,11 @@ export type MutationAddQuestionToExamArgs = {
   examId: Scalars['ID']['input'];
   points: Scalars['Int']['input'];
   questionId: Scalars['ID']['input'];
+};
+
+
+export type MutationApproveExamImportJobArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -278,6 +332,12 @@ export type MutationCreateExamArgs = {
 export type MutationCreateExamDraftVariantsArgs = {
   sourceQuestionId: Scalars['ID']['input'];
   totalVariants?: Scalars['Int']['input'];
+};
+
+
+export type MutationCreateExamImportJobArgs = {
+  fileName: Scalars['String']['input'];
+  fileSizeBytes: Scalars['Int']['input'];
 };
 
 
@@ -366,6 +426,8 @@ export type Query = {
   classes: Array<Class>;
   dashboardOverview: DashboardOverview;
   exam?: Maybe<Exam>;
+  examImportJob?: Maybe<ExamImportJob>;
+  examImportJobs: Array<ExamImportJob>;
   exams: Array<Exam>;
   health: Health;
   hello: Hello;
@@ -388,6 +450,11 @@ export type QueryClassArgs = {
 
 
 export type QueryExamArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryExamImportJobArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -475,6 +542,13 @@ export type AddQuestionToExamMutationVariables = Exact<{
 
 export type AddQuestionToExamMutation = { __typename?: 'Mutation', addQuestionToExam: { __typename?: 'Exam', id: string, questions: Array<{ __typename?: 'ExamQuestion', id: string, points: number, order: number, question: { __typename?: 'Question', id: string } }> } };
 
+export type ApproveExamImportJobMutationMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type ApproveExamImportJobMutationMutation = { __typename?: 'Mutation', approveExamImportJob: { __typename?: 'ExamImportJob', id: string, fileName: string, status: ExamImportJobStatus, title: string, totalQuestions: number, reviewCount: number, questionBank?: { __typename?: 'QuestionBank', id: string, title: string } | null, questions: Array<{ __typename?: 'ExamImportQuestion', id: string, order: number, type: QuestionType, title: string, prompt: string, options: Array<string>, answers: Array<string>, score: number, difficulty: Difficulty, sourcePage?: number | null, confidence: number, needsReview: boolean, createdAt: string }> } };
+
 export type AssignExamToClassMutationVariables = Exact<{
   examId: Scalars['ID']['input'];
   classId: Scalars['ID']['input'];
@@ -497,6 +571,14 @@ export type CreateExamDraftVariantsMutationMutationVariables = Exact<{
 
 
 export type CreateExamDraftVariantsMutationMutation = { __typename?: 'Mutation', createExamDraftVariants: Array<{ __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, difficulty: Difficulty, options: Array<string>, correctAnswer?: string | null, tags: Array<string> }> };
+
+export type CreateExamImportJobMutationMutationVariables = Exact<{
+  fileName: Scalars['String']['input'];
+  fileSizeBytes: Scalars['Int']['input'];
+}>;
+
+
+export type CreateExamImportJobMutationMutation = { __typename?: 'Mutation', createExamImportJob: { __typename?: 'ExamImportJob', id: string, fileName: string, fileSizeBytes: number, sourceType: ExamImportSourceType, status: ExamImportJobStatus, title: string, errorMessage?: string | null, totalQuestions: number, reviewCount: number, createdAt: string, updatedAt: string, questions: Array<{ __typename?: 'ExamImportQuestion', id: string, order: number, type: QuestionType, title: string, prompt: string, options: Array<string>, answers: Array<string>, score: number, difficulty: Difficulty, sourcePage?: number | null, confidence: number, needsReview: boolean, createdAt: string }> } };
 
 export type CreateExamMutationVariables = Exact<{
   classId: Scalars['ID']['input'];
@@ -709,6 +791,63 @@ export function useAddQuestionToExamMutation(baseOptions?: ApolloReactHooks.Muta
 export type AddQuestionToExamMutationHookResult = ReturnType<typeof useAddQuestionToExamMutation>;
 export type AddQuestionToExamMutationResult = ApolloReactCommon.MutationResult<AddQuestionToExamMutation>;
 export type AddQuestionToExamMutationOptions = ApolloReactCommon.BaseMutationOptions<AddQuestionToExamMutation, AddQuestionToExamMutationVariables>;
+export const ApproveExamImportJobMutationDocument = gql`
+    mutation ApproveExamImportJobMutation($id: ID!) {
+  approveExamImportJob(id: $id) {
+    id
+    fileName
+    status
+    title
+    totalQuestions
+    reviewCount
+    questionBank {
+      id
+      title
+    }
+    questions {
+      id
+      order
+      type
+      title
+      prompt
+      options
+      answers
+      score
+      difficulty
+      sourcePage
+      confidence
+      needsReview
+      createdAt
+    }
+  }
+}
+    `;
+export type ApproveExamImportJobMutationMutationFn = ApolloReactCommon.MutationFunction<ApproveExamImportJobMutationMutation, ApproveExamImportJobMutationMutationVariables>;
+
+/**
+ * __useApproveExamImportJobMutationMutation__
+ *
+ * To run a mutation, you first call `useApproveExamImportJobMutationMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useApproveExamImportJobMutationMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [approveExamImportJobMutationMutation, { data, loading, error }] = useApproveExamImportJobMutationMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useApproveExamImportJobMutationMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ApproveExamImportJobMutationMutation, ApproveExamImportJobMutationMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ApproveExamImportJobMutationMutation, ApproveExamImportJobMutationMutationVariables>(ApproveExamImportJobMutationDocument, options);
+      }
+export type ApproveExamImportJobMutationMutationHookResult = ReturnType<typeof useApproveExamImportJobMutationMutation>;
+export type ApproveExamImportJobMutationMutationResult = ApolloReactCommon.MutationResult<ApproveExamImportJobMutationMutation>;
+export type ApproveExamImportJobMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<ApproveExamImportJobMutationMutation, ApproveExamImportJobMutationMutationVariables>;
 export const AssignExamToClassDocument = gql`
     mutation AssignExamToClass($examId: ID!, $classId: ID!) {
   assignExamToClass(examId: $examId, classId: $classId) {
@@ -827,6 +966,65 @@ export function useCreateExamDraftVariantsMutationMutation(baseOptions?: ApolloR
 export type CreateExamDraftVariantsMutationMutationHookResult = ReturnType<typeof useCreateExamDraftVariantsMutationMutation>;
 export type CreateExamDraftVariantsMutationMutationResult = ApolloReactCommon.MutationResult<CreateExamDraftVariantsMutationMutation>;
 export type CreateExamDraftVariantsMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateExamDraftVariantsMutationMutation, CreateExamDraftVariantsMutationMutationVariables>;
+export const CreateExamImportJobMutationDocument = gql`
+    mutation CreateExamImportJobMutation($fileName: String!, $fileSizeBytes: Int!) {
+  createExamImportJob(fileName: $fileName, fileSizeBytes: $fileSizeBytes) {
+    id
+    fileName
+    fileSizeBytes
+    sourceType
+    status
+    title
+    errorMessage
+    totalQuestions
+    reviewCount
+    createdAt
+    updatedAt
+    questions {
+      id
+      order
+      type
+      title
+      prompt
+      options
+      answers
+      score
+      difficulty
+      sourcePage
+      confidence
+      needsReview
+      createdAt
+    }
+  }
+}
+    `;
+export type CreateExamImportJobMutationMutationFn = ApolloReactCommon.MutationFunction<CreateExamImportJobMutationMutation, CreateExamImportJobMutationMutationVariables>;
+
+/**
+ * __useCreateExamImportJobMutationMutation__
+ *
+ * To run a mutation, you first call `useCreateExamImportJobMutationMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateExamImportJobMutationMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createExamImportJobMutationMutation, { data, loading, error }] = useCreateExamImportJobMutationMutation({
+ *   variables: {
+ *      fileName: // value for 'fileName'
+ *      fileSizeBytes: // value for 'fileSizeBytes'
+ *   },
+ * });
+ */
+export function useCreateExamImportJobMutationMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreateExamImportJobMutationMutation, CreateExamImportJobMutationMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<CreateExamImportJobMutationMutation, CreateExamImportJobMutationMutationVariables>(CreateExamImportJobMutationDocument, options);
+      }
+export type CreateExamImportJobMutationMutationHookResult = ReturnType<typeof useCreateExamImportJobMutationMutation>;
+export type CreateExamImportJobMutationMutationResult = ApolloReactCommon.MutationResult<CreateExamImportJobMutationMutation>;
+export type CreateExamImportJobMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateExamImportJobMutationMutation, CreateExamImportJobMutationMutationVariables>;
 export const CreateExamDocument = gql`
     mutation CreateExam($classId: ID!, $title: String!, $description: String, $mode: ExamMode!, $durationMinutes: Int!, $scheduledFor: String, $shuffleQuestions: Boolean!, $shuffleAnswers: Boolean!, $generationMode: ExamGenerationMode!, $rules: [ExamGenerationRuleInput!], $passingCriteriaType: PassingCriteriaType!, $passingThreshold: Int!) {
   createExam(

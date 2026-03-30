@@ -19,6 +19,8 @@ export const schemaRootTypes = /* GraphQL */ `
     questions(bankId: ID): [Question!]!
     exams: [Exam!]!
     exam(id: ID!): Exam
+    examImportJobs: [ExamImportJob!]!
+    examImportJob(id: ID!): ExamImportJob
     attempts: [Attempt!]!
     attempt(id: ID!): Attempt
     dashboardOverview: DashboardOverview!
@@ -76,6 +78,8 @@ export const schemaRootTypes = /* GraphQL */ `
     addQuestionToExam(examId: ID!, questionId: ID!, points: Int!): Exam!
     publishExam(examId: ID!): Exam!
     closeExam(examId: ID!): Exam!
+    createExamImportJob(fileName: String!, fileSizeBytes: Int!): ExamImportJob!
+    approveExamImportJob(id: ID!): ExamImportJob!
     startAttempt(examId: ID!, studentId: ID!): Attempt!
     saveAnswer(attemptId: ID!, questionId: ID!, value: String!): Attempt!
     submitAttempt(attemptId: ID!): Attempt!

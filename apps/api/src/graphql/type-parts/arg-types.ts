@@ -90,5 +90,7 @@ export type CloseExamArgs = { examId: string };
 export type StartAttemptArgs = { examId: string; studentId: string };
 export type SaveAnswerArgs = { attemptId: string; questionId: string; value: string };
 export type SubmitAttemptArgs = { attemptId: string };
+export type CreateExamImportJobArgs = { fileName: string; fileSizeBytes: number };
+export type ApproveExamImportJobArgs = { id: string };
 export type QuestionsArgs = { bankId?: string };
 export type ByIdArgs = { id: string };

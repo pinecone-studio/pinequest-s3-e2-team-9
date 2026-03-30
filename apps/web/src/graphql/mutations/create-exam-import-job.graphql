@@ -1,0 +1,30 @@
+mutation CreateExamImportJobMutation($fileName: String!, $fileSizeBytes: Int!) {
+  createExamImportJob(fileName: $fileName, fileSizeBytes: $fileSizeBytes) {
+    id
+    fileName
+    fileSizeBytes
+    sourceType
+    status
+    title
+    errorMessage
+    totalQuestions
+    reviewCount
+    createdAt
+    updatedAt
+    questions {
+      id
+      order
+      type
+      title
+      prompt
+      options
+      answers
+      score
+      difficulty
+      sourcePage
+      confidence
+      needsReview
+      createdAt
+    }
+  }
+}

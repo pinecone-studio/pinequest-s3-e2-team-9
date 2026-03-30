@@ -13,7 +13,6 @@ export type ExamGenerationMode = "MANUAL" | "RULE_BASED";
 export type AttemptStatus = "IN_PROGRESS" | "SUBMITTED" | "GRADED";
 export type ClassStudentStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 export type PassingCriteriaType = "PERCENTAGE" | "POINTS";
-
 export type ExamGenerationRule = {
   label: string;
   bankIds: string[];
@@ -21,6 +20,12 @@ export type ExamGenerationRule = {
   count: number;
   points: number;
 };
+export type ExamImportJobStatus =
+  | "UPLOADED"
+  | "REVIEW"
+  | "APPROVED"
+  | "FAILED";
+export type ExamImportSourceType = "PDF";
 
 export type UserRow = {
   id: string;
@@ -118,5 +123,38 @@ export type AnswerRow = {
   auto_score: number | null;
   manual_score: number | null;
   feedback: string | null;
+  created_at: string;
+};
+
+export type ExamImportJobRow = {
+  id: string;
+  teacher_id: string;
+  question_bank_id: string | null;
+  file_name: string;
+  file_size_bytes: number;
+  source_type: ExamImportSourceType;
+  status: ExamImportJobStatus;
+  title: string;
+  extracted_text: string | null;
+  parsed_exam_json: string;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ExamImportQuestionRow = {
+  id: string;
+  job_id: string;
+  display_order: number;
+  type: QuestionType;
+  title: string;
+  prompt: string;
+  options_json: string;
+  answers_json: string;
+  score: number;
+  difficulty: Difficulty;
+  source_page: number | null;
+  confidence: number;
+  needs_review: number;
   created_at: string;
 };
