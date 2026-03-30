@@ -4,6 +4,7 @@ import { getClassSelectFields, insertClassRow } from "./class-schema";
 import { createAttemptMutations } from "./modules/attempts";
 import { closeExpiredExams, createExamQueriesAndMutations, findExamById } from "./modules/exams";
 import { createDashboardOverviewQuery } from "./modules/dashboard";
+import { createImportQueriesAndMutations } from "./modules/imports";
 import { publishLiveExamEvent, type LiveExamEventsEnv } from "../live-exam-events";
 import {
   createQuestionQueriesAndMutations,
@@ -224,6 +225,14 @@ export const createRootValue = ({ db, env }: CreateRootValueArgs) => {
       requireActor,
       toQuestionBank: (_, bank) => toQuestionBank(bank),
       toQuestion: (_, question) => toQuestion(question),
+    }),
+    ...createImportQueriesAndMutations({
+      db,
+      requireActor,
+      findQuestionBank: findQuestionBankById,
+      findUser,
+      toQuestionBank: (_, bank) => toQuestionBank(bank),
+      toUser,
     }),
   };
 };

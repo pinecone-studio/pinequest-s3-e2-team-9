@@ -1,0 +1,29 @@
+mutation ApproveExamImportJobMutation($id: ID!) {
+  approveExamImportJob(id: $id) {
+    id
+    fileName
+    status
+    title
+    totalQuestions
+    reviewCount
+    questionBank {
+      id
+      title
+    }
+    questions {
+      id
+      order
+      type
+      title
+      prompt
+      options
+      answers
+      score
+      difficulty
+      sourcePage
+      confidence
+      needsReview
+      createdAt
+    }
+  }
+}

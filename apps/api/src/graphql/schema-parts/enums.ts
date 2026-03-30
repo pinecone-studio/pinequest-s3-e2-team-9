@@ -41,4 +41,15 @@ export const schemaEnums = /* GraphQL */ `
     IN_PROGRESS
     COMPLETED
   }
+
+  enum ExamImportJobStatus {
+    UPLOADED
+    REVIEW
+    APPROVED
+    FAILED
+  }
+
+  enum ExamImportSourceType {
+    PDF
+  }
 `;
