@@ -1,15 +1,10 @@
 import type { ReactElement } from "react";
 import type { IconProps } from "./icons";
-import {
-  BookIcon,
-  PlusIcon,
-  UsersIcon,
-} from "./icons";
+import { BookIcon, HomeIcon, PlusIcon, UsersIcon } from "./icons";
 import {
   ClassesSideBarIcon,
   CheckIcon,
   GlobalIcon,
-  HomeIcon,
   MyExamsIcon,
   QuestionBoxIcon,
 } from "./icons-svg";
@@ -33,7 +28,11 @@ export const navItems: NavItem[] = [
   { label: "Миний шалгалтууд", href: "/my-exams", icon: MyExamsIcon },
   { label: "Ангиуд", href: "/classes", icon: ClassesSideBarIcon },
   { label: "Асуултын сан", href: "/question-bank", icon: QuestionBoxIcon },
-  { label: TEACHER_COMMON_TEXT.community, href: "/community", icon: GlobalIcon },
+  {
+    label: TEACHER_COMMON_TEXT.community,
+    href: "/community",
+    icon: GlobalIcon,
+  },
   { label: "Үнэлгээ", href: "/evaluation", icon: CheckIcon },
 ];
 

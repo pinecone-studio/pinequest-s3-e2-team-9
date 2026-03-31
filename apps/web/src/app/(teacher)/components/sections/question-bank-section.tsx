@@ -4,25 +4,17 @@
 import { useMemo, useState } from "react";
 import { useQuestionBanksQueryQuery } from "@/graphql/generated";
 import { useLiveQuestionBankEvents } from "@/lib/use-live-question-bank-events";
-import { PlusIcon } from "../icons";
-import {
-  getCurriculumGrades,
-  getCurriculumTopicGroupName,
-  getCurriculumSubjects,
-  getCurriculumTopicGroups,
-} from "../question-bank-curriculum";
+import { PlusIcon, SearchIcon } from "../icons";
+import { DownPressIcon } from "../icons-ic";
+import { TopSearchBar } from "../top-search-bar";
 import {
   formatQuestionBankDate,
   type QuestionBankItem,
 } from "../question-bank-utils";
-import { TeacherBackButton } from "../teacher-back-button";
 import { QuestionBankCreateDialog } from "./question-bank-create-dialog";
 import {
-  QuestionBankBrowseGrid,
+  QuestionBankCardGrid,
   QuestionBankEmptyState,
-  QuestionBankFilterPanel,
-  QuestionBankGrid,
-  QuestionBankTabButton,
 } from "./question-bank-section-ui";
 
 const QUESTION_BANK_SKELETONS = Array.from({ length: 6 }, (_, index) => index);
@@ -49,7 +41,7 @@ const mapQuestionBankItems = (
     id: bank.id,
     title: bank.title,
     displayTitle:
-      bank.topic !== "Ерөнхий" ? bank.topic : bank.topics[0] ?? bank.title,
+      bank.topic !== "Ерөнхий" ? bank.topic : (bank.topics[0] ?? bank.title),
     description: bank.description ?? "Тайлбар оруулаагүй асуултын сан",
     grade: bank.grade,
     subject: bank.subject,
@@ -67,11 +59,9 @@ const mapQuestionBankItems = (
 type LibraryTab = "public" | "mine";
 
 export function QuestionBankSection() {
-  const [activeTab, setActiveTab] = useState<LibraryTab>("public");
+  const [activeTab] = useState<LibraryTab>("public");
   const [search, setSearch] = useState("");
-  const [grade, setGrade] = useState("");
-  const [subject, setSubject] = useState("");
-  const [topic, setTopic] = useState("");
+  const [topSearch, setTopSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const { data, loading, error, refetch } = useQuestionBanksQueryQuery({
     fetchPolicy: "cache-and-network",
@@ -115,310 +105,104 @@ export function QuestionBankSection() {
     );
   }, [activeTab, itemsState.items, viewerId]);
 
-  const gradeOptions = useMemo(
-    () =>
-      [...new Set([...getCurriculumGrades(), ...scopedItems.map((item) => item.grade)])]
-        .sort((left, right) => left - right)
-        .map((value) => String(value)),
-    [scopedItems],
-  );
-
-  const subjectOptions = useMemo(() => {
-    if (!grade) {
-      return [];
-    }
-
-    const numericGrade = Number(grade);
-    const fromCurriculum = getCurriculumSubjects(numericGrade).map((entry) => entry.name);
-    const fromBanks = scopedItems
-      .filter((item) => item.grade === numericGrade)
-      .map((item) => item.subject);
-
-    return [...new Set([...fromCurriculum, ...fromBanks])];
-  }, [grade, scopedItems]);
-
-  const topicOptions = useMemo(() => {
-    if (!grade || !subject) {
-      return [];
-    }
-
-    const numericGrade = Number(grade);
-    const fromCurriculum = getCurriculumTopicGroups(numericGrade, subject).map(
-      (entry) => entry.name,
-    );
-    const fromBanks = scopedItems
-      .filter((item) => item.grade === numericGrade && item.subject === subject)
-      .flatMap((item) => (item.topic !== "Ерөнхий" ? [item.topic] : item.topics));
-
-    return [...new Set([...fromCurriculum, ...fromBanks])];
-  }, [grade, scopedItems, subject]);
-
-  const topicGroups = useMemo(() => {
-    if (!grade || !subject) {
-      return [];
-    }
-
-    return getCurriculumTopicGroups(Number(grade), subject);
-  }, [grade, subject]);
-
-  const topicGroupMap = useMemo(
-    () => new Map(topicGroups.map((entry) => [entry.name, entry.topics])),
-    [topicGroups],
-  );
-
   const filteredItems = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
     return scopedItems.filter((item) => {
-      const topicValues = item.topic !== "Ерөнхий" ? [item.topic] : item.topics;
-      const selectedTopicMembers = topic ? topicGroupMap.get(topic) ?? [topic] : [];
       const matchesSearch =
         !keyword ||
-        `${item.title} ${item.description} ${item.subject} ${topicValues.join(" ")} ${item.ownerName}`
+        `${item.title} ${item.description} ${item.subject} ${item.topics.join(" ")} ${item.ownerName}`
           .toLowerCase()
           .includes(keyword);
-      const matchesGrade = !grade || item.grade === Number(grade);
-      const matchesSubject = !subject || item.subject === subject;
-      const matchesTopic =
-        !topic || topicValues.some((value) => selectedTopicMembers.includes(value));
-
-      return matchesSearch && matchesGrade && matchesSubject && matchesTopic;
+      return matchesSearch;
     });
-  }, [grade, scopedItems, search, subject, topic, topicGroupMap]);
-
-  const groupedCategoryItems = useMemo(() => {
-    if (!grade || !subject || topic) {
-      return [];
-    }
-
-    const grouped = new Map<
-      string,
-      QuestionBankItem & { questionCountNumber: number; bankCount: number }
-    >();
-
-    for (const item of filteredItems) {
-      const topicValues = item.topic !== "Ерөнхий" ? [item.topic] : item.topics;
-      const primaryTopic = topicValues[0] ?? item.displayTitle;
-      const groupName = getCurriculumTopicGroupName(Number(grade), subject, primaryTopic);
-      const current = grouped.get(groupName) ?? {
-        ...item,
-        id: `group:${groupName}`,
-        title: groupName,
-        displayTitle: groupName,
-        description: `${groupName} сэдэвт хамаарах сангуудыг нэгтгэн харуулж байна.`,
-        subtopics: [],
-        ownerName: "",
-        questions: "0 асуулт",
-        questionCountNumber: 0,
-        bankCount: 0,
-      };
-
-      current.bankCount += 1;
-      const questionCount = Number.parseInt(item.questions, 10);
-      current.questionCountNumber += Number.isFinite(questionCount) ? questionCount : 0;
-      current.questions = `${current.questionCountNumber} асуулт`;
-      current.ownerName = `${current.bankCount} сан нэгтгэсэн`;
-      current.subtopics = [
-        ...new Set([...(current.subtopics ?? []), ...topicValues]),
-      ];
-      grouped.set(groupName, current);
-    }
-
-    return [...grouped.values()]
-      .sort((left, right) => left.displayTitle.localeCompare(right.displayTitle, "mn"))
-      .map(({ questionCountNumber: _questionCountNumber, bankCount: _bankCount, ...item }) => item);
-  }, [filteredItems, grade, subject, topic]);
-
-  const categoryBrowseItems = useMemo(() => {
-    if (grade) {
-      return [];
-    }
-
-    const keyword = search.trim().toLowerCase();
-    const itemsByCategory = new Map<
-      string,
-      { key: string; label: string; subtitle: string; bankCount: number }
-    >();
-
-    for (const item of scopedItems) {
-      const key = `${item.grade}:${item.subject}`;
-      const current = itemsByCategory.get(key) ?? {
-        key,
-        label: `${item.grade}-р анги ${item.subject}`,
-        subtitle: "",
-        bankCount: 0,
-      };
-      current.bankCount += 1;
-      current.subtitle = `${current.bankCount} сан`;
-      itemsByCategory.set(key, current);
-    }
-
-    return [...itemsByCategory.values()]
-      .filter((item) => !keyword || item.label.toLowerCase().includes(keyword))
-      .sort((left, right) => left.label.localeCompare(right.label, "mn"));
-  }, [grade, scopedItems, search]);
-
-  const subjectBrowseItems = useMemo(() => {
-    if (!grade || subject) {
-      return [];
-    }
-
-    const keyword = search.trim().toLowerCase();
-    const itemsBySubject = new Map<
-      string,
-      { key: string; label: string; subtitle: string; bankCount: number }
-    >();
-
-    for (const item of scopedItems.filter((entry) => entry.grade === Number(grade))) {
-      const current = itemsBySubject.get(item.subject) ?? {
-        key: item.subject,
-        label: item.subject,
-        subtitle: "",
-        bankCount: 0,
-      };
-      current.bankCount += 1;
-      current.subtitle = `${current.bankCount} сан`;
-      itemsBySubject.set(item.subject, current);
-    }
-
-    return [...itemsBySubject.values()]
-      .filter((item) => !keyword || item.label.toLowerCase().includes(keyword))
-      .sort((left, right) => left.label.localeCompare(right.label, "mn"));
-  }, [grade, scopedItems, search, subject]);
-
-  const selectedPathLabel = useMemo(() => {
-    const path = [
-      grade ? `${grade}-р анги` : "Анги",
-      subject || "Хичээл",
-      topic || "Бүх дэд сэдэв",
-    ];
-
-    return path.join(" / ");
-  }, [grade, subject, topic]);
+  }, [scopedItems, search]);
 
   return (
     <>
-      <section className="mx-auto w-full max-w-[1120px] space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-3">
-            <TeacherBackButton fallbackHref="/" />
+      <section className="mx-auto flex min-h-[900px] w-full max-w-[1184px] flex-col">
+        <div className="flex h-[90px] w-full items-center px-[32px] py-[24px]">
+          <TopSearchBar
+            searchPlaceholder="Шалгалт хайх"
+            searchValue={topSearch}
+            onSearchChange={setTopSearch}
+            leftWidthClassName="w-[608px]"
+            centered
+            filters={
+              <button
+                type="button"
+                className="flex h-[36px] w-[140px] items-center justify-between rounded-[20px] border border-transparent bg-white px-3 text-[14px] font-normal text-[#0F1216] shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)]"
+              >
+                <span className="flex w-[70px] justify-center whitespace-nowrap">
+                  Бүх төлөв
+                </span>
+                <DownPressIcon className="h-4 w-4" />
+              </button>
+            }
+          />
+        </div>
+        <div className="flex w-full flex-col gap-6 px-[60px] py-[54px]">
+          <div className="flex w-full items-center justify-between">
             <div>
-            <h1 className="text-[24px] font-semibold text-[#0F1216]">
-              Асуултын сан
-            </h1>
-            <p className="mt-1 text-[14px] text-[#52555B]">
-              Эхлээд анги, дараа нь хичээлээ сонгоно. Ижил утгатай дэд сэдвүүдийг нэгтгэн харуулж, хүсвэл дэд сэдвээр нь нэмж шүүнэ.
-            </p>
+              <h1 className="text-[24px] font-semibold leading-8 text-[#0F1216]">
+                Асуултын сан
+              </h1>
+              <p className="mt-1 text-[14px] leading-5 text-[#52555B]">
+                Асуултуудыг зохион байгуулж, олон шалгалтад дахин ашиглах
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="inline-flex h-[36px] items-center gap-2 rounded-[6px] bg-[#6F90FF] px-[12px] text-[14px] font-medium text-white"
+            >
+              <PlusIcon className="h-4 w-4" />
+              Сан үүсгэх
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center gap-2 rounded-md bg-[#00267F] px-4 py-2 text-[14px] font-medium text-white"
-          >
-            <PlusIcon className="h-4 w-4" />
-            Сан үүсгэх
-          </button>
-        </div>
 
-        <div className="flex flex-wrap gap-3">
-          <QuestionBankTabButton
-            active={activeTab === "public"}
-            label="Нэгдсэн сан"
-            onClick={() => setActiveTab("public")}
-          />
-          <QuestionBankTabButton
-            active={activeTab === "mine"}
-            label="Миний сан"
-            onClick={() => setActiveTab("mine")}
-          />
-        </div>
+          <label className="relative w-[384px]">
+            <span className="sr-only">Асуултын сан хайх</span>
+            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#52555B]" />
+            <input
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Асуултын сан хайх..."
+              className="h-[36px] w-full rounded-[6px] border border-[#DFE1E5] bg-white px-[12px] pl-[36px] text-[14px] leading-[18px] text-[#52555B] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#52555B] focus:outline-none focus:ring-1 focus:ring-[#D8E4FF]"
+            />
+          </label>
 
-        <QuestionBankFilterPanel
-          gradeOptions={gradeOptions}
-          grade={grade}
-          subjectOptions={subjectOptions}
-          subject={subject}
-          topicOptions={topicOptions}
-          topic={topic}
-          search={search}
-          selectedPathLabel={selectedPathLabel}
-          onGradeChange={(value) => {
-            const nextGrade = value.replace("-р анги", "").trim();
-            setGrade(nextGrade);
-            setSubject("");
-            setTopic("");
-          }}
-          onSubjectChange={(value) => {
-            setSubject(value);
-            setTopic("");
-          }}
-          onTopicChange={setTopic}
-          onSearchChange={setSearch}
-        />
+          {itemsState.errorMessage ? (
+            <p className="text-[14px] text-[#B42318]">
+              {itemsState.errorMessage}
+            </p>
+          ) : null}
 
-        {itemsState.errorMessage ? (
-          <p className="text-[14px] text-[#B42318]">{itemsState.errorMessage}</p>
-        ) : null}
+          {!loading && !itemsState.errorMessage && !filteredItems.length ? (
+            <QuestionBankEmptyState
+              grade=""
+              subject=""
+              topic=""
+              selectedPathLabel="Анги / Хичээл / Бүх дэд сэдэв"
+              onCreate={() => setCreateOpen(true)}
+            />
+          ) : null}
 
-        {!loading && !itemsState.errorMessage && !grade && categoryBrowseItems.length ? (
-          <QuestionBankBrowseGrid
-            title="Категориуд"
-            description="Анги, хичээлээр ангилсан сангийн category-оос сонгоно уу."
-            items={categoryBrowseItems}
-            onSelect={(value) => {
-              const [nextGrade, nextSubject] = value.split(":");
-              setGrade(nextGrade ?? "");
-              setSubject(nextSubject ?? "");
-              setTopic("");
-            }}
-          />
-        ) : null}
-
-        {!loading && !itemsState.errorMessage && grade && !subject && subjectBrowseItems.length ? (
-          <QuestionBankBrowseGrid
-            title={`${grade}-р ангийн хичээлүүд`}
-            description="Энэ ангийн category дотроос хичээлээ сонгоно уу."
-            items={subjectBrowseItems}
-            onSelect={(value) => {
-              setSubject(value);
-              setTopic("");
-            }}
-          />
-        ) : null}
-
-        {!loading &&
-        !itemsState.errorMessage &&
-        !filteredItems.length &&
-        !categoryBrowseItems.length &&
-        !subjectBrowseItems.length ? (
-          <QuestionBankEmptyState
-            grade={grade}
-            subject={subject}
-            topic={topic}
-            selectedPathLabel={selectedPathLabel}
-            onCreate={() => setCreateOpen(true)}
-          />
-        ) : null}
-
-        {grade && subject ? (
-          <QuestionBankGrid
-            items={topic ? filteredItems : groupedCategoryItems}
+          <QuestionBankCardGrid
+            items={filteredItems}
             loading={loading}
             skeletons={QUESTION_BANK_SKELETONS}
-            categoryLabel={grade && subject ? `${grade}-р анги ${subject}` : ""}
-            showCategoryContext={Boolean(grade && subject)}
-            onSelectItem={topic ? undefined : (item) => setTopic(item.displayTitle)}
           />
-        ) : null}
+        </div>
       </section>
 
       {createOpen ? (
         <QuestionBankCreateDialog
-          key={`${grade}-${subject}-${topic}-${activeTab}`}
-          initialGrade={grade ? Number(grade) : null}
-          initialSubject={subject || null}
-          initialTopic={topic || null}
+          key={`question-bank-create-${activeTab}`}
+          initialGrade={null}
+          initialSubject={null}
+          initialTopic={null}
           onClose={() => setCreateOpen(false)}
         />
       ) : null}

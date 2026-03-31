@@ -7,7 +7,7 @@ const cardClassName =
   "flex h-[216px] w-[352px] max-w-full flex-none flex-col gap-3 rounded-[16px] border border-[#F1F2F3] bg-white px-[10px] pb-[16px] pt-[10px] shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)]";
 
 const actionButtonClassName =
-  "inline-flex h-[36px] items-center justify-center rounded-[8px] border border-[#52555B] px-3 py-2 text-center text-[12px] font-semibold leading-5 text-[#52555B] transition-colors hover:bg-[#F8FAFC]";
+  "inline-flex h-[36px] items-center justify-center rounded-[8px] border border-[#52555B] px-0 py-2 text-center text-[12px] font-semibold leading-5 text-[#52555B] transition-colors hover:bg-[#F8FAFC]";
 
 type MyExamCardProps = {
   exam: MyExamListView;
@@ -31,14 +31,14 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
           {exam.title}
         </h3>
 
-        <div className="flex items-center gap-[6px] text-[14px] text-[#F5F5F5]">
+        <div className="flex items-center gap-[6px] text-[14px] leading-4 text-[#F5F5F5]">
           <CastForEducationIcon className="block h-4 w-4 shrink-0" />
-          <span className="block truncate leading-[14px]">{exam.subject}</span>
+          <span className="block truncate">{exam.subject}</span>
         </div>
 
-        <div className="flex items-center gap-[6px] text-[14px] text-[#F5F5F5]">
+        <div className="flex items-center gap-[6px] text-[14px] leading-4 text-[#F5F5F5]">
           <HuggingkidsIcon className="block h-4 w-4 shrink-0" />
-          <span className="block truncate leading-[14px]">
+          <span className="block truncate">
             {mode === "library" ? "Хувийн сан" : exam.secondaryLabel}
           </span>
         </div>
@@ -60,7 +60,7 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
       </div>
 
       <div
-        className={`grid w-full gap-3 ${showResults ? "sm:grid-cols-2" : ""}`}
+        className={`grid w-full gap-[12px] ${showResults ? "sm:grid-cols-2" : ""}`}
       >
         <button
           className={`${actionButtonClassName} ${showResults ? "" : "w-full"}`}

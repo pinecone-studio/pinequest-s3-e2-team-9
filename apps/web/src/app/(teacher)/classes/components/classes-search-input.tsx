@@ -24,7 +24,7 @@ export function ClassesSearchInput({
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="h-[42px] w-full rounded-[20px] border border-transparent bg-white pl-[44px] pr-3 text-[14px] leading-[18px] text-[#0F1216] shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)] placeholder:text-[#52555B] focus:border-[#D8E4FF] focus:outline-none"
+        className="h-[42px] w-full rounded-[20px] border border-transparent bg-white pl-[44px] pr-3 text-[14px] leading-[18px] text-[#52555B] shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)] placeholder:text-[#52555B] focus:border-[#D8E4FF] focus:outline-none"
       />
     </label>
   );
