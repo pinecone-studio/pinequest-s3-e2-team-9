@@ -122,6 +122,11 @@ export const schemaRootTypes = /* GraphQL */ `
     ): ExamImportJob!
     startAttempt(examId: ID!, studentId: ID!): Attempt!
     saveAnswer(attemptId: ID!, questionId: ID!, value: String!): Attempt!
+    recordAttemptIntegrityEvent(
+      attemptId: ID!
+      type: AttemptIntegrityEventType!
+      details: String
+    ): Boolean!
     reviewAnswer(answerId: ID!, manualScore: Float!, feedback: String): Answer!
     submitAttempt(attemptId: ID!): Attempt!
     reviewAttempt(attemptId: ID!, answers: [AttemptReviewAnswerInput!]!): Attempt!

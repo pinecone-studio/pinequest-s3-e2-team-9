@@ -1,10 +1,70 @@
 import { all, first, type D1DatabaseLike } from "../../lib/d1";
-import type { ClassRow, ClassStudentStatus, ExamRow, UserRow } from "../types";
+import type {
+  AttemptIntegrityEventType,
+  ClassRow,
+  ClassStudentStatus,
+  ExamRow,
+  IntegrityRiskLevel,
+  IntegritySeverity,
+  UserRow,
+} from "../types";
 
-type ClassMetrics = { studentCount: number; assignedExamCount: number; upcomingExamCount: number; completedExamCount: number; averageScore: number | null };
-type StudentInsightRow = { student_id: string; last_active_at: string | null; average_score: number | null; started_exam_count: number; completed_exam_count: number };
-type ExamInsightRow = { exam_id: string; submitted_count: number; total_students: number; progress_percent: number; average_score: number | null; question_count: number };
-type ClassAnalyticsDependencies = { db: D1DatabaseLike; classroom: ClassRow; findExam: (db: D1DatabaseLike, id: string) => Promise<ExamRow>; findUser: (db: D1DatabaseLike, id: string) => Promise<UserRow>; toExam: (db: D1DatabaseLike, exam: ExamRow) => unknown; toUser: (db: D1DatabaseLike, user: UserRow) => unknown };
+type ClassMetrics = {
+  studentCount: number;
+  assignedExamCount: number;
+  upcomingExamCount: number;
+  completedExamCount: number;
+  averageScore: number | null;
+};
+
+type StudentInsightRow = {
+  student_id: string;
+  last_active_at: string | null;
+  average_score: number | null;
+  started_exam_count: number;
+  completed_exam_count: number;
+};
+
+type StudentIntegrityRow = {
+  student_id: string;
+  event_type: AttemptIntegrityEventType;
+  severity: IntegritySeverity;
+  event_count: number;
+  last_event_at: string | null;
+};
+
+type StudentIntegrityEventRow = {
+  student_id: string;
+  id: string;
+  event_type: AttemptIntegrityEventType;
+  severity: IntegritySeverity;
+  details_json: string;
+  created_at: string;
+};
+
+type ExamInsightRow = {
+  exam_id: string;
+  submitted_count: number;
+  total_students: number;
+  progress_percent: number;
+  average_score: number | null;
+  question_count: number;
+};
+
+type ClassAnalyticsDependencies = {
+  db: D1DatabaseLike;
+  classroom: ClassRow;
+  findExam: (db: D1DatabaseLike, id: string) => Promise<ExamRow>;
+  findUser: (db: D1DatabaseLike, id: string) => Promise<UserRow>;
+  toExam: (db: D1DatabaseLike, exam: ExamRow) => unknown;
+  toUser: (db: D1DatabaseLike, user: UserRow) => unknown;
+};
+
+const integritySeverityWeight: Record<IntegritySeverity, number> = {
+  LOW: 1,
+  MEDIUM: 2,
+  HIGH: 3,
+};
 
 const loadClassMetrics = async (
   db: D1DatabaseLike,
@@ -30,6 +90,7 @@ const loadClassMetrics = async (
       ) AS averageScore`,
     [classId, classId, classId, classId, classId],
   );
+
   return metrics ?? {
     studentCount: 0,
     assignedExamCount: 0,
@@ -46,7 +107,27 @@ const resolveStudentStatus = (
   if (assignedExamCount > 0 && row.completed_exam_count >= assignedExamCount) {
     return "COMPLETED";
   }
+
   return row.started_exam_count > 0 ? "IN_PROGRESS" : "NOT_STARTED";
+};
+
+const resolveIntegrityRisk = (
+  rows: StudentIntegrityRow[],
+): IntegrityRiskLevel => {
+  if (!rows.length) {
+    return "LOW";
+  }
+
+  if (rows.some((row) => row.severity === "HIGH")) {
+    return "HIGH";
+  }
+
+  const weightedScore = rows.reduce(
+    (sum, row) => sum + integritySeverityWeight[row.severity] * row.event_count,
+    0,
+  );
+
+  return weightedScore >= 3 ? "MEDIUM" : "LOW";
 };
 
 export const createClassAnalytics = ({
@@ -81,6 +162,37 @@ export const createClassAnalytics = ({
     WHERE cs.class_id = ?
     GROUP BY u.id, u.full_name
     ORDER BY u.full_name ASC`,
+    [classroom.id],
+  );
+  const studentIntegrityPromise = all<StudentIntegrityRow>(
+    db,
+    `SELECT
+      a.student_id AS student_id,
+      ie.event_type AS event_type,
+      ie.severity AS severity,
+      COUNT(*) AS event_count,
+      MAX(ie.created_at) AS last_event_at
+    FROM attempt_integrity_events ie
+    JOIN attempts a ON a.id = ie.attempt_id
+    JOIN exams e ON e.id = ie.exam_id
+    WHERE e.class_id = ? AND a.status = 'IN_PROGRESS'
+    GROUP BY a.student_id, ie.event_type, ie.severity`,
+    [classroom.id],
+  );
+  const studentIntegrityEventsPromise = all<StudentIntegrityEventRow>(
+    db,
+    `SELECT
+      a.student_id AS student_id,
+      ie.id AS id,
+      ie.event_type AS event_type,
+      ie.severity AS severity,
+      ie.details_json AS details_json,
+      ie.created_at AS created_at
+    FROM attempt_integrity_events ie
+    JOIN attempts a ON a.id = ie.attempt_id
+    JOIN exams e ON e.id = ie.exam_id
+    WHERE e.class_id = ? AND a.status = 'IN_PROGRESS'
+    ORDER BY ie.created_at DESC`,
     [classroom.id],
   );
   const examInsightsPromise = all<ExamInsightRow>(
@@ -128,17 +240,75 @@ export const createClassAnalytics = ({
     completedExamCount: async () => (await metricsPromise).completedExamCount,
     averageScore: async () => (await metricsPromise).averageScore,
     studentInsights: async () => {
-      const [metrics, rows] = await Promise.all([
+      const [metrics, studentRows, integrityRows, integrityEvents] = await Promise.all([
         metricsPromise,
         studentInsightsPromise,
+        studentIntegrityPromise,
+        studentIntegrityEventsPromise,
       ]);
+
+      const integrityRowsByStudent = integrityRows.reduce<Map<string, StudentIntegrityRow[]>>(
+        (current, row) => {
+          const next = current.get(row.student_id) ?? [];
+          next.push(row);
+          current.set(row.student_id, next);
+          return current;
+        },
+        new Map(),
+      );
+      const integrityEventsByStudent = integrityEvents.reduce<Map<string, StudentIntegrityEventRow[]>>(
+        (current, row) => {
+          const next = current.get(row.student_id) ?? [];
+          next.push(row);
+          current.set(row.student_id, next);
+          return current;
+        },
+        new Map(),
+      );
+
       return Promise.all(
-        rows.map(async (row) => ({
-          student: toUser(db, await findUser(db, row.student_id)),
-          status: resolveStudentStatus(metrics.assignedExamCount, row),
-          lastActiveAt: row.last_active_at,
-          averageScore: row.average_score,
-        })),
+        studentRows.map(async (row) => {
+          const integritySignals = (integrityRowsByStudent.get(row.student_id) ?? [])
+            .slice()
+            .sort(
+              (left, right) =>
+                integritySeverityWeight[right.severity] - integritySeverityWeight[left.severity]
+                || right.event_count - left.event_count
+                || (right.last_event_at ?? "").localeCompare(left.last_event_at ?? ""),
+            );
+
+          const lastIntegrityEventAt =
+            integritySignals
+              .map((entry) => entry.last_event_at)
+              .filter((value): value is string => Boolean(value))[0] ?? null;
+          const studentIntegrityEvents =
+            integrityEventsByStudent.get(row.student_id) ?? [];
+
+          return {
+            student: toUser(db, await findUser(db, row.student_id)),
+            status: resolveStudentStatus(metrics.assignedExamCount, row),
+            lastActiveAt: row.last_active_at,
+            averageScore: row.average_score,
+            suspiciousEventCount: integritySignals.reduce(
+              (sum, entry) => sum + entry.event_count,
+              0,
+            ),
+            integrityRisk: resolveIntegrityRisk(integritySignals),
+            lastIntegrityEventAt,
+            integritySignals: integritySignals.map((entry) => ({
+              type: entry.event_type,
+              severity: entry.severity,
+              count: entry.event_count,
+            })),
+            integrityEvents: studentIntegrityEvents.map((entry) => ({
+              id: entry.id,
+              type: entry.event_type,
+              severity: entry.severity,
+              details: entry.details_json,
+              createdAt: entry.created_at,
+            })),
+          };
+        }),
       );
     },
     examInsights: async () =>

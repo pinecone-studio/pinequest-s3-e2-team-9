@@ -1,0 +1,11 @@
+mutation RecordAttemptIntegrityEvent(
+  $attemptId: ID!
+  $type: AttemptIntegrityEventType!
+  $details: String
+) {
+  recordAttemptIntegrityEvent(
+    attemptId: $attemptId
+    type: $type
+    details: $details
+  )
+}

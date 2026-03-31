@@ -9,8 +9,9 @@ import {
   useStudentExamRoomQuery,
   useSubmitAttemptMutation,
 } from "@/graphql/generated";
-import { formatRemaining, getExamEnd, getExamStart, parseDate } from "./student-home-time";
+import { buildPersistedAnswers, countAnsweredQuestions, enterFullscreen, exitFullscreen, getRemainingLabel, getTotalPoints } from "./student-exam-room-state-helpers";
 import { useStudentExamAutoSave } from "./use-student-exam-auto-save";
+import { useStudentExamIntegrity } from "./use-student-exam-integrity";
 import { useLiveExamEvents } from "./use-live-exam-events";
 import { applyStudentExamShuffleWithSeed } from "./student-exam-shuffle";
 import type { StudentExamRoomState } from "./student-exam-room-types";
@@ -43,15 +44,10 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
         currentAttempt?.generationSeed ?? null,
       )
     : null;
-  const basePersistedAnswers = Object.fromEntries(
-    currentAttempt?.answers.map((answer) => [answer.question.id, answer.value]) ?? [],
-  );
-  const persistedAnswers = {
-    ...basePersistedAnswers,
-    ...(localPersistedAnswers.attemptId === currentAttempt?.id
-      ? localPersistedAnswers.values
-      : {}),
-  };
+  const persistedAnswers = buildPersistedAnswers({
+    currentAttempt,
+    localPersistedAnswers,
+  });
 
   useEffect(() => {
     const timer = window.setInterval(() => setNowMs(Date.now()), 1000);
@@ -61,29 +57,13 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
   useLiveExamEvents({
     classIds: exam ? [exam.class.id] : [],
     enabled: Boolean(exam),
-    onEvent: () => {
-      void query.refetch();
-    },
+    onEvent: (event) => { if (event.type !== "attempt_integrity_flag") void query.refetch(); },
   });
 
-  const examEnd = !exam
-    ? null
-    : exam.endsAt ?? (() => {
-        const startedAt = parseDate(currentAttempt?.startedAt ?? getExamStart(exam));
-        return startedAt
-          ? new Date(startedAt.getTime() + exam.durationMinutes * 60_000).toISOString()
-          : getExamEnd(exam);
-      })();
-  const remainingLabel = currentAttempt
-    ? formatRemaining((parseDate(examEnd)?.getTime() ?? nowMs) - nowMs)
-    : `${exam?.durationMinutes ?? 0} минут`;
+  const remainingLabel = getRemainingLabel({ exam, currentAttempt, nowMs });
   const attemptAnswers = new Map(Object.entries(persistedAnswers));
-  const answeredCount = exam
-    ? exam.questions.filter((item) =>
-        Boolean((draftAnswers[item.question.id] ?? attemptAnswers.get(item.question.id) ?? "").trim()),
-      ).length
-    : 0;
-  const totalPoints = exam?.questions.reduce((sum, item) => sum + item.points, 0) ?? 0;
+  const answeredCount = countAnsweredQuestions({ attemptAnswers, draftAnswers, exam });
+  const totalPoints = getTotalPoints(exam);
   const canStart = Boolean(exam && viewer && exam.status === ExamStatus.Published && !currentAttempt);
   const isInProgress = currentAttempt?.status === AttemptStatus.InProgress;
   const isCompleted = currentAttempt?.status === AttemptStatus.Submitted || currentAttempt?.status === AttemptStatus.Graded;
@@ -110,8 +90,11 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
       setErrorMessage("Зарим хариулт автоматаар хадгалагдсангүй. Дахин оролдоно уу.");
     },
   });
+  const integrity = useStudentExamIntegrity({ attemptId: currentAttempt?.id ?? null, enabled: currentAttempt?.status === AttemptStatus.InProgress });
 
   const setDraftAnswer = (questionId: string, value: string) => {
+    const previousValue = draftAnswers[questionId] ?? attemptAnswers.get(questionId) ?? "";
+    integrity.trackAnswerInput(questionId, previousValue, value);
     setDraftAnswers((currentDrafts) => ({ ...currentDrafts, [questionId]: value }));
     setErrorMessage(null);
     if (currentAttempt?.status === AttemptStatus.InProgress) {
@@ -121,12 +104,18 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
 
   const handleStartAttempt = async () => {
     if (!viewer || !exam || !canStart) return;
+    let enteredFullscreen = false;
+
     try {
       setErrorMessage(null);
+      enteredFullscreen = await enterFullscreen();
       await startAttempt({ variables: { examId: exam.id, studentId: viewer.id } });
       await query.refetch();
     } catch (error) {
       console.error("Failed to start attempt", error);
+      if (enteredFullscreen) {
+        await exitFullscreen();
+      }
       setErrorMessage("Шалгалт эхлүүлэх үед алдаа гарлаа.");
     }
   };

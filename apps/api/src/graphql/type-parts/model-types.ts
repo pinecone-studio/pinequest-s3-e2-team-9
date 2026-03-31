@@ -13,6 +13,16 @@ export type ExamGenerationMode = "MANUAL" | "RULE_BASED";
 export type AttemptStatus = "IN_PROGRESS" | "SUBMITTED" | "GRADED";
 export type ClassStudentStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 export type PassingCriteriaType = "PERCENTAGE" | "POINTS";
+export type AttemptIntegrityEventType =
+  | "TAB_HIDDEN"
+  | "WINDOW_BLUR"
+  | "FULLSCREEN_EXIT"
+  | "PASTE_ATTEMPT"
+  | "COPY_ATTEMPT"
+  | "BULK_INPUT_BURST"
+  | "INACTIVE_THEN_BULK_INPUT";
+export type IntegritySeverity = "LOW" | "MEDIUM" | "HIGH";
+export type IntegrityRiskLevel = "LOW" | "MEDIUM" | "HIGH";
 export type ExamGenerationRule = {
   label: string;
   bankIds: string[];
@@ -124,6 +134,17 @@ export type AnswerRow = {
   auto_score: number | null;
   manual_score: number | null;
   feedback: string | null;
+  created_at: string;
+};
+
+export type AttemptIntegrityEventRow = {
+  id: string;
+  attempt_id: string;
+  exam_id: string;
+  student_id: string;
+  event_type: AttemptIntegrityEventType;
+  severity: IntegritySeverity;
+  details_json: string;
   created_at: string;
 };
 

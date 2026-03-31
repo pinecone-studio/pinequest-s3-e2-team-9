@@ -44,6 +44,16 @@ export type Attempt = {
   totalScore: Scalars['Float']['output'];
 };
 
+export enum AttemptIntegrityEventType {
+  BulkInputBurst = 'BULK_INPUT_BURST',
+  CopyAttempt = 'COPY_ATTEMPT',
+  FullscreenExit = 'FULLSCREEN_EXIT',
+  InactiveThenBulkInput = 'INACTIVE_THEN_BULK_INPUT',
+  PasteAttempt = 'PASTE_ATTEMPT',
+  TabHidden = 'TAB_HIDDEN',
+  WindowBlur = 'WINDOW_BLUR'
+}
+
 export type AttemptReviewAnswerInput = {
   answerId: Scalars['ID']['input'];
   feedback?: InputMaybe<Scalars['String']['input']>;
@@ -89,9 +99,14 @@ export type ClassExamInsight = {
 export type ClassStudentInsight = {
   __typename?: 'ClassStudentInsight';
   averageScore?: Maybe<Scalars['Float']['output']>;
+  integrityEvents: Array<IntegrityEvent>;
+  integrityRisk: IntegrityRiskLevel;
+  integritySignals: Array<IntegritySignalCount>;
   lastActiveAt?: Maybe<Scalars['String']['output']>;
+  lastIntegrityEventAt?: Maybe<Scalars['String']['output']>;
   status: ClassStudentStatus;
   student: User;
+  suspiciousEventCount: Scalars['Int']['output'];
 };
 
 export enum ClassStudentStatus {
@@ -285,6 +300,34 @@ export type Hello = {
   message: Scalars['String']['output'];
 };
 
+export type IntegrityEvent = {
+  __typename?: 'IntegrityEvent';
+  createdAt: Scalars['String']['output'];
+  details: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  severity: IntegritySeverity;
+  type: AttemptIntegrityEventType;
+};
+
+export enum IntegrityRiskLevel {
+  High = 'HIGH',
+  Low = 'LOW',
+  Medium = 'MEDIUM'
+}
+
+export enum IntegritySeverity {
+  High = 'HIGH',
+  Low = 'LOW',
+  Medium = 'MEDIUM'
+}
+
+export type IntegritySignalCount = {
+  __typename?: 'IntegritySignalCount';
+  count: Scalars['Int']['output'];
+  severity: IntegritySeverity;
+  type: AttemptIntegrityEventType;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   addQuestionToExam: Exam;
@@ -301,6 +344,7 @@ export type Mutation = {
   deleteQuestion: Scalars['Boolean']['output'];
   groupQuestionsAsVariants: Array<Question>;
   publishExam: Exam;
+  recordAttemptIntegrityEvent: Scalars['Boolean']['output'];
   reviewAnswer: Answer;
   reviewAttempt: Attempt;
   saveAnswer: Attempt;
@@ -411,6 +455,13 @@ export type MutationGroupQuestionsAsVariantsArgs = {
 
 export type MutationPublishExamArgs = {
   examId: Scalars['ID']['input'];
+};
+
+
+export type MutationRecordAttemptIntegrityEventArgs = {
+  attemptId: Scalars['ID']['input'];
+  details?: InputMaybe<Scalars['String']['input']>;
+  type: AttemptIntegrityEventType;
 };
 
 
@@ -722,6 +773,15 @@ export type PublishExamMutationVariables = Exact<{
 
 export type PublishExamMutation = { __typename?: 'Mutation', publishExam: { __typename?: 'Exam', id: string, status: ExamStatus, startedAt?: string | null, endsAt?: string | null } };
 
+export type RecordAttemptIntegrityEventMutationVariables = Exact<{
+  attemptId: Scalars['ID']['input'];
+  type: AttemptIntegrityEventType;
+  details?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type RecordAttemptIntegrityEventMutation = { __typename?: 'Mutation', recordAttemptIntegrityEvent: boolean };
+
 export type ReviewAnswerMutationVariables = Exact<{
   answerId: Scalars['ID']['input'];
   manualScore: Scalars['Float']['input'];
@@ -802,7 +862,7 @@ export type ClassDetailQueryVariables = Exact<{
 }>;
 
 
-export type ClassDetailQuery = { __typename?: 'Query', class?: { __typename?: 'Class', id: string, name: string, description?: string | null, subject: string, grade: number, studentCount: number, assignedExamCount: number, upcomingExamCount: number, completedExamCount: number, averageScore?: number | null, teacher: { __typename?: 'User', id: string, fullName: string }, studentInsights: Array<{ __typename?: 'ClassStudentInsight', status: ClassStudentStatus, lastActiveAt?: string | null, averageScore?: number | null, student: { __typename?: 'User', id: string, fullName: string, email: string } }>, examInsights: Array<{ __typename?: 'ClassExamInsight', submittedCount: number, totalStudents: number, progressPercent: number, averageScore?: number | null, questionCount: number, exam: { __typename?: 'Exam', id: string, title: string, durationMinutes: number, status: ExamStatus } }> } | null };
+export type ClassDetailQuery = { __typename?: 'Query', class?: { __typename?: 'Class', id: string, name: string, description?: string | null, subject: string, grade: number, studentCount: number, assignedExamCount: number, upcomingExamCount: number, completedExamCount: number, averageScore?: number | null, teacher: { __typename?: 'User', id: string, fullName: string }, studentInsights: Array<{ __typename?: 'ClassStudentInsight', status: ClassStudentStatus, lastActiveAt?: string | null, averageScore?: number | null, suspiciousEventCount: number, integrityRisk: IntegrityRiskLevel, lastIntegrityEventAt?: string | null, integritySignals: Array<{ __typename?: 'IntegritySignalCount', type: AttemptIntegrityEventType, severity: IntegritySeverity, count: number }>, integrityEvents: Array<{ __typename?: 'IntegrityEvent', id: string, type: AttemptIntegrityEventType, severity: IntegritySeverity, details: string, createdAt: string }>, student: { __typename?: 'User', id: string, fullName: string, email: string } }>, examInsights: Array<{ __typename?: 'ClassExamInsight', submittedCount: number, totalStudents: number, progressPercent: number, averageScore?: number | null, questionCount: number, exam: { __typename?: 'Exam', id: string, title: string, durationMinutes: number, status: ExamStatus } }> } | null };
 
 export type ClassesListQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1480,6 +1540,43 @@ export function usePublishExamMutation(baseOptions?: ApolloReactHooks.MutationHo
 export type PublishExamMutationHookResult = ReturnType<typeof usePublishExamMutation>;
 export type PublishExamMutationResult = ApolloReactCommon.MutationResult<PublishExamMutation>;
 export type PublishExamMutationOptions = ApolloReactCommon.BaseMutationOptions<PublishExamMutation, PublishExamMutationVariables>;
+export const RecordAttemptIntegrityEventDocument = gql`
+    mutation RecordAttemptIntegrityEvent($attemptId: ID!, $type: AttemptIntegrityEventType!, $details: String) {
+  recordAttemptIntegrityEvent(
+    attemptId: $attemptId
+    type: $type
+    details: $details
+  )
+}
+    `;
+export type RecordAttemptIntegrityEventMutationFn = ApolloReactCommon.MutationFunction<RecordAttemptIntegrityEventMutation, RecordAttemptIntegrityEventMutationVariables>;
+
+/**
+ * __useRecordAttemptIntegrityEventMutation__
+ *
+ * To run a mutation, you first call `useRecordAttemptIntegrityEventMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRecordAttemptIntegrityEventMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [recordAttemptIntegrityEventMutation, { data, loading, error }] = useRecordAttemptIntegrityEventMutation({
+ *   variables: {
+ *      attemptId: // value for 'attemptId'
+ *      type: // value for 'type'
+ *      details: // value for 'details'
+ *   },
+ * });
+ */
+export function useRecordAttemptIntegrityEventMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RecordAttemptIntegrityEventMutation, RecordAttemptIntegrityEventMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<RecordAttemptIntegrityEventMutation, RecordAttemptIntegrityEventMutationVariables>(RecordAttemptIntegrityEventDocument, options);
+      }
+export type RecordAttemptIntegrityEventMutationHookResult = ReturnType<typeof useRecordAttemptIntegrityEventMutation>;
+export type RecordAttemptIntegrityEventMutationResult = ApolloReactCommon.MutationResult<RecordAttemptIntegrityEventMutation>;
+export type RecordAttemptIntegrityEventMutationOptions = ApolloReactCommon.BaseMutationOptions<RecordAttemptIntegrityEventMutation, RecordAttemptIntegrityEventMutationVariables>;
 export const ReviewAnswerDocument = gql`
     mutation ReviewAnswer($answerId: ID!, $manualScore: Float!, $feedback: String) {
   reviewAnswer(
@@ -1850,6 +1947,21 @@ export const ClassDetailDocument = gql`
       status
       lastActiveAt
       averageScore
+      suspiciousEventCount
+      integrityRisk
+      lastIntegrityEventAt
+      integritySignals {
+        type
+        severity
+        count
+      }
+      integrityEvents {
+        id
+        type
+        severity
+        details
+        createdAt
+      }
       student {
         id
         fullName

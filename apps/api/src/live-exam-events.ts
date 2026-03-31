@@ -65,6 +65,24 @@ export type LiveExamMutationEvent =
       submittedAt: string;
     }
   | {
+      type: "attempt_integrity_flag";
+      attemptId: string;
+      classId: string;
+      emittedAt: string;
+      eventCount: number;
+      eventType:
+        | "TAB_HIDDEN"
+        | "WINDOW_BLUR"
+        | "FULLSCREEN_EXIT"
+        | "PASTE_ATTEMPT"
+        | "COPY_ATTEMPT"
+        | "BULK_INPUT_BURST"
+        | "INACTIVE_THEN_BULK_INPUT";
+      examId: string;
+      severity: "LOW" | "MEDIUM" | "HIGH";
+      studentId: string;
+    }
+  | {
       type: "exam_published";
       classId: string;
       endsAt: string | null;

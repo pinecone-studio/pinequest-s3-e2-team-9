@@ -1,4 +1,5 @@
 import type {
+  AttemptIntegrityEventType,
   Difficulty,
   ExamGenerationMode,
   ExamGenerationRule,
@@ -117,6 +118,11 @@ export type ReviewAnswerArgs = {
   feedback?: string;
 };
 export type SubmitAttemptArgs = { attemptId: string };
+export type RecordAttemptIntegrityEventArgs = {
+  attemptId: string;
+  type: AttemptIntegrityEventType;
+  details?: string;
+};
 export type CreateExamImportJobArgs = {
   fileName: string;
   fileSizeBytes: number;

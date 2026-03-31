@@ -3,9 +3,13 @@ import { closeExpiredExams } from "./exams";
 import type { RequestContext } from "../../auth";
 import type { LiveExamMutationEvent } from "../../live-exam-events";
 import {
+  type AttemptIntegrityEventRow,
+  type AttemptIntegrityEventType,
   makeId,
+  type IntegritySeverity,
   normalize,
   now,
+  type RecordAttemptIntegrityEventArgs,
   parseJsonArray,
   parseNumericAnswer,
   splitAcceptedAnswers,
@@ -23,6 +27,22 @@ import {
   type Role,
   type UserRow,
 } from "../types";
+
+const integrityEventSeverity: Record<
+  AttemptIntegrityEventType,
+  IntegritySeverity
+> = {
+  TAB_HIDDEN: "MEDIUM",
+  WINDOW_BLUR: "LOW",
+  FULLSCREEN_EXIT: "MEDIUM",
+  PASTE_ATTEMPT: "HIGH",
+  COPY_ATTEMPT: "MEDIUM",
+  BULK_INPUT_BURST: "HIGH",
+  INACTIVE_THEN_BULK_INPUT: "HIGH",
+};
+
+const INTEGRITY_EVENT_DEDUPE_WINDOW_MS = 3_000;
+const MAX_INTEGRITY_DETAILS_LENGTH = 1_200;
 
 export const findAttemptById = async (
   db: D1DatabaseLike,
@@ -250,6 +270,59 @@ const findAnswerById = async (
   return answer;
 };
 
+const findLatestIntegrityEventByType = async (
+  db: D1DatabaseLike,
+  attemptId: string,
+  eventType: AttemptIntegrityEventType,
+): Promise<AttemptIntegrityEventRow | null> =>
+  first<AttemptIntegrityEventRow>(
+    db,
+    `SELECT
+      id,
+      attempt_id,
+      exam_id,
+      student_id,
+      event_type,
+      severity,
+      details_json,
+      created_at
+     FROM attempt_integrity_events
+     WHERE attempt_id = ? AND event_type = ?
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [attemptId, eventType],
+  );
+
+const countIntegrityEventsByType = async (
+  db: D1DatabaseLike,
+  attemptId: string,
+  eventType: AttemptIntegrityEventType,
+): Promise<number> =>
+  (await first<{ count: number | null }>(
+    db,
+    `SELECT COUNT(*) AS count
+     FROM attempt_integrity_events
+     WHERE attempt_id = ? AND event_type = ?`,
+    [attemptId, eventType],
+  ))?.count ?? 0;
+
+const sanitizeIntegrityDetails = (details?: string): string => {
+  const trimmed = details?.trim();
+
+  if (!trimmed) {
+    return "{}";
+  }
+
+  const normalized = trimmed.slice(0, MAX_INTEGRITY_DETAILS_LENGTH);
+
+  try {
+    JSON.parse(normalized);
+    return normalized;
+  } catch {
+    return JSON.stringify({ message: normalized });
+  }
+};
+
 type AttemptMutationDependencies = {
   db: D1DatabaseLike;
   requireActor: (context: RequestContext, roles: Role[]) => Promise<UserRow>;
@@ -416,6 +489,79 @@ export const createAttemptMutations = ({
 
     await recalculateAttemptScores(db, attemptId);
     return toAttempt(db, await findAttemptById(db, attemptId));
+  },
+  recordAttemptIntegrityEvent: async (
+    { attemptId, type, details }: RecordAttemptIntegrityEventArgs,
+    context: RequestContext,
+  ) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
+    const attempt = await findAttemptById(db, attemptId);
+
+    if (actor.role === "STUDENT") {
+      invariant(
+        attempt.student_id === actor.id,
+        "Students can only flag their own attempts.",
+      );
+    }
+
+    invariant(
+      attempt.status === "IN_PROGRESS",
+      "Only in-progress attempts can record integrity events.",
+    );
+
+    const latestEvent = await findLatestIntegrityEventByType(db, attemptId, type);
+    const latestTimestamp = latestEvent?.created_at
+      ? new Date(latestEvent.created_at).getTime()
+      : Number.NaN;
+
+    if (
+      Number.isFinite(latestTimestamp)
+      && Date.now() - latestTimestamp < INTEGRITY_EVENT_DEDUPE_WINDOW_MS
+    ) {
+      return true;
+    }
+
+    await run(
+      db,
+      `INSERT INTO attempt_integrity_events (
+        id,
+        attempt_id,
+        exam_id,
+        student_id,
+        event_type,
+        severity,
+        details_json,
+        created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        makeId("integrity"),
+        attempt.id,
+        attempt.exam_id,
+        attempt.student_id,
+        type,
+        integrityEventSeverity[type],
+        sanitizeIntegrityDetails(details),
+        now(),
+      ],
+    );
+
+    const eventCount = await countIntegrityEventsByType(db, attempt.id, type);
+    const exam = await findExam(db, attempt.exam_id);
+
+    await publishLiveEvent?.({
+      type: "attempt_integrity_flag",
+      attemptId: attempt.id,
+      classId: exam.class_id,
+      emittedAt: now(),
+      eventCount,
+      eventType: type,
+      examId: attempt.exam_id,
+      severity: integrityEventSeverity[type],
+      studentId: attempt.student_id,
+    });
+
+    return true;
   },
   reviewAnswer: async (
     { answerId, manualScore, feedback }: ReviewAnswerArgs,

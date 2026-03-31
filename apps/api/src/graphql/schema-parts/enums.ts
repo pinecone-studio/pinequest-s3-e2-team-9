@@ -57,6 +57,28 @@ export const schemaEnums = /* GraphQL */ `
     POINTS
   }
 
+  enum AttemptIntegrityEventType {
+    TAB_HIDDEN
+    WINDOW_BLUR
+    FULLSCREEN_EXIT
+    PASTE_ATTEMPT
+    COPY_ATTEMPT
+    BULK_INPUT_BURST
+    INACTIVE_THEN_BULK_INPUT
+  }
+
+  enum IntegritySeverity {
+    LOW
+    MEDIUM
+    HIGH
+  }
+
+  enum IntegrityRiskLevel {
+    LOW
+    MEDIUM
+    HIGH
+  }
+
   enum ExamImportJobStatus {
     UPLOADED
     PROCESSING
