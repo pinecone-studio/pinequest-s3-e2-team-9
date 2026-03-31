@@ -92,43 +92,45 @@ export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
   const isLibraryMode = mode === "library";
 
   return (
-    <section className="mx-auto flex min-h-[900px] w-full max-w-[1184px] flex-col gap-6 px-[32px] py-[24px] box-border">
+    <section className="px-6 pb-8 pt-5 sm:px-7 lg:px-8">
       <h1 className="sr-only">{title}</h1>
-      <MyExamsToolbar
-        isLibraryMode={isLibraryMode}
-        search={search}
-        status={status}
-        statusOptions={statusOptions}
-        onSearchChange={setSearch}
-        onStatusChange={setStatus}
-      />
-      {errorMessage ? (
-        <p className="text-[14px] text-[#B42318]">{errorMessage}</p>
-      ) : null}
-      <div className="grid justify-items-start gap-x-[32px] gap-y-[20px] xl:grid-cols-[repeat(3,352px)]">
-        {loading ? <MyExamsLoadingList /> : null}
-        {filteredExams.map((exam) => (
-          <MyExamCard
-            key={exam.id}
-            exam={exam}
-            mode={mode}
-            onView={() => {
-              setSelectedExam(exam);
-              setIsResultsOpen(false);
-              setIsPreviewOpen(true);
-            }}
-            onResults={() => {
-              setSelectedExam(exam);
-              setIsPreviewOpen(false);
-              setIsResultsOpen(true);
-            }}
-          />
-        ))}
-        {!loading && !errorMessage && !filteredExams.length ? (
-          <p className="col-span-full rounded-[20px] border border-[#DFE1E5] bg-white p-8 text-[14px] text-[#52555B] shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)]">
-            {emptyMessage}
-          </p>
+      <div className="mx-auto w-full max-w-[1120px]">
+        <MyExamsToolbar
+          isLibraryMode={isLibraryMode}
+          search={search}
+          status={status}
+          statusOptions={statusOptions}
+          onSearchChange={setSearch}
+          onStatusChange={setStatus}
+        />
+        {errorMessage ? (
+          <p className="mt-4 text-[14px] text-[#B42318]">{errorMessage}</p>
         ) : null}
+        <div className="mt-6 grid justify-items-start gap-x-8 gap-y-5 xl:grid-cols-[repeat(3,352px)]">
+          {loading ? <MyExamsLoadingList /> : null}
+          {filteredExams.map((exam) => (
+            <MyExamCard
+              key={exam.id}
+              exam={exam}
+              mode={mode}
+              onView={() => {
+                setSelectedExam(exam);
+                setIsResultsOpen(false);
+                setIsPreviewOpen(true);
+              }}
+              onResults={() => {
+                setSelectedExam(exam);
+                setIsPreviewOpen(false);
+                setIsResultsOpen(true);
+              }}
+            />
+          ))}
+          {!loading && !errorMessage && !filteredExams.length ? (
+            <p className="col-span-full rounded-[20px] border border-[#DFE1E5] bg-white p-8 text-[14px] text-[#52555B] shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)]">
+              {emptyMessage}
+            </p>
+          ) : null}
+        </div>
       </div>
       <ExamPreviewDialog
         exam={selectedExam}

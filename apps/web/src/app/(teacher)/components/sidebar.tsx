@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navItems } from "./dashboard-data";
-import { ExamFlowIcon } from "./icons-ic";
 import { SidebarAccountPanel } from "./sidebar-account-panel";
 
 export function Sidebar() {
@@ -12,14 +11,14 @@ export function Sidebar() {
   return (
     <aside className="flex w-full flex-col bg-[#F6F9FC] [background-image:radial-gradient(circle_at_1px_1px,#D8E4FF_1px,transparent_0)] [background-size:20px_20px] lg:min-h-screen lg:w-[256px] lg:min-w-[256px]">
       <div className="flex h-full flex-1 flex-col pt-[20px]">
-        <div className="flex h-[64px] items-center justify-center px-[20px]">
-          <div className="flex h-[56px] w-[89px] flex-col items-center justify-center">
-            <ExamFlowIcon className="h-[28px] w-[44px]" />
-            <div className="flex h-[28px] w-[89px] flex-col items-start">
-              <span className="flex h-[28px] items-center text-[18px] font-semibold leading-7 text-[#0F1216]">
-                ExamFlow
-              </span>
+        <div className="flex h-[64px] items-center px-[20px]">
+          <div className="flex h-[56px] items-center gap-3">
+            <div className="flex h-7 w-[44px] items-center justify-center rounded-md bg-[#6F90FF]/20 text-[12px] font-bold text-[#6F90FF]">
+              EF
             </div>
+            <span className="text-[18px] font-semibold leading-7 text-[#0F1216]">
+              ExamFlow
+            </span>
           </div>
         </div>
 
@@ -27,8 +26,7 @@ export function Sidebar() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.href
-              ? pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(`${item.href}/`))
+              ? pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`))
               : false;
             const itemClassName = `flex h-[44px] w-[224px] items-center gap-3 rounded-[12px] px-4 py-3 text-left text-[14px] font-medium leading-5 transition ${
               isActive
@@ -50,7 +48,11 @@ export function Sidebar() {
             }
 
             return (
-              <Link key={item.label} href={item.href} className={itemClassName}>
+              <Link
+                key={item.label}
+                href={item.href}
+                className={itemClassName}
+              >
                 <Icon className="h-[18px] w-[18px] shrink-0" />
                 <span>{item.label}</span>
               </Link>

@@ -3,7 +3,6 @@
 
 import Link from "next/link";
 import { BookIcon, ChevronDownIcon, PlusIcon, SearchIcon } from "../icons";
-import { LibraryIcon } from "../icons-ic";
 import {
   formatGradeLabel,
   formatVisibilityLabel,
@@ -420,69 +419,6 @@ export function QuestionBankGrid({
           );
         })}
       </div>
-    </div>
-  );
-}
-
-export function QuestionBankCardGrid({
-  items,
-  loading,
-  skeletons,
-}: {
-  items: QuestionBankItem[];
-  loading: boolean;
-  skeletons: number[];
-}) {
-  return (
-    <div className="grid justify-items-start gap-4 xl:grid-cols-[repeat(3,344px)]">
-      {loading
-        ? skeletons.map((item) => (
-            <div
-              key={item}
-              className="h-[221.6px] w-[344px] rounded-[12px] border border-[#DFE1E5] bg-white p-[20px] shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
-            >
-              <div className="animate-pulse">
-                <div className="flex items-start justify-between">
-                  <div className="h-10 w-10 rounded-[8px] bg-[#E9EDF3]" />
-                  <div className="h-[22px] w-16 rounded-[6px] bg-[#E9EDF3]" />
-                </div>
-                <div className="mt-4 h-5 w-2/3 rounded bg-[#E9EDF3]" />
-                <div className="mt-2 h-4 w-full rounded bg-[#E9EDF3]" />
-                <div className="mt-2 h-4 w-5/6 rounded bg-[#E9EDF3]" />
-                <div className="mt-6 flex items-center justify-between">
-                  <div className="h-4 w-16 rounded bg-[#E9EDF3]" />
-                  <div className="h-4 w-20 rounded bg-[#E9EDF3]" />
-                </div>
-              </div>
-            </div>
-          ))
-        : null}
-      {items.map((item) => (
-        <Link
-          key={item.id}
-          href={`/question-bank/${item.id}`}
-          className="flex h-[221.6px] w-[344px] flex-col rounded-[12px] border border-[#DFE1E5] bg-white p-[20px] text-left shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition hover:-translate-y-0.5 hover:shadow-[0px_8px_24px_rgba(15,18,22,0.08)]"
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex h-[40px] w-[40px] items-center justify-center rounded-[8px] bg-[#1922301A]">
-              <LibraryIcon className="h-5 w-5" />
-            </div>
-            <span className="rounded-[6px] bg-[#F2F4F7] px-[8px] py-[2px] text-[12px] font-medium text-[#344054]">
-              {item.subject}
-            </span>
-          </div>
-          <h3 className="mt-[12px] text-[16px] font-medium leading-[24px] text-[#0F1216]">
-            {item.displayTitle}
-          </h3>
-          <p className="mt-[4px] text-[14px] leading-[20px] text-[#52555B]">
-            {item.description}
-          </p>
-          <div className="mt-auto flex items-center justify-between text-[14px] leading-[20px] text-[#52555B]">
-            <span>{item.questions}</span>
-            <span>{item.date}</span>
-          </div>
-        </Link>
-      ))}
     </div>
   );
 }
