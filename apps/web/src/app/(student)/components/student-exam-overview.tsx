@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExamStatus } from "@/graphql/generated";
+import { ExamMode, ExamStatus } from "@/graphql/generated";
 import type { StudentExamData } from "./student-exam-room-types";
 
 type StudentExamOverviewProps = {
@@ -25,6 +25,7 @@ export function StudentExamOverview({
     { label: "Төлөв", value: exam.status === ExamStatus.Published ? "Идэвхтэй" : "Хаагдсан" },
     ...(totalPoints > 0 ? [{ label: "Нийт оноо", value: `${totalPoints} оноо` }] : []),
   ];
+  const isPractice = exam.mode === ExamMode.Practice;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_360px]">
@@ -35,13 +36,15 @@ export function StudentExamOverview({
         <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-[720px]">
             <span className="inline-flex rounded-full bg-white px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.12em] text-[#2466D0] shadow-[0_4px_16px_rgba(36,102,208,0.08)]">
-              Шалгалтын тойм
+              {isPractice ? "Self test" : "Шалгалтын тойм"}
             </span>
             <h1 className="mt-4 text-[32px] font-semibold tracking-[-0.03em] text-[#0F172A]">
               {exam.title}
             </h1>
             <p className="mt-3 text-[15px] leading-7 text-[#475467]">
-              {exam.description?.trim() || "Энэ шалгалтыг эхлүүлэхээс өмнө ерөнхий мэдээллийг нягталж, бэлэн болмогц орж ажиллана."}
+              {exam.description?.trim() || (isPractice
+                ? "Энэ practice test-ийг хүссэн үедээ олон дахин ажиллаж, дуусмагц шууд feedback авч болно."
+                : "Энэ шалгалтыг эхлүүлэхээс өмнө ерөнхий мэдээллийг нягталж, бэлэн болмогц орж ажиллана.")}
             </p>
             <p className="mt-4 text-[14px] leading-6 text-[#667085]">
               {exam.class.subject || exam.class.name} • {exam.class.teacher.fullName}
@@ -49,10 +52,12 @@ export function StudentExamOverview({
           </div>
           <div className="rounded-[20px] bg-[#2466D0] px-5 py-4 text-white shadow-[0_14px_30px_rgba(36,102,208,0.24)]">
             <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-white/72">
-              Асуултууд түгжигдсэн
+              {isPractice ? "Шууд feedback" : "Асуултууд түгжигдсэн"}
             </p>
             <p className="mt-2 max-w-[220px] text-[14px] leading-6 text-white/92">
-              Эхлүүлэх товч дарсны дараа асуултууд харагдаж, хугацаатай бол хугацаа шууд явж эхэлнэ.
+              {isPractice
+                ? "Дуусмагц оноо, зөв хариу, сул сэдвийн зөвлөмж гарч ирнэ."
+                : "Эхлүүлэх товч дарсны дараа асуултууд харагдаж, хугацаатай бол хугацаа шууд явж эхэлнэ."}
             </p>
           </div>
         </div>
@@ -78,7 +83,9 @@ export function StudentExamOverview({
           Шалгалтаа эхлүүлэхэд бэлэн үү?
         </h2>
         <p className="mt-3 text-[15px] leading-7 text-[#475467]">
-          Хариулт бүр автоматаар хадгалагдана. Шалгалт эхэлсний дараа тойм дэлгэц асуултын дэлгэц рүү шилжинэ.
+          {isPractice
+            ? "Хариулт бүр автоматаар хадгалагдана. Энэ self-test-ийг олон удаа өгч, бүрт нь шинэ feedback авч болно."
+            : "Хариулт бүр автоматаар хадгалагдана. Шалгалт эхэлсний дараа тойм дэлгэц асуултын дэлгэц рүү шилжинэ."}
         </p>
         <div className="mt-6 rounded-[20px] bg-[#F8FAFF] px-4 py-4 text-[14px] leading-6 text-[#475467]">
           Хадгалах товч байхгүй. Хэрэглэгчийн бүх өөрчлөлт автоматаар хадгалагдах тул refresh эсвэл crash болсон ч алдагдах эрсдэл багасна.
@@ -89,11 +96,15 @@ export function StudentExamOverview({
           onClick={onStartAttempt}
           type="button"
         >
-          {isStarting ? "Шалгалтыг эхлүүлж байна..." : "Шалгалт эхлүүлэх"}
+          {isStarting
+            ? (isPractice ? "Practice test-ийг эхлүүлж байна..." : "Шалгалтыг эхлүүлж байна...")
+            : (isPractice ? "Practice test эхлүүлэх" : "Шалгалт эхлүүлэх")}
         </button>
         {!canStart ? (
           <p className="mt-3 text-[13px] leading-6 text-[#667085]">
-            Энэ шалгалтыг одоогоор эхлүүлэх боломжгүй байна.
+            {isPractice
+              ? "Энэ practice test-ийг одоогоор эхлүүлэх боломжгүй байна."
+              : "Энэ шалгалтыг одоогоор эхлүүлэх боломжгүй байна."}
           </p>
         ) : null}
         {errorMessage ? <p className="mt-4 text-[14px] font-medium text-[#B42318]">{errorMessage}</p> : null}

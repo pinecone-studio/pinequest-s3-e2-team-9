@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  ExamMode,
   ExamGenerationMode,
   useAddQuestionToExamMutation,
   useAssignExamToClassMutation,
@@ -21,6 +22,7 @@ import {
 } from "../create-exam-validation";
 import {
   createEmptyGenerationRule,
+  createPracticeDifficultyRules,
   EMPTY_ERRORS,
   hasValidationErrors,
   INITIAL_FORM_VALUES,
@@ -109,8 +111,9 @@ export const useCreateExamFlow = (
         optionsQuery.data?.questionBanks ?? [],
         getQuestionOptions(optionsQuery.data, ""),
         resolvedBankId,
+        formValues.mode,
       ),
-    [optionsQuery.data, resolvedBankId],
+    [formValues.mode, optionsQuery.data, resolvedBankId],
   );
 
   useEffect(() => {
@@ -168,6 +171,15 @@ export const useCreateExamFlow = (
         ...previous.generationRules,
         createEmptyGenerationRule(getDefaultRuleSourceId()),
       ],
+    }));
+    setErrors((previous) => ({ ...previous, generationRules: undefined }));
+    setSubmitState({ status: "idle" });
+  };
+
+  const replaceWithPracticeDifficultyRules = (sourceId: string) => {
+    setFormValues((previous) => ({
+      ...previous,
+      generationRules: createPracticeDifficultyRules(sourceId),
     }));
     setErrors((previous) => ({ ...previous, generationRules: undefined }));
     setSubmitState({ status: "idle" });
@@ -262,6 +274,29 @@ export const useCreateExamFlow = (
     }
 
     const selectedQuestions = toSelectedQuestionsPayload(selectedQuestionPoints);
+    const selectedQuestionDetails = selectedQuestions
+      .map((item) => questionOptions.find((question) => question.id === item.questionId))
+      .filter((question) => Boolean(question));
+
+    if (formValues.mode === ExamMode.Practice) {
+      const unsupportedQuestion =
+        formValues.generationMode === ExamGenerationMode.Manual
+          ? selectedQuestionDetails.find(
+              (question) =>
+                question?.type === "ESSAY" || question?.type === "IMAGE_UPLOAD",
+            )
+          : null;
+
+      if (unsupportedQuestion) {
+        setSubmitState({
+          status: "error",
+          message:
+            "Practice mode-д гараар сонгох үед задгай даалгавар болон зураг оруулах асуулт дэмжигдэхгүй. Автоматаар үнэлэгддэг асуултууд сонгоно уу.",
+        });
+        return null;
+      }
+    }
+
     const generationRules =
       formValues.generationMode === ExamGenerationMode.RuleBased
         ? formValues.generationRules.map((rule) => ({
@@ -449,6 +484,7 @@ export const useCreateExamFlow = (
     addGenerationRule,
     removeGenerationRule,
     updateGenerationRule,
+    replaceWithPracticeDifficultyRules,
     submitForm,
     refetchOptions: async () => Promise.all([optionsQuery.refetch(), isEditMode ? draftQuery.refetch() : Promise.resolve()]),
   };

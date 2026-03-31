@@ -35,6 +35,7 @@ type CreateExamQuestionCardProps = {
     field: K,
     value: CreateExamGenerationRule[K],
   ) => void;
+  onReplaceWithPracticeDifficultyRules: (sourceId: string) => void;
   onQuestionsRefresh: () => Promise<unknown>;
   initialBankId?: string;
 };
@@ -62,6 +63,7 @@ export function CreateExamQuestionCard({
   onAddGenerationRule,
   onRemoveGenerationRule,
   onUpdateGenerationRule,
+  onReplaceWithPracticeDifficultyRules,
   onQuestionsRefresh,
   initialBankId = "",
 }: CreateExamQuestionCardProps) {
@@ -89,10 +91,12 @@ export function CreateExamQuestionCard({
           sourceOptions={ruleSourceOptions}
           disabled={disabled}
           error={errors.generationRules}
+          mode={values.mode}
           rules={values.generationRules}
           onAddRule={onAddGenerationRule}
           onRemoveRule={onRemoveGenerationRule}
           onUpdateRule={onUpdateGenerationRule}
+          onQuickFillPracticeRules={onReplaceWithPracticeDifficultyRules}
         />
       ) : (
         <>

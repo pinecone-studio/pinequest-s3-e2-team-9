@@ -1,8 +1,10 @@
+/* eslint-disable max-lines */
 "use client";
 
 import { useEffect, useState } from "react";
 import {
   AttemptStatus,
+  ExamMode,
   ExamStatus,
   useSaveAnswerMutation,
   useStartAttemptMutation,
@@ -10,6 +12,7 @@ import {
   useSubmitAttemptMutation,
 } from "@/graphql/generated";
 import { buildPersistedAnswers, countAnsweredQuestions, enterFullscreen, exitFullscreen, getRemainingLabel, getTotalPoints } from "./student-exam-room-state-helpers";
+import { applyAdaptivePracticeOrdering } from "./student-exam-practice-order";
 import { useStudentExamAutoSave } from "./use-student-exam-auto-save";
 import { useStudentExamIntegrity } from "./use-student-exam-integrity";
 import { useLiveExamEvents } from "./use-live-exam-events";
@@ -37,11 +40,28 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const viewer = query.data?.me ?? null;
-  const currentAttempt = query.data?.attempts.find((attempt) => attempt.exam.id === examId) ?? null;
+  const currentAttempt =
+    query.data?.attempts
+      .filter((attempt) => attempt.exam.id === examId)
+      .sort((left, right) => {
+        if (left.status === AttemptStatus.InProgress && right.status !== AttemptStatus.InProgress) {
+          return -1;
+        }
+        if (right.status === AttemptStatus.InProgress && left.status !== AttemptStatus.InProgress) {
+          return 1;
+        }
+        return (
+          new Date(right.submittedAt ?? right.startedAt).getTime() -
+          new Date(left.submittedAt ?? left.startedAt).getTime()
+        );
+      })[0] ?? null;
   const exam = query.data?.exam
-    ? applyStudentExamShuffleWithSeed(
-        query.data.exam,
-        currentAttempt?.generationSeed ?? null,
+    ? applyAdaptivePracticeOrdering(
+        applyStudentExamShuffleWithSeed(
+          query.data.exam,
+          currentAttempt?.generationSeed ?? null,
+        ),
+        currentAttempt,
       )
     : null;
   const persistedAnswers = buildPersistedAnswers({
@@ -64,7 +84,12 @@ export function useStudentExamRoomState(examId: string): StudentExamRoomState {
   const attemptAnswers = new Map(Object.entries(persistedAnswers));
   const answeredCount = countAnsweredQuestions({ attemptAnswers, draftAnswers, exam });
   const totalPoints = getTotalPoints(exam);
-  const canStart = Boolean(exam && viewer && exam.status === ExamStatus.Published && !currentAttempt);
+  const canStart = Boolean(
+    exam &&
+      viewer &&
+      exam.status === ExamStatus.Published &&
+      (!currentAttempt || (exam.mode === ExamMode.Practice && currentAttempt.status !== AttemptStatus.InProgress)),
+  );
   const isInProgress = currentAttempt?.status === AttemptStatus.InProgress;
   const isCompleted = currentAttempt?.status === AttemptStatus.Submitted || currentAttempt?.status === AttemptStatus.Graded;
   const autoSave = useStudentExamAutoSave({

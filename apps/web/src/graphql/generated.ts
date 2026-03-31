@@ -271,6 +271,7 @@ export enum ExamImportSourceType {
 
 export enum ExamMode {
   OpenWindow = 'OPEN_WINDOW',
+  Practice = 'PRACTICE',
   Scheduled = 'SCHEDULED'
 }
 
@@ -933,12 +934,12 @@ export type StudentExamRoomQueryVariables = Exact<{
 }>;
 
 
-export type StudentExamRoomQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string } | null, exam?: { __typename?: 'Exam', id: string, title: string, description?: string | null, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, shuffleQuestions: boolean, shuffleAnswers: boolean, passingCriteriaType: PassingCriteriaType, passingThreshold: number, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, order: number, points: number, question: { __typename?: 'Question', id: string, title: string, prompt: string, tags: Array<string>, type: QuestionType, options: Array<string> } }> } | null, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, generationSeed?: string | null, startedAt: string, submittedAt?: string | null, exam: { __typename?: 'Exam', id: string }, answers: Array<{ __typename?: 'Answer', id: string, value: string, autoScore?: number | null, manualScore?: number | null, feedback?: string | null, question: { __typename?: 'Question', id: string } }> }> };
+export type StudentExamRoomQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string } | null, exam?: { __typename?: 'Exam', id: string, title: string, description?: string | null, mode: ExamMode, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, shuffleQuestions: boolean, shuffleAnswers: boolean, passingCriteriaType: PassingCriteriaType, passingThreshold: number, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, order: number, points: number, question: { __typename?: 'Question', id: string, title: string, prompt: string, tags: Array<string>, type: QuestionType, difficulty: Difficulty, options: Array<string> } }> } | null, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, generationSeed?: string | null, startedAt: string, submittedAt?: string | null, exam: { __typename?: 'Exam', id: string }, answers: Array<{ __typename?: 'Answer', id: string, value: string, autoScore?: number | null, manualScore?: number | null, feedback?: string | null, question: { __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, correctAnswer?: string | null, tags: Array<string>, bank: { __typename?: 'QuestionBank', id: string, topic: string } } }> }> };
 
 export type StudentHomeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type StudentHomeQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string, classes: Array<{ __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }> } | null, exams: Array<{ __typename?: 'Exam', id: string, title: string, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, points: number }> }>, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, startedAt: string, submittedAt?: string | null, exam: { __typename?: 'Exam', id: string, title: string, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, points: number }> } }> };
+export type StudentHomeQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string, classes: Array<{ __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }> } | null, exams: Array<{ __typename?: 'Exam', id: string, title: string, mode: ExamMode, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, points: number }> }>, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, startedAt: string, submittedAt?: string | null, exam: { __typename?: 'Exam', id: string, title: string, mode: ExamMode, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, points: number }> } }> };
 
 
 export const AddQuestionToExamDocument = gql`
@@ -2806,6 +2807,7 @@ export const StudentExamRoomDocument = gql`
     id
     title
     description
+    mode
     status
     durationMinutes
     startedAt
@@ -2836,6 +2838,7 @@ export const StudentExamRoomDocument = gql`
         prompt
         tags
         type
+        difficulty
         options
       }
     }
@@ -2858,6 +2861,15 @@ export const StudentExamRoomDocument = gql`
       feedback
       question {
         id
+        title
+        prompt
+        type
+        correctAnswer
+        tags
+        bank {
+          id
+          topic
+        }
       }
     }
   }
@@ -2918,6 +2930,7 @@ export const StudentHomeDocument = gql`
   exams {
     id
     title
+    mode
     status
     durationMinutes
     startedAt
@@ -2948,6 +2961,7 @@ export const StudentHomeDocument = gql`
     exam {
       id
       title
+      mode
       status
       durationMinutes
       startedAt

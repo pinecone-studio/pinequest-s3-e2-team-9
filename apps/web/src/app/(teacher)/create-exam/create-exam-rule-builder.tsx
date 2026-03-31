@@ -1,7 +1,8 @@
 /* eslint-disable max-lines */
 "use client";
 
-import { Difficulty } from "@/graphql/generated";
+import { useState } from "react";
+import { Difficulty, ExamMode } from "@/graphql/generated";
 import type {
   CreateExamGenerationRule,
   CreateExamRuleSourceOption,
@@ -11,6 +12,7 @@ type CreateExamRuleBuilderProps = {
   sourceOptions: CreateExamRuleSourceOption[];
   disabled: boolean;
   error?: string;
+  mode: ExamMode;
   rules: CreateExamGenerationRule[];
   onAddRule: () => void;
   onRemoveRule: (ruleId: string) => void;
@@ -19,6 +21,7 @@ type CreateExamRuleBuilderProps = {
     field: K,
     value: CreateExamGenerationRule[K],
   ) => void;
+  onQuickFillPracticeRules?: (sourceId: string) => void;
 };
 
 const selectClassName =
@@ -31,11 +34,16 @@ export function CreateExamRuleBuilder({
   sourceOptions,
   disabled,
   error,
+  mode,
   rules,
   onAddRule,
   onRemoveRule,
   onUpdateRule,
+  onQuickFillPracticeRules,
 }: CreateExamRuleBuilderProps) {
+  const [quickSourceId, setQuickSourceId] = useState("");
+  const resolvedQuickSourceId = quickSourceId || rules[0]?.sourceId || sourceOptions[0]?.id || "";
+
   const getAvailableCount = (
     option: CreateExamRuleSourceOption | undefined,
     difficulty: CreateExamGenerationRule["difficulty"],
@@ -62,11 +70,14 @@ export function CreateExamRuleBuilder({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-[14px] font-semibold text-[#0F1216]">
-              Rule-based асуулт бүрдүүлэлт
+              {mode === ExamMode.Practice
+                ? "Practice pool-оо rule-ээр бүрдүүлэх"
+                : "Rule-based асуулт бүрдүүлэлт"}
             </h3>
             <p className="mt-1 text-[13px] text-[#52555B]">
-              Сан, түвшин, тоо, онооны rule-үүдээ өгвөл system шалгалтын асуултуудыг
-              автоматаар бүрдүүлнэ.
+              {mode === ExamMode.Practice
+                ? "Нэг сэдэв дээр Easy, Medium, Hard rule-үүдээ тусад нь өгөөд free test-ийн асуултын pool-оо автоматаар бүрдүүлнэ."
+                : "Сан, түвшин, тоо, онооны rule-үүдээ өгвөл system шалгалтын асуултуудыг автоматаар бүрдүүлнэ."}
             </p>
           </div>
           <button
@@ -78,6 +89,42 @@ export function CreateExamRuleBuilder({
             Rule нэмэх
           </button>
         </div>
+
+        {mode === ExamMode.Practice && onQuickFillPracticeRules ? (
+          <div className="mt-4 rounded-[10px] border border-[#DCFCE7] bg-[#F0FDF4] p-3">
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <label className="grid gap-1.5">
+                <span className="text-[12px] font-medium text-[#166534]">
+                  Сэдэв сонгоод 3 түвшний pool үүсгэх
+                </span>
+                <select
+                  value={resolvedQuickSourceId}
+                  disabled={disabled}
+                  className={selectClassName}
+                  onChange={(event) => setQuickSourceId(event.target.value)}
+                >
+                  <option value="">Сэдэв сонгох</option>
+                  {sourceOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                className="inline-flex h-10 items-center justify-center rounded-[8px] bg-[#16A34A] px-4 text-[13px] font-medium text-white disabled:bg-[#98A2B3]"
+                disabled={disabled || !resolvedQuickSourceId}
+                onClick={() => onQuickFillPracticeRules(resolvedQuickSourceId)}
+              >
+                Easy / Medium / Hard бэлдэх
+              </button>
+            </div>
+            <p className="mt-2 text-[12px] text-[#166534]">
+              Default-аар хялбар 3, дунд 4, хүнд 3 асуултын rule үүсгэнэ.
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {error ? <p className="text-[12px] text-[#B42318]">{error}</p> : null}
@@ -113,7 +160,9 @@ export function CreateExamRuleBuilder({
 
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <label className="grid gap-1.5">
-                <span className="text-[12px] font-medium text-[#52555B]">Үндсэн сэдэв</span>
+                <span className="text-[12px] font-medium text-[#52555B]">
+                  {mode === ExamMode.Practice ? "Сэдэв" : "Үндсэн сэдэв"}
+                </span>
                 <select
                   value={rule.sourceId}
                   disabled={disabled}

@@ -10,6 +10,7 @@ import {
   type ByIdArgs,
   type CreateExamArgs,
   type ExamQuestionRow,
+  type ExamMode,
   type ExamRow,
   type PublishExamArgs,
   type QuestionRow,
@@ -98,11 +99,13 @@ const buildRuleBasedQuestions = async ({
   actor,
   db,
   examId,
+  mode,
   rules,
 }: {
   actor: UserRow;
   db: D1DatabaseLike;
   examId: string;
+  mode: ExamMode;
   rules: ReturnType<typeof normalizeExamRules>;
 }) => {
   const usedQuestionIds = new Set<string>();
@@ -141,9 +144,10 @@ const buildRuleBasedQuestions = async ({
         created_at
       FROM questions
       WHERE bank_id IN (${placeholders})
+        AND (? != 'PRACTICE' OR type NOT IN ('ESSAY', 'IMAGE_UPLOAD'))
         AND (? IS NULL OR difficulty = ?)
       ORDER BY created_at DESC`,
-      [...rule.bankIds, rule.difficulty, rule.difficulty],
+      [...rule.bankIds, mode, rule.difficulty, rule.difficulty],
     );
 
     const availableRows = rows.filter((row) => !usedQuestionIds.has(row.id));
@@ -240,13 +244,18 @@ export const createExamQueriesAndMutations = ({
               ORDER BY e.created_at DESC`,
               [actor.id],
             )
-          : await all<ExamRow>(
+        : await all<ExamRow>(
               db,
               `SELECT DISTINCT
                 e.${examSelectFields.replaceAll(",\n      ", ",\n                e.")}
               FROM exams e
-              JOIN class_students cs ON cs.class_id = e.class_id
-              WHERE COALESCE(e.is_template, 0) = 0 AND cs.student_id = ?
+              LEFT JOIN class_students cs
+                ON cs.class_id = e.class_id AND cs.student_id = ?
+              WHERE COALESCE(e.is_template, 0) = 0
+                AND (
+                  cs.student_id IS NOT NULL
+                  OR (e.mode = 'PRACTICE' AND e.status = 'PUBLISHED')
+                )
               ORDER BY e.created_at DESC`,
               [actor.id],
             );
@@ -280,9 +289,15 @@ export const createExamQueriesAndMutations = ({
               `SELECT DISTINCT
                 e.${examSelectFields.replaceAll(",\n      ", ",\n                e.")}
               FROM exams e
-              JOIN class_students cs ON cs.class_id = e.class_id
-              WHERE COALESCE(e.is_template, 0) = 0 AND e.id = ? AND cs.student_id = ?`,
-              [id, actor.id],
+              LEFT JOIN class_students cs
+                ON cs.class_id = e.class_id AND cs.student_id = ?
+              WHERE COALESCE(e.is_template, 0) = 0
+                AND e.id = ?
+                AND (
+                  cs.student_id IS NOT NULL
+                  OR (e.mode = 'PRACTICE' AND e.status = 'PUBLISHED')
+                )`,
+              [actor.id, id],
             );
     return exam ? toExam(db, exam) : null;
   },
@@ -373,6 +388,7 @@ export const createExamQueriesAndMutations = ({
         actor,
         db,
         examId: id,
+        mode: mode ?? "SCHEDULED",
         rules: normalizedRules,
       });
       await insertExamQuestions(db, id, selectedQuestions);
@@ -619,6 +635,7 @@ export const createExamQueriesAndMutations = ({
             actor,
             db,
             examId,
+            mode: mode ?? exam.mode,
             rules: normalizedRules,
           })
         : (questionItems ?? []).map((item) => ({

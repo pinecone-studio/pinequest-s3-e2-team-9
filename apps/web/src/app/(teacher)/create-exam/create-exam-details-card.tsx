@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ExamMode } from "@/graphql/generated";
 import {
   type CreateExamFieldErrors,
   type CreateExamFormValues,
@@ -44,6 +45,47 @@ export function CreateExamDetailsCard({
 }: CreateExamDetailsCardProps) {
   return (
     <section className="relative isolate flex flex-col gap-4 self-stretch rounded-[12px] border border-[#DFE1E5] bg-white px-4 py-5 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+      <Field htmlFor="exam-mode">
+        <div className="grid gap-2">
+          <span className="text-[14px] font-medium leading-5 text-[#52555B]">
+            Үнэлгээний төрөл
+          </span>
+          <div className="grid gap-3 md:grid-cols-2">
+            <button
+              id="exam-mode"
+              type="button"
+              className={`rounded-[10px] border px-4 py-4 text-left transition ${
+                values.mode === ExamMode.Scheduled
+                  ? "border-[#2466D0] bg-[#EEF4FF]"
+                  : "border-[#DFE1E5] bg-white"
+              }`}
+              disabled={disabled}
+              onClick={() => onFieldChange("mode", ExamMode.Scheduled)}
+            >
+              <p className="text-[14px] font-semibold text-[#0F1216]">Ангийн шалгалт</p>
+              <p className="mt-1 text-[12px] leading-5 text-[#52555B]">
+                Нэг удаагийн formal шалгалт. Дууссаны дараа багш review хийж болно.
+              </p>
+            </button>
+            <button
+              type="button"
+              className={`rounded-[10px] border px-4 py-4 text-left transition ${
+                values.mode === ExamMode.Practice
+                  ? "border-[#16A34A] bg-[#F0FDF4]"
+                  : "border-[#DFE1E5] bg-white"
+              }`}
+              disabled={disabled}
+              onClick={() => onFieldChange("mode", ExamMode.Practice)}
+            >
+              <p className="text-[14px] font-semibold text-[#0F1216]">Practice / Free test</p>
+              <p className="mt-1 text-[12px] leading-5 text-[#52555B]">
+                Олон дахин ажиллаж болно. Дуусмагц шууд дүн, feedback харуулна.
+              </p>
+            </button>
+          </div>
+        </div>
+      </Field>
+
       <Field htmlFor="exam-title" error={errors.title}>
         <input
           id="exam-title"

@@ -7,7 +7,7 @@ export type QuestionType =
   | "ESSAY"
   | "IMAGE_UPLOAD";
 export type Difficulty = "EASY" | "MEDIUM" | "HARD";
-export type ExamMode = "SCHEDULED" | "OPEN_WINDOW";
+export type ExamMode = "SCHEDULED" | "OPEN_WINDOW" | "PRACTICE";
 export type ExamStatus = "DRAFT" | "PUBLISHED" | "CLOSED";
 export type ExamGenerationMode = "MANUAL" | "RULE_BASED";
 export type AttemptStatus = "IN_PROGRESS" | "SUBMITTED" | "GRADED";

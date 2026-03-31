@@ -7,6 +7,7 @@ query StudentExamRoom($id: ID!) {
     id
     title
     description
+    mode
     status
     durationMinutes
     startedAt
@@ -37,6 +38,7 @@ query StudentExamRoom($id: ID!) {
         prompt
         tags
         type
+        difficulty
         options
       }
     }
@@ -59,6 +61,15 @@ query StudentExamRoom($id: ID!) {
       feedback
       question {
         id
+        title
+        prompt
+        type
+        correctAnswer
+        tags
+        bank {
+          id
+          topic
+        }
       }
     }
   }

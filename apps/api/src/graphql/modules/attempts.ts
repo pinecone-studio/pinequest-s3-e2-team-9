@@ -373,7 +373,7 @@ export const createAttemptMutations = ({
       effectiveStudentId,
     );
 
-    if (existingAttempt) {
+    if (existingAttempt && (exam.mode !== "PRACTICE" || existingAttempt.status === "IN_PROGRESS")) {
       return toAttempt(db, existingAttempt);
     }
 
@@ -426,6 +426,7 @@ export const createAttemptMutations = ({
   ) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
     const attempt = await findAttemptById(db, attemptId);
+    const exam = await findExam(db, attempt.exam_id);
     if (actor.role === "STUDENT") {
       invariant(
         attempt.student_id === actor.id,
@@ -628,6 +629,7 @@ export const createAttemptMutations = ({
   ) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
     const attempt = await findAttemptById(db, attemptId);
+    const exam = await findExam(db, attempt.exam_id);
     if (actor.role === "STUDENT") {
       invariant(
         attempt.student_id === actor.id,
@@ -647,18 +649,19 @@ export const createAttemptMutations = ({
     await recalculateAttemptScores(db, attemptId);
     const requiresReview = await attemptNeedsManualReview(db, attemptId);
     const submittedAt = now();
+    const nextStatus =
+      exam.mode === "PRACTICE" || !requiresReview ? "GRADED" : "SUBMITTED";
     await run(
       db,
       `UPDATE attempts
        SET status = ?, submitted_at = ?
        WHERE id = ?`,
-      [requiresReview ? "SUBMITTED" : "GRADED", submittedAt, attemptId],
+      [nextStatus, submittedAt, attemptId],
     );
     const submittedAttempt = await findAttemptById(db, attemptId);
-    const exam = await findExam(db, submittedAttempt.exam_id);
     const emittedAt = now();
 
-    if (requiresReview) {
+    if (nextStatus === "SUBMITTED") {
       await publishLiveEvent?.({
         type: "attempt_submitted",
         attemptId: submittedAttempt.id,

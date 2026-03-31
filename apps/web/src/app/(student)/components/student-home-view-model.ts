@@ -1,4 +1,4 @@
-import { AttemptStatus, ExamStatus, type StudentHomeQuery } from "@/graphql/generated";
+import { AttemptStatus, ExamMode, ExamStatus, type StudentHomeQuery } from "@/graphql/generated";
 import {
   formatClock,
   formatMonthDay,
@@ -105,6 +105,9 @@ export const buildStudentHomeViewModel = (data: StudentHomeQuery): StudentHomeVi
     .filter((exam) => {
       if (exam.status !== ExamStatus.Published) return false;
       const attempt = attemptsByExamId.get(exam.id);
+      if (exam.mode === ExamMode.Practice) {
+        return attempt?.status !== AttemptStatus.InProgress;
+      }
       return !attempt;
     })
     .map((exam) => buildExamCard({ exam, nowMs, tone: "available" }));

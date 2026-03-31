@@ -115,6 +115,7 @@ export function CreateExamContent({
           onAddGenerationRule={flow.addGenerationRule}
           onRemoveGenerationRule={flow.removeGenerationRule}
           onUpdateGenerationRule={flow.updateGenerationRule}
+          onReplaceWithPracticeDifficultyRules={flow.replaceWithPracticeDifficultyRules}
           onQuestionsRefresh={flow.refetchOptions}
           initialBankId={flow.resolvedBankId}
         />

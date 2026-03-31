@@ -16,6 +16,7 @@ query StudentHome {
   exams {
     id
     title
+    mode
     status
     durationMinutes
     startedAt
@@ -46,6 +47,7 @@ query StudentHome {
     exam {
       id
       title
+      mode
       status
       durationMinutes
       startedAt

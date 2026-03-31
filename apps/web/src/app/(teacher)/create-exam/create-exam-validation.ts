@@ -2,6 +2,7 @@ import {
   type CreateExamFieldErrors,
   type CreateExamFormValues,
   type SelectedQuestionPoints,
+  type CreateExamGenerationRule,
 } from "./create-exam-types";
 import { ExamGenerationMode, PassingCriteriaType } from "@/graphql/generated";
 
@@ -9,6 +10,13 @@ const MIN_DURATION_MINUTES = 5;
 const MAX_DURATION_MINUTES = 360;
 const MIN_TITLE_LENGTH = 3;
 const DEFAULT_POINTS = 1;
+
+const totalFromRules = (rules: CreateExamGenerationRule[]) =>
+  rules.reduce((sum, rule) => {
+    const count = parsePositiveInteger(rule.count) ?? 0;
+    const points = parsePositiveInteger(rule.points) ?? 0;
+    return sum + count * points;
+  }, 0);
 
 const parsePositiveInteger = (value: string): number | null => {
   const trimmed = value.trim();
@@ -85,10 +93,13 @@ export const validateCreateExamForm = (
   }
 
   const passingThreshold = parsePositiveInteger(values.passingThreshold);
-  const totalPoints = Object.values(selectedQuestionPoints).reduce((sum, points) => {
-    const parsed = parsePositiveInteger(points) ?? DEFAULT_POINTS;
-    return sum + parsed;
-  }, 0);
+  const totalPoints =
+    values.generationMode === ExamGenerationMode.RuleBased
+      ? totalFromRules(values.generationRules)
+      : Object.values(selectedQuestionPoints).reduce((sum, points) => {
+          const parsed = parsePositiveInteger(points) ?? DEFAULT_POINTS;
+          return sum + parsed;
+        }, 0);
 
   if (!passingThreshold) {
     errors.passingThreshold = "Тэнцэх босго нь 1-ээс их бүхэл тоо байна.";

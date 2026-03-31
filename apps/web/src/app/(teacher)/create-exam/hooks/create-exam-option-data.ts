@@ -1,3 +1,4 @@
+import { ExamMode } from "@/graphql/generated";
 import { getCurriculumTopicGroupName } from "@/app/(teacher)/components/question-bank-curriculum";
 import type { CreateExamOptionsQuery } from "@/graphql/generated";
 import type { CreateExamRuleSourceOption } from "../create-exam-types";
@@ -68,8 +69,10 @@ export const getRuleSourceOptions = (
   questions: Array<{
     difficulty: string;
     bankId: string;
+    type: string;
   }>,
   initialBankId: string,
+  mode: ExamMode,
 ): CreateExamRuleSourceOption[] => {
   const grouped = new Map<string, CreateExamRuleSourceOption>();
 
@@ -97,8 +100,11 @@ export const getRuleSourceOptions = (
   }
 
   for (const option of grouped.values()) {
-    const matchedQuestions = questions.filter((question) =>
-      option.bankIds.includes(question.bankId),
+    const matchedQuestions = questions.filter(
+      (question) =>
+        option.bankIds.includes(question.bankId) &&
+        (mode !== ExamMode.Practice ||
+          (question.type !== "ESSAY" && question.type !== "IMAGE_UPLOAD")),
     );
     option.totalQuestions = matchedQuestions.length;
     option.easyQuestions = matchedQuestions.filter(

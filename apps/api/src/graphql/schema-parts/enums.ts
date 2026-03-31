@@ -27,6 +27,7 @@ export const schemaEnums = /* GraphQL */ `
   enum ExamMode {
     SCHEDULED
     OPEN_WINDOW
+    PRACTICE
   }
 
   enum ExamStatus {

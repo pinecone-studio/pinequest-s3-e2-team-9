@@ -1,51 +1,178 @@
-/* eslint-disable max-lines */
+/* eslint-disable max-lines, @next/next/no-img-element */
 import Link from "next/link";
-import { AttemptStatus } from "@/graphql/generated";
+import { AttemptStatus, ExamMode } from "@/graphql/generated";
+import { useProtectedImageSource } from "@/lib/image-answer";
+import { parseOpenTaskAnswer } from "@/lib/open-task-answer";
+import { getQuestionPromptImageValue } from "@/lib/question-prompt-image";
 import type { StudentExamAttempt, StudentExamData } from "./student-exam-room-types";
 import { formatClock, formatMonthDay } from "./student-home-time";
 
 const isUrl = (value: string) => /^https?:\/\//i.test(value);
 
-const AnswerValue = ({ value }: { value: string }) =>
-  isUrl(value) ? (
-    <a
-      href={value}
-      target="_blank"
-      rel="noreferrer"
-      className="text-[14px] font-medium text-[#155EEF] underline underline-offset-2"
-    >
-      Материал нээх
-    </a>
-  ) : (
+const questionTypeLabel = (type: string) => {
+  if (type === "MCQ") return "Олон сонголт";
+  if (type === "TRUE_FALSE") return "Үнэн / Худал";
+  if (type === "SHORT_ANSWER") return "Тоо бодолт";
+  if (type === "ESSAY") return "Задгай даалгавар";
+  if (type === "IMAGE_UPLOAD") return "Зураг оруулах";
+  return "Асуулт";
+};
+
+function QuestionPromptImage({ tags }: { tags: string[] }) {
+  const promptImageValue = getQuestionPromptImageValue(tags) ?? "";
+  const { error, isLoading, src } = useProtectedImageSource(promptImageValue);
+
+  if (src) {
+    return (
+      <div className="overflow-hidden rounded-md border border-[#DFE1E5] bg-[#F8FAFC] p-2">
+        <img
+          alt="Асуултад хавсаргасан зураг"
+          className="max-h-[280px] w-full rounded object-contain"
+          src={src}
+        />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return <p className="text-[13px] text-[#667085]">Асуултын зургийг ачаалж байна...</p>;
+  }
+
+  if (error) {
+    return <p className="text-[13px] font-medium text-[#B42318]">{error}</p>;
+  }
+
+  return null;
+}
+
+function AnswerValue({
+  type,
+  value,
+}: {
+  type: string;
+  value: string;
+}) {
+  const openTaskAnswer = type === "ESSAY" ? parseOpenTaskAnswer(value) : null;
+  const imageValue =
+    type === "ESSAY" ? openTaskAnswer?.image ?? "" : type === "IMAGE_UPLOAD" ? value : "";
+  const { error, isLoading, src } = useProtectedImageSource(imageValue);
+
+  if (type === "ESSAY") {
+    return (
+      <div className="space-y-3">
+        {openTaskAnswer?.text.trim() ? (
+          <div className="rounded-md border border-[#DFE1E5] bg-[#F8FAFC] px-3 py-2 text-[14px] leading-6 text-[#0F1216] whitespace-pre-wrap">
+            {openTaskAnswer.text}
+          </div>
+        ) : null}
+        {src ? (
+          <div className="overflow-hidden rounded-md border border-[#DFE1E5] bg-[#F8FAFC] p-2">
+            <img
+              alt="Хавсаргасан зураг"
+              className="max-h-[320px] w-full rounded object-contain"
+              src={src}
+            />
+          </div>
+        ) : null}
+        {isLoading ? (
+          <p className="text-[13px] text-[#667085]">Зургийг ачаалж байна...</p>
+        ) : null}
+        {error ? (
+          <p className="text-[13px] font-medium text-[#B42318]">{error}</p>
+        ) : null}
+        {!openTaskAnswer?.text.trim() && !openTaskAnswer?.image.trim() ? (
+          <div className="rounded-md border border-[#DFE1E5] bg-[#F8FAFC] px-3 py-2 text-[14px] leading-6 text-[#0F1216] whitespace-pre-wrap">
+            Хариулт оруулаагүй
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (src) {
+    return (
+      <div className="overflow-hidden rounded-md border border-[#DFE1E5] bg-[#F8FAFC] p-2">
+        <img
+          alt="Оруулсан зураг"
+          className="max-h-[320px] w-full rounded object-contain"
+          src={src}
+        />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return <p className="text-[13px] text-[#667085]">Зургийг ачаалж байна...</p>;
+  }
+
+  if (error) {
+    return <p className="text-[13px] font-medium text-[#B42318]">{error}</p>;
+  }
+
+  if (isUrl(value)) {
+    return (
+      <a
+        href={value}
+        target="_blank"
+        rel="noreferrer"
+        className="text-[14px] font-medium text-[#155EEF] underline underline-offset-2"
+      >
+        Материал нээх
+      </a>
+    );
+  }
+
+  return (
     <div className="rounded-md border border-[#DFE1E5] bg-[#F8FAFC] px-3 py-2 text-[14px] leading-6 text-[#0F1216] whitespace-pre-wrap">
       {value.trim() || "Хариулт оруулаагүй"}
     </div>
   );
+}
 
 type StudentExamSubmittedScreenProps = {
   answeredCount: number;
   currentAttempt: StudentExamAttempt;
   exam: StudentExamData;
+  isRestarting: boolean;
+  onRestartAttempt: () => void;
 };
 
 export function StudentExamSubmittedScreen({
   answeredCount,
   currentAttempt,
   exam,
+  isRestarting,
+  onRestartAttempt,
 }: StudentExamSubmittedScreenProps) {
   const submittedAt = currentAttempt.submittedAt ?? currentAttempt.startedAt;
+  const isPractice = exam.mode === ExamMode.Practice;
   const isReviewed = currentAttempt.status === AttemptStatus.Graded;
   const totalPoints = exam.questions.reduce((sum, question) => sum + question.points, 0);
   const answersByQuestionId = new Map(
     currentAttempt.answers.map((answer) => [answer.question.id, answer]),
   );
+  const pointsByQuestionId = new Map(
+    exam.questions.map((item) => [item.question.id, item.points]),
+  );
+  const weakTopicCounts = new Map<string, number>();
+  for (const answer of currentAttempt.answers) {
+    const topic = answer.question.bank?.topic ?? "Ерөнхий";
+    const points = pointsByQuestionId.get(answer.question.id) ?? 0;
+    const score = (answer.autoScore ?? 0) + (answer.manualScore ?? 0);
+    if (points > 0 && score < points) {
+      weakTopicCounts.set(topic, (weakTopicCounts.get(topic) ?? 0) + 1);
+    }
+  }
+  const weakTopics = [...weakTopicCounts.entries()]
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 3);
   const details = [
     {
       label: "Төлөв",
-      value: isReviewed ? "Reviewed" : "Pending Review",
+      value: isPractice ? "Practice дууссан" : isReviewed ? "Reviewed" : "Pending Review",
     },
     ...(isReviewed
-      ? [{ label: "Final score", value: `${currentAttempt.totalScore} / ${totalPoints}` }]
+      ? [{ label: isPractice ? "Practice score" : "Final score", value: `${currentAttempt.totalScore} / ${totalPoints}` }]
       : []),
     {
       label: "Илгээсэн огноо, цаг",
@@ -61,19 +188,23 @@ export function StudentExamSubmittedScreen({
         <section className="overflow-hidden rounded-[28px] border border-[#DCE6FF] bg-[radial-gradient(circle_at_top_left,#EEF4FF_0%,#F8FAFF_45%,#FFFFFF_100%)] p-7 shadow-[0_24px_60px_rgba(36,102,208,0.12)] sm:p-8">
           <span
             className={`inline-flex rounded-full px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.1em] ${
-              isReviewed
+              isPractice
+                ? "bg-[#ECFDF3] text-[#027A48]"
+                : isReviewed
                 ? "bg-[#ECFDF3] text-[#027A48]"
                 : "bg-[#FFF4E5] text-[#B54708]"
             }`}
           >
-            {isReviewed ? "Reviewed" : "Pending Review"}
+            {isPractice ? "Practice Complete" : isReviewed ? "Reviewed" : "Pending Review"}
           </span>
           <h1 className="mt-4 text-[32px] font-semibold tracking-[-0.03em] text-[#101828]">
             {exam.title}
           </h1>
           <p className="mt-4 max-w-[760px] text-[16px] leading-7 text-[#475467]">
             {isReviewed
-              ? "Багш таны шалгалтыг шалгасан байна. Final score болон feedback доор харагдана."
+              ? isPractice
+                ? "Та энэ self-test-ийг дуусгалаа. Доор зөв хариу, өөрийн хариулт, сул сэдвийн зөвлөмж харагдана."
+                : "Багш таны шалгалтыг шалгасан байна. Final score болон feedback доор харагдана."
               : "Таны шалгалт хүлээн авлаа. Review дуусмагц энэ хуудсанд final score болон feedback харагдана."}
           </p>
 
@@ -95,15 +226,33 @@ export function StudentExamSubmittedScreen({
             Дараагийн алхам
           </p>
           <h2 className="mt-3 text-[24px] font-semibold tracking-[-0.03em] text-[#101828]">
-            {isReviewed ? "Final result бэлэн боллоо" : "Багшийн review-г хүлээнэ үү"}
+            {isPractice
+              ? "Self-review ба зөвлөмж"
+              : isReviewed
+                ? "Final result бэлэн боллоо"
+                : "Багшийн review-г хүлээнэ үү"}
           </h2>
           <p className="mt-3 text-[15px] leading-7 text-[#475467]">
-            {isReviewed
-              ? "Хэрэв багш нэмэлт тайлбар үлдээсэн бол доорх асуулт бүрийн card дээрээс уншина уу."
-              : "Review хийгдсэний дараа энэ хуудас автоматаар Reviewed төлөв, final score, feedback-тайгаар шинэчлэгдэнэ."}
+            {isPractice
+              ? weakTopics.length
+                ? `Илүү анхаарах сэдэв: ${weakTopics.map(([topic]) => topic).join(", ")}. Дахин ажиллаад ахицaa шууд харж болно.`
+                : "Сайн байна. Ихэнх асуултад зөв хариулсан тул ахиад нэг удаа өөр хувилбараар өөрийгөө сорьж болно."
+              : isReviewed
+                ? "Хэрэв багш нэмэлт тайлбар үлдээсэн бол доорх асуулт бүрийн card дээрээс уншина уу."
+                : "Review хийгдсэний дараа энэ хуудас автоматаар Reviewed төлөв, final score, feedback-тайгаар шинэчлэгдэнэ."}
           </p>
+          {isPractice ? (
+            <button
+              className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-[16px] bg-[#16A34A] text-[15px] font-semibold text-white shadow-[0_16px_36px_rgba(22,163,74,0.28)] transition hover:bg-[#15803D] disabled:cursor-not-allowed disabled:bg-[#98A2B3]"
+              disabled={isRestarting}
+              onClick={onRestartAttempt}
+              type="button"
+            >
+              {isRestarting ? "Дахин эхлүүлж байна..." : "Дахин оролдох"}
+            </button>
+          ) : null}
           <Link
-            className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-[16px] bg-[#2466D0] text-[15px] font-semibold text-white shadow-[0_16px_36px_rgba(36,102,208,0.28)] transition hover:bg-[#1E56B2]"
+            className="mt-4 inline-flex h-12 w-full items-center justify-center rounded-[16px] bg-[#2466D0] text-[15px] font-semibold text-white shadow-[0_16px_36px_rgba(36,102,208,0.28)] transition hover:bg-[#1E56B2]"
             href="/student"
           >
             Нүүр хуудас руу буцах
@@ -139,6 +288,9 @@ export function StudentExamSubmittedScreen({
                           {index + 1}
                         </span>
                         <span className="rounded-md border border-[#D5D9E0] bg-white px-2 py-0.5 text-[12px] font-medium text-[#344054]">
+                          {questionTypeLabel(item.question.type)}
+                        </span>
+                        <span className="rounded-md border border-[#D5D9E0] bg-white px-2 py-0.5 text-[12px] font-medium text-[#344054]">
                           {item.points} оноо
                         </span>
                       </div>
@@ -152,12 +304,14 @@ export function StudentExamSubmittedScreen({
                   </div>
 
                   <div className="mt-4 space-y-3">
+                    <QuestionPromptImage tags={item.question.tags} />
+
                     <div>
                       <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-[#475467]">
                         Таны хариулт
                       </p>
                       {answer ? (
-                        <AnswerValue value={answer.value} />
+                        <AnswerValue type={item.question.type} value={answer.value} />
                       ) : (
                         <div className="rounded-md border border-dashed border-[#D0D5DD] bg-white px-3 py-2 text-[14px] text-[#667085]">
                           Хариулт оруулаагүй
@@ -165,12 +319,27 @@ export function StudentExamSubmittedScreen({
                       )}
                     </div>
 
+                    {isPractice ? (
+                      <div className="rounded-md border border-[#D5E3FF] bg-white px-4 py-3">
+                        <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#2466D0]">
+                          Зөв хариу
+                        </p>
+                        <p className="mt-2 text-[14px] leading-6 text-[#344054] whitespace-pre-wrap">
+                          {answer?.question.correctAnswer?.trim() || "Тайлбаргүй"}
+                        </p>
+                      </div>
+                    ) : null}
+
                     <div className="rounded-md border border-[#D5E3FF] bg-[#EEF4FF] px-4 py-3">
                       <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#2466D0]">
-                        Feedback
+                        {isPractice ? "Feedback / Зөвлөмж" : "Feedback"}
                       </p>
                       <p className="mt-2 text-[14px] leading-6 text-[#344054]">
-                        {answer?.feedback?.trim() || "Багш энэ асуултад нэмэлт feedback үлдээгээгүй байна."}
+                        {isPractice
+                          ? answer && ((answer.autoScore ?? 0) + (answer.manualScore ?? 0)) >= item.points
+                            ? "Зөв хариулсан байна. Хүсвэл ижил сэдвээр дараагийн түвшний дасгал ажиллаарай."
+                            : `Энэ асуулт дээр ${answer?.question.bank?.topic ?? "энэ сэдэв"}-ээ дахин давтаад, зөв хариутайгаа харьцуулж бодоорой.`
+                          : answer?.feedback?.trim() || "Багш энэ асуултад нэмэлт feedback үлдээгээгүй байна."}
                       </p>
                     </div>
                   </div>

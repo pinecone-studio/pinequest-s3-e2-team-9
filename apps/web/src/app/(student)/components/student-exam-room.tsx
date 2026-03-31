@@ -40,6 +40,8 @@ export function StudentExamRoom({ examId }: StudentExamRoomProps) {
           answeredCount={state.answeredCount}
           currentAttempt={state.currentAttempt}
           exam={state.exam}
+          isRestarting={state.isStarting}
+          onRestartAttempt={() => void state.handleStartAttempt()}
         />
       ) : state.showQuestions && state.currentAttempt ? (
         <StudentExamSessionHeader
