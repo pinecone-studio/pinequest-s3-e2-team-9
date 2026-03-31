@@ -3,6 +3,7 @@ import {
   ExamStatus,
   QuestionType,
 } from "@/graphql/generated";
+import { getQuestionPromptImageValue } from "@/lib/question-prompt-image";
 import { getCurriculumTopicGroupName } from "../question-bank-curriculum";
 import type { MyExamQuestionPreview, QueryExam } from "./my-exams-types";
 
@@ -64,7 +65,7 @@ export const getAttemptLabel = (status: AttemptStatus) =>
 
 const getPreviewTypeLabel = (type: QuestionType) => {
   if (type === QuestionType.ShortAnswer) return "Тоон";
-  if (type === QuestionType.Essay) return "Эссе";
+  if (type === QuestionType.Essay) return "Задгай";
   if (type === QuestionType.ImageUpload) return "Зураг";
   return "Сонгох";
 };
@@ -98,6 +99,7 @@ export const buildPreviewQuestions = (exam: QueryExam): MyExamQuestionPreview[] 
       id: item.id,
       order: item.order,
       prompt: item.question.prompt || item.question.title,
+      promptImageValue: getQuestionPromptImageValue(item.question.tags),
       topic: getCurriculumTopicGroupName(
         exam.class.grade,
         exam.class.subject,

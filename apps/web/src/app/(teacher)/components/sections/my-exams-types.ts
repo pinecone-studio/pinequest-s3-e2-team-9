@@ -24,6 +24,7 @@ export type ExamFooterData =
 export type MyExamQuestionPreview = {
   id: string;
   prompt: string;
+  promptImageValue: string | null;
   topic: string;
   order: number;
   kind: "options" | "text" | "upload";
@@ -38,6 +39,7 @@ export type MyExamStudentAnswer = {
   id: string;
   questionId: string;
   prompt: string;
+  promptImageValue: string | null;
   value: string;
   displayValue: string;
   type: string;

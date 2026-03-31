@@ -387,7 +387,7 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require("node:fs");
-          const inputPath = "wrangler.dev.toml";
+          const inputPath = "wrangler.toml";
           const outputPath = "wrangler.preview.toml";
           const source = fs.readFileSync(inputPath, "utf8");
 

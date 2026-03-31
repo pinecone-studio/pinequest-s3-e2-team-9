@@ -1,6 +1,10 @@
 "use client";
 
 import { Difficulty, QuestionType } from "@/graphql/generated";
+import {
+  stripQuestionPromptImageTag,
+  withQuestionPromptImageTag,
+} from "@/lib/question-prompt-image";
 import { formatTolerance, type QuestionBankQuestionRow } from "../question-bank-utils";
 
 export const getQuestionDialogTitle = (type: QuestionType) => {
@@ -11,7 +15,7 @@ export const getQuestionDialogTitle = (type: QuestionType) => {
     return "Тоо бодолт";
   }
   if (type === QuestionType.Essay) {
-    return "Задгай хариулт";
+    return "Задгай даалгавар";
   }
   return "Олон сонголт";
 };
@@ -31,6 +35,7 @@ export const getInitialQuestionState = (
   numericAnswer: string;
   tolerance: string;
   referenceAnswer: string;
+  promptImageValue: string;
 } => ({
   prompt: question?.prompt ?? "",
   questionType: (question?.rawType as QuestionType | undefined) ?? QuestionType.Mcq,
@@ -47,6 +52,7 @@ export const getInitialQuestionState = (
   numericAnswer: question?.rawType === "SHORT_ANSWER" ? question.correctAnswer ?? "" : "",
   tolerance: question?.rawType === "SHORT_ANSWER" ? formatTolerance(question.tags) ?? "" : "",
   referenceAnswer: question?.rawType === "ESSAY" ? question.correctAnswer ?? "" : "",
+  promptImageValue: question?.promptImageValue ?? "",
 });
 
 export const buildCreateQuestionPayload = ({
@@ -58,7 +64,9 @@ export const buildCreateQuestionPayload = ({
   numericAnswer,
   tolerance,
   referenceAnswer,
+  promptImageValue,
   difficulty,
+  existingTags = [],
 }: {
   prompt: string;
   questionType: QuestionType;
@@ -68,7 +76,9 @@ export const buildCreateQuestionPayload = ({
   numericAnswer: string;
   tolerance: string;
   referenceAnswer: string;
+  promptImageValue: string;
   difficulty: Difficulty;
+  existingTags?: string[];
 }) => {
   const trimmedPrompt = prompt.trim();
   const normalizedOptions = questionType === QuestionType.Mcq
@@ -83,9 +93,14 @@ export const buildCreateQuestionPayload = ({
       : questionType === QuestionType.ShortAnswer
         ? numericAnswer.trim()
         : referenceAnswer.trim();
-  const tags = questionType === QuestionType.ShortAnswer && tolerance.trim()
-    ? [`tolerance:${tolerance.trim()}`]
-    : [];
+  const baseTags = stripQuestionPromptImageTag(existingTags).filter(
+    (tag) => !tag.startsWith("tolerance:"),
+  );
+  const tagsWithTolerance =
+    questionType === QuestionType.ShortAnswer && tolerance.trim()
+      ? [...baseTags, `tolerance:${tolerance.trim()}`]
+      : baseTags;
+  const tags = withQuestionPromptImageTag(tagsWithTolerance, promptImageValue);
 
   return {
     title: trimmedPrompt.slice(0, 80),

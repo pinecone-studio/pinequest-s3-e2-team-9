@@ -24,7 +24,7 @@ const QUESTION_TYPE_LABELS: Record<string, string> = {
   MCQ: "Олон сонголт",
   TRUE_FALSE: "Үнэн/Худал",
   SHORT_ANSWER: "Тоо бодолт",
-  ESSAY: "Задгай хариулт",
+  ESSAY: "Задгай даалгавар",
 };
 
 const DIFFICULTY_LABELS: Record<string, string> = {
@@ -667,7 +667,7 @@ export function CreateExamQuestionLibrary({
             <option value="MCQ">Олон сонголт</option>
             <option value="TRUE_FALSE">Үнэн/Худал</option>
             <option value="SHORT_ANSWER">Тоо бодолт</option>
-            <option value="ESSAY">Задгай хариулт</option>
+            <option value="ESSAY">Задгай даалгавар</option>
           </select>
         </div>
       </div>

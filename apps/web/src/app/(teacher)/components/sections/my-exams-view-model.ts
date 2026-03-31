@@ -1,5 +1,6 @@
 /* eslint-disable max-lines */
 import { AttemptStatus, ExamStatus, QuestionType } from "@/graphql/generated";
+import { getQuestionPromptImageValue } from "@/lib/question-prompt-image";
 import { getCurriculumTopicGroupName } from "../question-bank-curriculum";
 import type {
   MyExamListView,
@@ -24,7 +25,7 @@ import { formatDateOnly } from "./my-exams-view-model-helpers";
 
 const getPreviewTypeLabel = (type: QuestionType) => {
   if (type === QuestionType.ShortAnswer) return "Тоон";
-  if (type === QuestionType.Essay) return "Эссе";
+  if (type === QuestionType.Essay) return "Задгай";
   if (type === QuestionType.ImageUpload) return "Зураг";
   return "Сонгох";
 };
@@ -56,6 +57,7 @@ const buildPreviewQuestions = (exam: QueryExamDetail): MyExamQuestionPreview[] =
       id: item.question.id,
       order: item.order,
       prompt: item.question.prompt || item.question.title,
+      promptImageValue: getQuestionPromptImageValue(item.question.tags),
       topic: getCurriculumTopicGroupName(
         exam.class.grade,
         exam.class.subject,
@@ -180,12 +182,15 @@ export const buildMyExamDetailView = (exam: QueryExamDetail): MyExamView => {
         id: answer.id,
         questionId: answer.question.id,
         prompt: answer.question.prompt || answer.question.title,
+        promptImageValue: getQuestionPromptImageValue(answer.question.tags),
         value: answer.value,
         displayValue: formatAnswerValue(answer.question.type, answer.value),
         type: answer.question.type,
         autoScore: answer.autoScore ?? null,
         manualScore: answer.manualScore ?? null,
-        requiresReview: answer.autoScore === null,
+        requiresReview:
+          answer.autoScore === null ||
+          answer.question.type === QuestionType.ShortAnswer,
         score: (answer.autoScore ?? 0) + (answer.manualScore ?? 0),
         total: questionPointsMap.get(answer.question.id) ?? 0,
         feedback: answer.feedback ?? null,

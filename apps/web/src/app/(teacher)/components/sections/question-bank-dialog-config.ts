@@ -12,7 +12,7 @@ export const questionTypeOptions = [
   { label: "Сонгох", value: QuestionType.Mcq },
   { label: "Үнэн / Худал", value: QuestionType.TrueFalse },
   { label: "Тоо бодолт", value: QuestionType.ShortAnswer },
-  { label: "Задгай хариулт", value: QuestionType.Essay },
+  { label: "Задгай даалгавар", value: QuestionType.Essay },
 ];
 
 export const resetQuestionOptions = () => [

@@ -43,6 +43,7 @@ export function QuestionBankAddQuestionDialog({
     numericAnswer, setNumericAnswer,
     tolerance, setTolerance,
     referenceAnswer, setReferenceAnswer,
+    promptImageValue, setPromptImageValue,
     saveToBank, setSaveToBank,
     errorMessage, setErrorMessage,
     closeAndReset, updateOption, addOption, removeOption,
@@ -66,7 +67,9 @@ export function QuestionBankAddQuestionDialog({
         numericAnswer,
         tolerance,
         referenceAnswer,
+        promptImageValue,
         difficulty,
+        existingTags: initialQuestion?.tags,
       });
 
       if (!payload.prompt) {
@@ -118,7 +121,11 @@ export function QuestionBankAddQuestionDialog({
         </div>
         <div className="space-y-4">
           <label className="block space-y-2"><span className="text-[12px] font-medium text-[#52555B]">Асуулт</span><textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Асуултаа оруулна уу..." className="h-16 w-full rounded-md border border-[#DFE1E5] bg-white px-3 py-2 text-[14px] text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#52555B]" /></label>
-          <QuestionBankDialogMedia />
+          <QuestionBankDialogMedia
+            disabled={loading || updateLoading}
+            value={promptImageValue}
+            onChange={setPromptImageValue}
+          />
           <div className="grid gap-3 sm:grid-cols-3">
             <QuestionBankDialogSelect value={questionType} onChange={(value) => setQuestionType(value as QuestionType)}>
               {questionTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}

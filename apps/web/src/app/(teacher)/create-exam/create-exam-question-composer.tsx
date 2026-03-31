@@ -9,6 +9,7 @@ import {
   type CreateQuestionMutationMutation,
   type Difficulty,
 } from "@/graphql/generated";
+import { QuestionBankDialogMedia } from "../components/sections/question-bank-dialog-fields";
 import { useQuestionBankDialogState } from "../components/sections/question-bank-dialog-state";
 import { buildCreateQuestionPayload } from "../components/sections/question-bank-dialog-submit";
 import {
@@ -44,6 +45,7 @@ export function CreateExamQuestionComposer(props: CreateExamQuestionComposerProp
     numericAnswer, setNumericAnswer,
     tolerance, setTolerance,
     referenceAnswer, setReferenceAnswer,
+    promptImageValue, setPromptImageValue,
     saveToBank, setSaveToBank,
     errorMessage, setErrorMessage,
     closeAndReset, resetState, updateOption, addOption, removeOption,
@@ -101,6 +103,7 @@ export function CreateExamQuestionComposer(props: CreateExamQuestionComposerProp
         numericAnswer,
         tolerance,
         referenceAnswer,
+        promptImageValue,
         difficulty: difficulty as Difficulty,
       });
       if (!payload.prompt) {
@@ -155,6 +158,12 @@ export function CreateExamQuestionComposer(props: CreateExamQuestionComposerProp
             disabled={props.disabled || loading}
           />
         </label>
+
+        <QuestionBankDialogMedia
+          disabled={props.disabled || loading}
+          value={promptImageValue}
+          onChange={setPromptImageValue}
+        />
 
         <CreateExamQuestionComposerMeta
           bankOptions={props.bankOptions}

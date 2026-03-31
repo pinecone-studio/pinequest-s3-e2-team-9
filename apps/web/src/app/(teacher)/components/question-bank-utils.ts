@@ -1,3 +1,5 @@
+import { getQuestionPromptImageValue } from "@/lib/question-prompt-image";
+
 export type QuestionBankItem = {
   id: string;
   title: string;
@@ -31,6 +33,7 @@ export type QuestionBankQuestionRow = {
   id: string;
   text: string;
   prompt: string;
+  promptImageValue: string | null;
   topic: string;
   type: string;
   rawType: RawQuestion["type"];
@@ -59,7 +62,7 @@ const QUESTION_TYPE_LABELS: Record<RawQuestion["type"], string> = {
   MCQ: "Олон сонголт",
   TRUE_FALSE: "Үнэн/Худал",
   SHORT_ANSWER: "Тоо бодолт",
-  ESSAY: "Задгай хариулт",
+  ESSAY: "Задгай даалгавар",
   IMAGE_UPLOAD: "Зураг",
 };
 
@@ -136,6 +139,7 @@ export const buildQuestionBankRows = (
       id: question.id,
       text: question.prompt.trim() || question.title.trim(),
       prompt: question.prompt.trim(),
+      promptImageValue: getQuestionPromptImageValue(question.tags),
       topic:
         question.tags.filter((tag) => tag && !tag.includes("анги"))[1] ??
         question.tags.filter((tag) => tag && !tag.includes("анги"))[0] ??

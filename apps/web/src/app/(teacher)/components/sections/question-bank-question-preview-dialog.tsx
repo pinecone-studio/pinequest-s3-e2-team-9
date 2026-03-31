@@ -1,5 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
+import { useProtectedImageSource } from "@/lib/image-answer";
 import { CloseIcon } from "../icons";
 import {
   formatQuestionAnswer,
@@ -18,8 +20,23 @@ export function QuestionBankQuestionPreviewDialog({
     return null;
   }
 
+  return <QuestionBankQuestionPreviewContent row={row} onClose={onClose} />;
+}
+
+function QuestionBankQuestionPreviewContent({
+  row,
+  onClose,
+}: {
+  row: QuestionBankQuestionRow;
+  onClose: () => void;
+}) {
   const tolerance = formatTolerance(row.tags);
   const answer = formatQuestionAnswer(row);
+  const {
+    error: promptImageError,
+    isLoading: isPromptImageLoading,
+    src: promptImageSrc,
+  } = useProtectedImageSource(row.promptImageValue ?? "");
 
   return (
     <div
@@ -51,6 +68,23 @@ export function QuestionBankQuestionPreviewDialog({
           <section className="rounded-lg border border-[#DFE1E5] bg-white p-4">
             <p className="mb-2 text-[12px] font-medium text-[#52555B]">Асуулт</p>
             <p>{row.prompt || row.text}</p>
+            {promptImageSrc ? (
+              <div className="mt-4 overflow-hidden rounded-md border border-[#DFE1E5] bg-[#F8FAFC] p-2">
+                <img
+                  alt="Асуултын хавсаргасан зураг"
+                  className="max-h-[320px] w-full rounded object-contain"
+                  src={promptImageSrc}
+                />
+              </div>
+            ) : null}
+            {isPromptImageLoading ? (
+              <p className="mt-3 text-[12px] text-[#667085]">Зургийг ачаалж байна...</p>
+            ) : null}
+            {promptImageError ? (
+              <p className="mt-3 text-[12px] font-medium text-[#B42318]">
+                {promptImageError}
+              </p>
+            ) : null}
           </section>
           {row.rawType === "MCQ" ? (
             <section className="rounded-lg border border-[#DFE1E5] bg-white p-4">

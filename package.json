@@ -11,7 +11,6 @@
     "dev": "npm run dev --workspace @pinequest/web",
     "dev:web": "npm run dev --workspace @pinequest/web",
     "dev:api": "npm run dev --workspace @pinequest/api",
-    "dev:api:local": "npm run dev:local --workspace @pinequest/api",
     "build": "npm run build --workspace @pinequest/web",
     "build:web": "npm run build --workspace @pinequest/web",
     "build:worker": "npm run build:worker --workspace @pinequest/web",

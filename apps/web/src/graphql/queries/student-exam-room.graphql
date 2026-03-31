@@ -35,6 +35,7 @@ query StudentExamRoom($id: ID!) {
         id
         title
         prompt
+        tags
         type
         options
       }

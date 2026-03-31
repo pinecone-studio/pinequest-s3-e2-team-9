@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { useReviewAttemptMutation } from "@/graphql/generated";
 import { isDirectImageSource, useProtectedImageSource } from "@/lib/image-answer";
+import { parseOpenTaskAnswer } from "@/lib/open-task-answer";
 import { CloseIcon } from "../icons";
 import { getStudentWeakTopics } from "./exam-results-analytics";
 import { formatScore } from "./my-exams-view-model-utils";
@@ -26,7 +27,7 @@ const questionTypeLabel = (type: string) => {
   if (type === "MCQ") return "Олон сонголт";
   if (type === "TRUE_FALSE") return "Үнэн / Худал";
   if (type === "SHORT_ANSWER") return "Тоо бодолт";
-  if (type === "ESSAY") return "Задгай хариулт";
+  if (type === "ESSAY") return "Задгай даалгавар";
   if (type === "IMAGE_UPLOAD") return "Зураг оруулах";
   return "Асуулт";
 };
@@ -34,10 +35,12 @@ const questionTypeLabel = (type: string) => {
 const isUrl = (value: string) => /^https?:\/\//i.test(value);
 
 const allowsManualScore = (answer: MyExamStudentAnswer) =>
-  answer.requiresReview || answer.manualScore !== null;
+  answer.type === "SHORT_ANSWER" || answer.requiresReview || answer.manualScore !== null;
 
 const getMaxManualScore = (answer: MyExamStudentAnswer) =>
-  Math.max(answer.total - (answer.autoScore ?? 0), 0);
+  answer.type === "SHORT_ANSWER"
+    ? answer.total
+    : Math.max(answer.total - (answer.autoScore ?? 0), 0);
 
 const createInitialDrafts = (student: MyExamStudentRow | null) =>
   Object.fromEntries(
@@ -51,7 +54,53 @@ const createInitialDrafts = (student: MyExamStudentRow | null) =>
   ) as Record<string, ReviewDraft>;
 
 function AnswerValue({ answer }: { answer: MyExamStudentAnswer }) {
+  const openTaskAnswer = answer.type === "ESSAY"
+    ? parseOpenTaskAnswer(answer.value)
+    : null;
+  const answerValue =
+    answer.type === "ESSAY" ? openTaskAnswer?.image ?? "" : answer.value;
   const { error, isLoading, src } = useProtectedImageSource(answer.value);
+  const {
+    error: openTaskImageError,
+    isLoading: isOpenTaskImageLoading,
+    src: openTaskImageSrc,
+  } = useProtectedImageSource(answerValue);
+
+  if (answer.type === "ESSAY") {
+    return (
+      <div className="space-y-3">
+        {openTaskAnswer?.text.trim() ? (
+          <div className="rounded-md border border-[#DFE1E5] bg-[#F8FAFC] px-3 py-2 text-[14px] leading-6 text-[#0F1216] whitespace-pre-wrap">
+            {openTaskAnswer.text}
+          </div>
+        ) : null}
+        {openTaskImageSrc ? (
+          <div className="overflow-hidden rounded-md border border-[#DFE1E5] bg-[#F8FAFC] p-2">
+            <img
+              alt="Сурагчийн хавсаргасан зураг"
+              className="max-h-[320px] w-full rounded object-contain"
+              src={openTaskImageSrc}
+            />
+          </div>
+        ) : null}
+        {isOpenTaskImageLoading ? (
+          <p className="text-[13px] text-[#667085]">
+            Зургийг ачаалж байна...
+          </p>
+        ) : null}
+        {openTaskImageError ? (
+          <p className="text-[13px] font-medium text-[#B42318]">
+            {openTaskImageError}
+          </p>
+        ) : null}
+        {!openTaskAnswer?.text.trim() && !openTaskAnswer?.image.trim() ? (
+          <div className="rounded-md border border-[#DFE1E5] bg-[#F8FAFC] px-3 py-2 text-[14px] leading-6 text-[#0F1216] whitespace-pre-wrap">
+            Хариулт оруулаагүй
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   if (src) {
     return (
@@ -103,6 +152,34 @@ function AnswerValue({ answer }: { answer: MyExamStudentAnswer }) {
       {answer.displayValue}
     </div>
   );
+}
+
+function QuestionPromptImage({ answer }: { answer: MyExamStudentAnswer }) {
+  const { error, isLoading, src } = useProtectedImageSource(
+    answer.promptImageValue ?? "",
+  );
+
+  if (src) {
+    return (
+      <div className="overflow-hidden rounded-md border border-[#DFE1E5] bg-[#F8FAFC] p-2">
+        <img
+          alt="Асуултад хавсаргасан зураг"
+          className="max-h-[280px] w-full rounded object-contain"
+          src={src}
+        />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return <p className="text-[13px] text-[#667085]">Асуултын зургийг ачаалж байна...</p>;
+  }
+
+  if (error) {
+    return <p className="text-[13px] font-medium text-[#B42318]">{error}</p>;
+  }
+
+  return null;
 }
 
 export function ExamResultsStudentDetailDialog({
@@ -355,6 +432,9 @@ export function ExamResultsStudentDetailDialog({
                       <p className="text-[15px] font-medium leading-6 text-[#0F1216]">
                         {answer.prompt}
                       </p>
+                      {answer.promptImageValue ? (
+                        <QuestionPromptImage answer={answer} />
+                      ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-[12px]">
                       <span className="rounded-md border border-[#DFE1E5] bg-[#F9FAFB] px-2 py-1 text-[#344054]">
@@ -376,10 +456,15 @@ export function ExamResultsStudentDetailDialog({
                       <div className="rounded-md border border-[#D5D9E0] bg-white px-3 py-2 text-[13px] text-[#344054]">
                         Автомат: {formatScore(answer.autoScore ?? 0)} / {formatScore(answer.total)}
                       </div>
+                      {answer.type === "SHORT_ANSWER" ? (
+                        <div className="rounded-md border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-[12px] text-[#1D4ED8]">
+                          Хэрэв автомат үнэлгээ буруу бол manual талбарт эцсийн оноог оруулж хадгална.
+                        </div>
+                      ) : null}
                       {allowsManualScore(answer) ? (
                         <label className="block space-y-1">
                           <span className="text-[12px] font-medium text-[#475467]">
-                            Manual оноо
+                            {answer.type === "SHORT_ANSWER" ? "Эцсийн оноо" : "Manual оноо"}
                           </span>
                           <input
                             type="number"

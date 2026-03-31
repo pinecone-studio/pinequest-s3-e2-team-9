@@ -21,6 +21,7 @@ export function useQuestionBankDialogState(
   const [numericAnswer, setNumericAnswer] = useState(initialState.numericAnswer);
   const [tolerance, setTolerance] = useState(initialState.tolerance);
   const [referenceAnswer, setReferenceAnswer] = useState(initialState.referenceAnswer);
+  const [promptImageValue, setPromptImageValue] = useState(initialState.promptImageValue);
   const [saveToBank, setSaveToBank] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -35,6 +36,7 @@ export function useQuestionBankDialogState(
     setNumericAnswer(nextState.numericAnswer);
     setTolerance(nextState.tolerance);
     setReferenceAnswer(nextState.referenceAnswer);
+    setPromptImageValue(nextState.promptImageValue);
     setSaveToBank(true);
     setErrorMessage(null);
   };
@@ -87,6 +89,7 @@ export function useQuestionBankDialogState(
     numericAnswer, setNumericAnswer,
     tolerance, setTolerance,
     referenceAnswer, setReferenceAnswer,
+    promptImageValue, setPromptImageValue,
     saveToBank, setSaveToBank,
     errorMessage, setErrorMessage,
     resetState, closeAndReset, updateOption, addOption, removeOption,

@@ -38,6 +38,7 @@ query MyExamsQuery {
         id
         title
         prompt
+        tags
         type
         options
         correctAnswer
@@ -70,6 +71,7 @@ query MyExamsQuery {
           id
           title
           prompt
+          tags
           type
         }
       }
