@@ -18,7 +18,14 @@ export const toDraftSelectedQuestionPoints = (exam: DraftExam): SelectedQuestion
 export const toDraftInitialBankId = (
   exam: DraftExam,
   fallbackBankId: string,
-) => fallbackBankId || exam.questions[0]?.question.bank.id || "";
+) => {
+  if (fallbackBankId) {
+    return fallbackBankId;
+  }
+
+  const bankIds = [...new Set(exam.questions.map((item) => item.question.bank.id))];
+  return bankIds.length === 1 ? bankIds[0] : "";
+};
 
 export const toDraftFormValues = (
   exam: DraftExam,

@@ -82,7 +82,7 @@ export type MyExamListView = {
   totalPointsLabel: string;
   status: { label: string; tone: string };
   meta: ExamMetaItem[];
-  actions: { view: boolean; results: boolean };
+  actions: { view: boolean; results: boolean; edit: boolean };
   footer?: ExamFooterData;
   highlight?: boolean;
 };

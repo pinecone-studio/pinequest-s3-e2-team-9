@@ -148,7 +148,11 @@ const buildBaseExamView = (
     totalPointsLabel,
     status: getExamStatus(exam.status),
     meta: buildExamMeta(exam),
-    actions: { view: true, results: exam.attempts.length > 0 },
+    actions: {
+      view: true,
+      results: exam.attempts.length > 0,
+      edit: exam.status === ExamStatus.Draft,
+    },
     footer,
     highlight: exam.status === ExamStatus.Published,
   };

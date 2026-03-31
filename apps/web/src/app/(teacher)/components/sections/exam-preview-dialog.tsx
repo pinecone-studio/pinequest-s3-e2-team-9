@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   PreviewFileIcon,
   PreviewInfoIcon,
@@ -26,6 +27,11 @@ export function ExamPreviewDialog({
   }
 
   const resolvedExam = detailExam;
+  const canEdit = resolvedExam?.actions.edit ?? exam.actions.edit;
+  const editHref = `/create-exam?${new URLSearchParams({
+    examId: exam.id,
+    returnTo: "/my-exams",
+  }).toString()}`;
 
   return (
     <div
@@ -120,13 +126,25 @@ export function ExamPreviewDialog({
           </section>
 
           <div className="mt-4 flex items-center gap-2 pb-[30px]">
-            <button
-              type="button"
-              className="flex h-[36px] flex-1 items-center justify-center gap-3 rounded-[8px] border border-[#D0D5DD] bg-white px-4 text-[16px] font-medium leading-5 text-[#161616]"
-            >
-              <PreviewPencilIcon className="h-4 w-4 shrink-0" />
-              Асуултууд засах
-            </button>
+            {canEdit ? (
+              <Link
+                href={editHref}
+                onClick={onClose}
+                className="flex h-[36px] flex-1 items-center justify-center gap-3 rounded-[8px] border border-[#D0D5DD] bg-white px-4 text-[16px] font-medium leading-5 text-[#161616]"
+              >
+                <PreviewPencilIcon className="h-4 w-4 shrink-0" />
+                Асуултууд засах
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="flex h-[36px] flex-1 items-center justify-center gap-3 rounded-[8px] border border-[#EAECF0] bg-[#F8FAFC] px-4 text-[16px] font-medium leading-5 text-[#98A2B3]"
+              >
+                <PreviewPencilIcon className="h-4 w-4 shrink-0" />
+                Засах боломжгүй
+              </button>
+            )}
             <button
               type="button"
               aria-label="Delete exam"
