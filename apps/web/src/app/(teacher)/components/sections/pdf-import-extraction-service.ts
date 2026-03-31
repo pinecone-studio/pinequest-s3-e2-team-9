@@ -1,127 +1,20 @@
 "use client";
 
 import { getApiBaseUrl } from "@/lib/graphql-endpoint";
-import { extractPdfText, type PdfImportExtractionResult } from "./pdf-import-text-extractor";
-
-export type PdfImportServiceResult = PdfImportExtractionResult & {
-  provider: "api" | "client";
-};
-
-export type PdfImportUploadResult = {
-  key: string;
-  fileName: string;
-  fileSizeBytes: number;
-  contentType: string;
-};
-
-type GetToken = () => Promise<string | null>;
+import { extractPdfText } from "./pdf-import-text-extractor";
+import {
+  canFallbackToClient,
+  canRetryWithoutStoredFile,
+  type GetToken,
+  parseExtractionApiResponse,
+  parseUploadApiResponse,
+  PdfImportExtractionError,
+  type PdfImportServiceResult,
+  type PdfImportUploadResult,
+  PdfImportUploadError,
+} from "./pdf-import-extraction-service-helpers";
 
 type ExtractionApiPayload = PdfImportServiceResult;
-type UploadApiPayload = PdfImportUploadResult;
-
-const isExtractionApiPayload = (
-  value: unknown,
-): value is ExtractionApiPayload =>
-  typeof value === "object" &&
-  value !== null &&
-  "extractedText" in value &&
-  typeof value.extractedText === "string" &&
-  "strategy" in value &&
-  typeof value.strategy === "string" &&
-  "provider" in value &&
-  typeof value.provider === "string";
-
-const isUploadApiPayload = (value: unknown): value is UploadApiPayload =>
-  typeof value === "object" &&
-  value !== null &&
-  "key" in value &&
-  typeof value.key === "string" &&
-  "fileName" in value &&
-  typeof value.fileName === "string" &&
-  "fileSizeBytes" in value &&
-  typeof value.fileSizeBytes === "number" &&
-  "contentType" in value &&
-  typeof value.contentType === "string";
-
-class PdfImportExtractionError extends Error {
-  readonly status: number;
-
-  constructor(status: number, message: string) {
-    super(message);
-    this.name = "PdfImportExtractionError";
-    this.status = status;
-  }
-}
-
-class PdfImportUploadError extends Error {
-  readonly status: number;
-
-  constructor(status: number, message: string) {
-    super(message);
-    this.name = "PdfImportUploadError";
-    this.status = status;
-  }
-}
-
-const parseApiResponse = async (response: Response): Promise<ExtractionApiPayload> => {
-  const rawText = await response.text().catch(() => "");
-  const payload = (() => {
-    if (!rawText) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(rawText) as { error?: string } | ExtractionApiPayload;
-    } catch {
-      return null;
-    }
-  })() as
-    | { error?: string }
-    | ExtractionApiPayload
-    | null;
-  const errorPayload = payload as { error?: string } | null;
-
-  if (!response.ok) {
-    throw new PdfImportExtractionError(
-      response.status,
-      typeof errorPayload?.error === "string"
-        ? errorPayload.error
-        : rawText.trim() || `PDF extraction request failed with status ${response.status}.`,
-    );
-  }
-
-  if (!isExtractionApiPayload(payload)) {
-    throw new PdfImportExtractionError(
-      502,
-      "PDF extraction API invalid response returned.",
-    );
-  }
-
-  return payload;
-};
-
-const parseUploadResponse = async (response: Response): Promise<UploadApiPayload> => {
-  const payload = (await response.json().catch(() => null)) as
-    | { error?: string }
-    | UploadApiPayload
-    | null;
-  const errorPayload = payload as { error?: string } | null;
-
-  if (!response.ok) {
-    throw new PdfImportUploadError(
-      response.status,
-      typeof errorPayload?.error === "string"
-        ? errorPayload.error
-        : "PDF upload request failed.",
-    );
-  }
-
-  if (!isUploadApiPayload(payload)) {
-    throw new PdfImportUploadError(502, "PDF upload API invalid response returned.");
-  }
-
-  return payload;
-};
 
 const extractViaApi = async (
   file: File,
@@ -154,12 +47,8 @@ const extractViaApi = async (
         })(),
       });
 
-  return parseApiResponse(response);
+  return parseExtractionApiResponse(response);
 };
-
-const canRetryWithoutStoredFile = (error: unknown) =>
-  error instanceof PdfImportExtractionError &&
-  [400, 401, 403, 404].includes(error.status);
 
 export const uploadPdfImportFile = async (
   file: File,
@@ -181,15 +70,8 @@ export const uploadPdfImportFile = async (
     body: formData,
   });
 
-  return parseUploadResponse(response);
+  return parseUploadApiResponse(response);
 };
-
-export const canFallbackWithoutStoredUpload = (error: unknown) =>
-  error instanceof PdfImportUploadError &&
-  (error.status === 501 || error.status === 502 || error.status === 503);
-
-const canFallbackToClient = (error: unknown) =>
-  error instanceof PdfImportExtractionError;
 
 export const extractPdfImportContent = async (
   file: File,
