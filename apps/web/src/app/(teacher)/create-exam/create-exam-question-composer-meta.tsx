@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import type { Difficulty, QuestionType } from "@/graphql/generated";
 import { difficultyOptions, questionTypeOptions } from "../components/sections/question-bank-dialog-config";
 import {
@@ -7,7 +6,7 @@ import {
   getBankTopicOptions,
   type BankSelectionValues,
 } from "./create-exam-bank-selection";
-import { ChevronDownIcon, UploadIcon } from "./create-exam-icons";
+import { ChevronDownIcon } from "./create-exam-icons";
 import type { CreateExamQuestionBankOption } from "./create-exam-types";
 
 type CreateExamQuestionComposerMetaProps = {
@@ -56,24 +55,6 @@ export function CreateExamQuestionComposerMeta({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <p className="text-[12px] font-medium uppercase tracking-[0.3px] leading-4 text-[#52555B]">
-          Медиа (сонголтоор)
-        </p>
-        <div className="grid gap-4 md:grid-cols-2">
-          {["Зураг оруулах", "Видео оруулах"].map((label) => (
-            <button
-              key={label}
-              type="button"
-              className="flex h-[75.2px] flex-col items-center justify-center gap-1 rounded-[8px] border border-dashed border-[#DFE1E5] bg-white px-[16.6px] py-[16.6px] text-[12px] leading-4 text-[#52555B]"
-            >
-              <UploadIcon className="h-5 w-5" />
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div className="flex items-center justify-between rounded-[8px] border border-[rgba(111,144,255,0.3)] bg-[rgba(111,144,255,0.05)] px-[11.8px] py-[11.8px]">
         <p className="text-[14px] font-medium leading-5 text-[#0F1216]">
           Энэ асуултын оноо

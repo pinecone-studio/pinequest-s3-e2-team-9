@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+import { useProtectedImageSource } from "@/lib/image-answer";
 import { PreviewCheckCircleIcon } from "../icons";
 import type { MyExamQuestionPreview } from "./my-exams-types";
 
@@ -13,6 +15,12 @@ export function ExamPreviewQuestionCard({
   index,
   question,
 }: ExamPreviewQuestionCardProps) {
+  const {
+    error: promptImageError,
+    isLoading: isPromptImageLoading,
+    src: promptImageSrc,
+  } = useProtectedImageSource(question.promptImageValue ?? "");
+
   return (
     <article className="rounded-[8px] border border-[#D0D5DD] bg-white px-[12.8px] pb-[12.8px] pt-[12.8px]">
       <div className="flex items-start justify-between gap-3">
@@ -32,6 +40,24 @@ export function ExamPreviewQuestionCard({
       <p className="mt-[10px] text-[14px] leading-5 text-[#0F1216]">
         {question.prompt}
       </p>
+
+      {promptImageSrc ? (
+        <div className="mt-3 overflow-hidden rounded-[10px] border border-[#D0D5DD] bg-[#F8FAFC] p-2">
+          <img
+            alt={`Асуулт ${index + 1}-ийн хавсаргасан зураг`}
+            className="max-h-[280px] w-full rounded object-contain"
+            src={promptImageSrc}
+          />
+        </div>
+      ) : null}
+      {isPromptImageLoading ? (
+        <p className="mt-3 text-[13px] text-[#667085]">Зургийг ачаалж байна...</p>
+      ) : null}
+      {promptImageError ? (
+        <p className="mt-3 text-[13px] font-medium text-[#B42318]">
+          {promptImageError}
+        </p>
+      ) : null}
 
       {question.kind === "options" ? (
         <div className="mt-[8px] border-l border-[#EAECF0] pl-[9.6px]">

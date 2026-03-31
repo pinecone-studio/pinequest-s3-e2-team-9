@@ -431,6 +431,7 @@ export const createAttemptMutations = ({
     const answer = await findAnswerById(db, answerId);
     const attempt = await findAttemptById(db, answer.attempt_id);
     const exam = await findExam(db, attempt.exam_id);
+    const question = await findQuestion(db, answer.question_id);
     const examQuestion = await first<ExamQuestionRow>(
       db,
       `SELECT id, exam_id, question_id, points, display_order
@@ -462,9 +463,14 @@ export const createAttemptMutations = ({
     await run(
       db,
       `UPDATE answers
-       SET manual_score = ?, feedback = ?
+       SET auto_score = ?, manual_score = ?, feedback = ?
        WHERE id = ?`,
-      [roundScore(manualScore), feedback?.trim() || null, answerId],
+      [
+        question.type === "SHORT_ANSWER" ? 0 : answer.auto_score,
+        roundScore(manualScore),
+        feedback?.trim() || null,
+        answerId,
+      ],
     );
 
     await recalculateAttemptScores(db, attempt.id);
@@ -576,6 +582,7 @@ export const createAttemptMutations = ({
 
       const hasManualScore = hasOwn(review, "manualScore");
       const hasFeedback = hasOwn(review, "feedback");
+      const question = await findQuestion(db, existingAnswer.question_id);
 
       if (!hasManualScore && !hasFeedback) {
         continue;
@@ -595,10 +602,10 @@ export const createAttemptMutations = ({
             Math.abs(roundedManualScore - review.manualScore) < 0.000001,
             `Manual score for answer ${review.answerId} must have at most one decimal place.`,
           );
-          const maxManualScore = Math.max(
-            existingAnswer.points - (existingAnswer.auto_score ?? 0),
-            0,
-          );
+          const maxManualScore =
+            question.type === "SHORT_ANSWER"
+              ? existingAnswer.points
+              : Math.max(existingAnswer.points - (existingAnswer.auto_score ?? 0), 0);
           invariant(
             roundedManualScore >= 0 && roundedManualScore <= maxManualScore,
             `Manual score for answer ${review.answerId} must be between 0 and ${maxManualScore}.`,
@@ -614,11 +621,21 @@ export const createAttemptMutations = ({
       await run(
         db,
         `UPDATE answers
-         SET manual_score = ?, feedback = ?
+         SET auto_score = ?, manual_score = ?, feedback = ?
          WHERE id = ?`,
-        [nextManualScore, nextFeedback, existingAnswer.id],
+        [
+          question.type === "SHORT_ANSWER" && nextManualScore !== null
+            ? 0
+            : existingAnswer.auto_score,
+          nextManualScore,
+          nextFeedback,
+          existingAnswer.id,
+        ],
       );
 
+      if (question.type === "SHORT_ANSWER" && nextManualScore !== null) {
+        existingAnswer.auto_score = 0;
+      }
       existingAnswer.manual_score = nextManualScore;
       existingAnswer.feedback = nextFeedback;
     }

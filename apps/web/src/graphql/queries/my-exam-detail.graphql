@@ -29,6 +29,7 @@ query MyExamDetailQuery($id: ID!) {
         id
         title
         prompt
+        tags
         type
         options
         correctAnswer
@@ -61,6 +62,7 @@ query MyExamDetailQuery($id: ID!) {
           id
           title
           prompt
+          tags
           type
         }
       }

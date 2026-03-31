@@ -5,10 +5,18 @@
 Keep feature development predictable:
 
 - `prod` uses the real production database
-- `local` and `preview` use the same shared non-production D1 dataset by default
-- isolated local sandbox mode stays available, but only when explicitly requested
+- the whole team uses one shared non-production D1 dataset for daily work
+- `preview` uses that same shared dataset by default
+- local sandbox mode is removed from the normal setup to avoid team drift
 
 ## Default workflow
+
+This is the only setup the team should use day to day:
+
+- `npm run dev:api`
+- `npm run dev`
+
+If everyone uses the same branch, the same login account, and the commands above, everyone sees the same data.
 
 ### Web
 
@@ -16,7 +24,7 @@ Keep feature development predictable:
 npm run dev
 ```
 
-The web app uses `apps/web/.env.local` and talks to the local API at `http://127.0.0.1:8787/graphql`.
+The web app uses `apps/web/.env.local` and talks to the local API at `http://localhost:8787/graphql`.
 
 ### API
 
@@ -24,22 +32,7 @@ The web app uses `apps/web/.env.local` and talks to the local API at `http://127
 npm run dev:api
 ```
 
-This starts Wrangler in `--remote` mode with `apps/api/wrangler.dev.toml`, so local development reads the shared dev D1 database instead of a private empty sandbox.
-
-## Isolated local sandbox
-
-Use this only when you intentionally want disposable data:
-
-```bash
-npm run dev:api:local
-```
-
-Useful companion commands:
-
-```bash
-npm run db:migrate:local --workspace @pinequest/api
-npm run db:seed:local --workspace @pinequest/api
-```
+This starts Wrangler in `--remote` mode with the default `apps/api/wrangler.toml` config, so local development reads the shared dev D1 database instead of a private sandbox.
 
 ## Shared dev database maintenance
 
@@ -57,7 +50,7 @@ npm run db:seed:dev --workspace @pinequest/api
 
 ## Preview behavior
 
-CI preview deploys the API from `apps/api/wrangler.dev.toml`, so preview and local default to the same non-production data source.
+CI preview deploys the API from the default `apps/api/wrangler.toml`, so preview and local default to the same non-production data source.
 
 This is intentional. It gives the team stable parity between:
 
@@ -66,6 +59,15 @@ This is intentional. It gives the team stable parity between:
 - shared review data
 
 Production remains isolated and should not be used as a development data source.
+
+## Production deployment
+
+The same Wrangler config file also contains the production environment.
+
+- local development uses the default shared dev bindings
+- production deploys use `--env production`
+
+This keeps one source of truth for configuration while still isolating production data.
 
 ## R2 image uploads
 

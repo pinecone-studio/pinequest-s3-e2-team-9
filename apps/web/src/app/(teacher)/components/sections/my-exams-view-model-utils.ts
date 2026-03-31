@@ -4,6 +4,8 @@ import {
   PassingCriteriaType,
   QuestionType,
 } from "@/graphql/generated";
+import { getQuestionPromptImageValue } from "@/lib/question-prompt-image";
+import { parseOpenTaskAnswer } from "@/lib/open-task-answer";
 import { getCurriculumTopicGroupName } from "../question-bank-curriculum";
 import { CalendarIcon, ClipboardIcon, ClockIcon } from "../icons";
 import type { ExamMetaItem, MyExamQuestionPreview, QueryExam } from "./my-exams-types";
@@ -73,6 +75,19 @@ export const formatAnswerValue = (type: QuestionType, value: string) => {
   if (type === QuestionType.TrueFalse) {
     return value === "true" ? "Үнэн" : value === "false" ? "Худал" : value;
   }
+  if (type === QuestionType.Essay) {
+    const parsed = parseOpenTaskAnswer(value);
+    if (parsed.text.trim() && parsed.image.trim()) {
+      return "Текст болон зураг илгээсэн";
+    }
+    if (parsed.text.trim()) {
+      return parsed.text.trim();
+    }
+    if (parsed.image.trim()) {
+      return "Зураг хавсаргасан";
+    }
+    return "Хариулт оруулаагүй";
+  }
   if (type === QuestionType.ImageUpload) {
     return value.trim() ? "Зураг оруулсан" : "Хариулт оруулаагүй";
   }
@@ -81,7 +96,7 @@ export const formatAnswerValue = (type: QuestionType, value: string) => {
 
 const getPreviewTypeLabel = (type: QuestionType) => {
   if (type === QuestionType.ShortAnswer) return "Тоон";
-  if (type === QuestionType.Essay) return "Эссе";
+  if (type === QuestionType.Essay) return "Задгай";
   if (type === QuestionType.ImageUpload) return "Зураг";
   return "Сонгох";
 };
@@ -113,6 +128,7 @@ export const buildPreviewQuestions = (exam: QueryExam): MyExamQuestionPreview[] 
       id: item.question.id,
       order: item.order,
       prompt: item.question.prompt || item.question.title,
+      promptImageValue: getQuestionPromptImageValue(item.question.tags),
       topic: getCurriculumTopicGroupName(
         exam.class.grade,
         exam.class.subject,

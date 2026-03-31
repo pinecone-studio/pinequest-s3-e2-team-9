@@ -10,13 +10,18 @@ import {
   uploadImageAnswer,
   useProtectedImageSource,
 } from "@/lib/image-answer";
+import {
+  parseOpenTaskAnswer,
+  serializeOpenTaskAnswer,
+} from "@/lib/open-task-answer";
+import { getQuestionPromptImageValue } from "@/lib/question-prompt-image";
 import type { StudentExamQuestion } from "./student-exam-room-types";
 
 const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   [QuestionType.Mcq]: "Олон сонголт",
   [QuestionType.TrueFalse]: "Үнэн / Худал",
   [QuestionType.ShortAnswer]: "Богино хариулт",
-  [QuestionType.Essay]: "Задгай хариулт",
+  [QuestionType.Essay]: "Задгай даалгавар",
   [QuestionType.ImageUpload]: "Зураг оруулах",
 };
 
@@ -47,14 +52,29 @@ export function StudentExamQuestionCard({
   const isImageUpload = question.question.type === QuestionType.ImageUpload;
   const isEssay = question.question.type === QuestionType.Essay;
   const isShortAnswer = question.question.type === QuestionType.ShortAnswer;
+  const essayAnswer = parseOpenTaskAnswer(isEssay ? draftValue : "");
+  const essayImageValue = essayAnswer.image.trim();
+  const promptImageValue = getQuestionPromptImageValue(question.question.tags);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
   const currentImageValue = draftValue.trim() || savedValue?.trim() || "";
   const { error: imageSourceError, isLoading: isImageLoading, src: protectedImageSrc } =
     useProtectedImageSource(isImageUpload ? currentImageValue : "");
+  const {
+    error: essayImageSourceError,
+    isLoading: isEssayImageLoading,
+    src: protectedEssayImageSrc,
+  } = useProtectedImageSource(isEssay ? essayImageValue : "");
+  const {
+    error: promptImageError,
+    isLoading: isPromptImageLoading,
+    src: promptImageSrc,
+  } = useProtectedImageSource(promptImageValue ?? "");
   const imagePreviewSrc = localPreviewUrl ?? protectedImageSrc;
+  const essayImagePreviewSrc = localPreviewUrl ?? protectedEssayImageSrc;
   const shouldShowImagePreview = Boolean(imagePreviewSrc);
+  const shouldShowEssayImagePreview = Boolean(essayImagePreviewSrc);
 
   useEffect(() => {
     return () => {
@@ -71,6 +91,14 @@ export function StudentExamQuestionCard({
 
     setLocalPreviewUrl(null);
   }, [draftValue, isImageUpload]);
+
+  useEffect(() => {
+    if (!isEssay || essayImageValue.startsWith("r2:")) {
+      return;
+    }
+
+    setLocalPreviewUrl(null);
+  }, [essayImageValue, isEssay]);
 
   const handleImagePick = async (file: File | null) => {
     if (!file) {
@@ -103,6 +131,42 @@ export function StudentExamQuestionCard({
     }
   };
 
+  const handleEssayImagePick = async (file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setLocalPreviewUrl((current) => {
+      if (current) {
+        URL.revokeObjectURL(current);
+      }
+      return objectUrl;
+    });
+    setImageUploadError(null);
+    setIsUploadingImage(true);
+
+    try {
+      const storedValue = await uploadImageAnswer(file, getToken);
+      setImageUploadError(null);
+      onChange(
+        serializeOpenTaskAnswer({
+          image: storedValue,
+          text: essayAnswer.text,
+        }),
+      );
+    } catch (error) {
+      console.error("Failed to upload essay image", error);
+      setImageUploadError(
+        error instanceof Error
+          ? error.message
+          : "Зураг оруулах үед алдаа гарлаа.",
+      );
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   return (
     <article className="rounded-[20px] border border-[#E7ECF6] bg-white p-6 shadow-[0_4px_8px_-2px_rgba(0,0,0,0.06)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -110,6 +174,21 @@ export function StudentExamQuestionCard({
           <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-[#2466D0]">Асуулт {questionIndex + 1}</p>
           <h3 className="text-[18px] font-semibold text-[#0F1216]">{question.question.title || question.question.prompt}</h3>
           <p className="text-[15px] leading-6 text-[#475467]">{question.question.prompt}</p>
+          {promptImageSrc ? (
+            <div className="mt-3 overflow-hidden rounded-[14px] border border-[#D0D5DD] bg-[#F8FAFC] p-2">
+              <img
+                alt={`Асуулт ${questionIndex + 1}-ийн хавсаргасан зураг`}
+                className="max-h-[320px] w-full rounded-[10px] object-contain"
+                src={promptImageSrc}
+              />
+            </div>
+          ) : null}
+          {isPromptImageLoading ? (
+            <p className="text-[13px] text-[#667085]">Асуултын зургийг ачаалж байна...</p>
+          ) : null}
+          {promptImageError ? (
+            <p className="text-[13px] font-medium text-[#B42318]">{promptImageError}</p>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge>{QUESTION_TYPE_LABELS[question.question.type]}</Badge>
@@ -130,7 +209,90 @@ export function StudentExamQuestionCard({
         ) : null}
 
         {isShortAnswer ? <input className="h-12 w-full rounded-[14px] border border-[#D0D5DD] px-4 text-[14px] outline-none focus:border-[#2466D0]" disabled={!isInProgress} onChange={(event) => onChange(event.target.value)} placeholder="Хариултаа оруулна уу" type="text" value={draftValue} /> : null}
-        {isEssay ? <textarea className="min-h-[140px] w-full rounded-[14px] border border-[#D0D5DD] px-4 py-3 text-[14px] outline-none focus:border-[#2466D0]" disabled={!isInProgress} onChange={(event) => onChange(event.target.value)} placeholder="Дэлгэрэнгүй хариултаа энд бичнэ үү" value={draftValue} /> : null}
+        {isEssay ? (
+          <div className="space-y-3 rounded-[14px] border border-[#D0D5DD] bg-[#F8FAFF] px-4 py-4">
+            <textarea
+              className="min-h-[140px] w-full rounded-[14px] border border-[#D0D5DD] bg-white px-4 py-3 text-[14px] outline-none focus:border-[#2466D0]"
+              disabled={!isInProgress}
+              onChange={(event) =>
+                onChange(
+                  serializeOpenTaskAnswer({
+                    image: essayAnswer.image,
+                    text: event.target.value,
+                  }),
+                )
+              }
+              placeholder="Тайлбар, бодолт, шийдлээ энд бичнэ үү"
+              value={essayAnswer.text}
+            />
+            <div className="space-y-3 rounded-[14px] border border-dashed border-[#D0D5DD] bg-white px-4 py-4">
+              <label className="block text-[13px] font-medium text-[#344054]">
+                Зураг хавсаргах
+              </label>
+              <input
+                accept="image/*"
+                className="block w-full text-[13px] text-[#475467]"
+                disabled={!isInProgress}
+                onChange={(event) => void handleEssayImagePick(event.target.files?.[0] ?? null)}
+                type="file"
+              />
+              <input
+                className="h-11 w-full rounded-[14px] border border-[#D0D5DD] px-4 text-[14px] outline-none focus:border-[#2466D0]"
+                disabled={!isInProgress}
+                onChange={(event) => {
+                  setLocalPreviewUrl((current) => {
+                    if (current) {
+                      URL.revokeObjectURL(current);
+                    }
+                    return null;
+                  });
+                  setImageUploadError(null);
+                  onChange(
+                    serializeOpenTaskAnswer({
+                      image: event.target.value,
+                      text: essayAnswer.text,
+                    }),
+                  );
+                }}
+                placeholder="Эсвэл зургийн холбоос оруулна уу"
+                type="text"
+                value={isImageAnswerValue(essayAnswer.image) ? "" : essayAnswer.image}
+              />
+              {shouldShowEssayImagePreview ? (
+                <div className="overflow-hidden rounded-[14px] border border-[#D0D5DD] bg-white p-2">
+                  <img
+                    alt={`Асуулт ${questionIndex + 1}-ийн хавсаргасан зураг`}
+                    className="max-h-[280px] w-full rounded-[10px] object-contain"
+                    src={essayImagePreviewSrc ?? ""}
+                  />
+                </div>
+              ) : null}
+              {isUploadingImage ? (
+                <p className="text-[12px] font-medium text-[#2466D0]">
+                  Зургийг R2 руу оруулж байна...
+                </p>
+              ) : null}
+              {isEssayImageLoading && !localPreviewUrl ? (
+                <p className="text-[12px] text-[#667085]">
+                  Хадгалагдсан зургийг ачаалж байна...
+                </p>
+              ) : null}
+              {imageUploadError ? (
+                <p className="text-[12px] font-medium text-[#B42318]">
+                  {imageUploadError}
+                </p>
+              ) : null}
+              {essayImageSourceError && !imageUploadError ? (
+                <p className="text-[12px] font-medium text-[#B42318]">
+                  {essayImageSourceError}
+                </p>
+              ) : null}
+              <p className="text-[12px] leading-5 text-[#667085]">
+                Текст болон зураг хоёуланг нь илгээж болно. Энэ даалгаврыг багш гараар шалгана.
+              </p>
+            </div>
+          </div>
+        ) : null}
         {isImageUpload ? (
           <div className="space-y-3 rounded-[14px] border border-dashed border-[#D0D5DD] bg-[#F8FAFF] px-4 py-5">
             <label className="block text-[13px] font-medium text-[#344054]">
