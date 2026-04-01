@@ -32,3 +32,11 @@ migrations_dir = "migrations"
 [[env.production.r2_buckets]]
 binding = "IMAGE_UPLOADS"
 bucket_name = "pinequest-uploads"
+
+[[env.production.durable_objects.bindings]]
+name = "LIVE_EXAM_EVENTS"
+class_name = "LiveExamEvents"
+
+[[env.production.migrations]]
+tag = "v1"
+new_sqlite_classes = ["LiveExamEvents"]

@@ -1,4 +1,5 @@
-const LOCAL_GRAPHQL_ENDPOINT = "http://127.0.0.1:8787/graphql";
+const DEFAULT_GRAPHQL_ENDPOINT =
+  "https://pinequest-api.b94889340.workers.dev/graphql";
 
 const getConfiguredGraphqlEndpoint = (): string => {
   const configuredEndpoint = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT?.trim();
@@ -7,11 +8,7 @@ const getConfiguredGraphqlEndpoint = (): string => {
     return configuredEndpoint;
   }
 
-  if (process.env.NODE_ENV === "development") {
-    return LOCAL_GRAPHQL_ENDPOINT;
-  }
-
-  throw new Error("NEXT_PUBLIC_GRAPHQL_ENDPOINT is not configured.");
+  return DEFAULT_GRAPHQL_ENDPOINT;
 };
 
 export const getGraphqlEndpoint = (): string => getConfiguredGraphqlEndpoint();

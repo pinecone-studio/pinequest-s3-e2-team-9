@@ -4,11 +4,12 @@ void import("@opennextjs/cloudflare")
   .then(({ initOpenNextCloudflareForDev }) => void initOpenNextCloudflareForDev())
   .catch(() => {});
 
-const LOCAL_GRAPHQL_ENDPOINT = "http://127.0.0.1:8787/graphql";
+const DEFAULT_GRAPHQL_ENDPOINT =
+  "https://pinequest-api.b94889340.workers.dev/graphql";
 
 const getApiBaseUrl = (): string => {
   const endpoint =
-    process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT?.trim() || LOCAL_GRAPHQL_ENDPOINT;
+    process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT?.trim() || DEFAULT_GRAPHQL_ENDPOINT;
 
   try {
     const url = new URL(endpoint);
