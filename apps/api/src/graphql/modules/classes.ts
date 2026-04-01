@@ -175,7 +175,7 @@ export const createClassAnalytics = ({
     FROM attempt_integrity_events ie
     JOIN attempts a ON a.id = ie.attempt_id
     JOIN exams e ON e.id = ie.exam_id
-    WHERE e.class_id = ? AND a.status = 'IN_PROGRESS'
+    WHERE e.class_id = ?
     GROUP BY a.student_id, ie.event_type, ie.severity`,
     [classroom.id],
   );
@@ -191,7 +191,7 @@ export const createClassAnalytics = ({
     FROM attempt_integrity_events ie
     JOIN attempts a ON a.id = ie.attempt_id
     JOIN exams e ON e.id = ie.exam_id
-    WHERE e.class_id = ? AND a.status = 'IN_PROGRESS'
+    WHERE e.class_id = ?
     ORDER BY ie.created_at DESC`,
     [classroom.id],
   );

@@ -130,6 +130,7 @@ const buildBaseExamView = (
 
   return {
     id: exam.id,
+    classId: exam.class.id,
     title: exam.title,
     subject: exam.class.name,
     className: exam.class.name,

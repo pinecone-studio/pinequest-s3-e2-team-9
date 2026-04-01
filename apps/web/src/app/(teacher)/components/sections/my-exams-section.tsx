@@ -2,6 +2,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useQuery } from "@apollo/client/react";
+import { useRouter } from "next/navigation";
 import {
   ExamStatus,
   MyExamsSectionQueryDocument,
@@ -34,6 +35,7 @@ const isLibraryExam = (exam: MyExamsSectionQueryQuery["exams"][number]) =>
   exam.isTemplate || (!exam.sourceExamId && exam.status === ExamStatus.Draft);
 
 export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState(ALL_SUBJECTS);
   const [levelFilter, setLevelFilter] = useState(ALL_LEVELS);
@@ -144,6 +146,16 @@ export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
       })).filter((group) => group.exams.length > 0),
     [filteredExams],
   );
+  const openResults = (exam: MyExamListView) => {
+    if (mode === "evaluation") {
+      router.push(`/classes/${exam.classId}#students-section`);
+      return;
+    }
+
+    setSelectedExam(exam);
+    setIsPreviewOpen(false);
+    setIsResultsOpen(true);
+  };
 
   return (
     <section className="mx-auto flex w-full max-w-[1184px] flex-col gap-[26px] px-6 pb-8 pt-6 sm:px-7 lg:px-8">
@@ -190,9 +202,7 @@ export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
                       setIsPreviewOpen(true);
                     }}
                     onResults={() => {
-                      setSelectedExam(exam);
-                      setIsPreviewOpen(false);
-                      setIsResultsOpen(true);
+                      openResults(exam);
                     }}
                   />
                 ))}
@@ -219,9 +229,7 @@ export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
                 setIsPreviewOpen(true);
               }}
               onResults={() => {
-                setSelectedExam(exam);
-                setIsPreviewOpen(false);
-                setIsResultsOpen(true);
+                openResults(exam);
               }}
             />
           ))}
