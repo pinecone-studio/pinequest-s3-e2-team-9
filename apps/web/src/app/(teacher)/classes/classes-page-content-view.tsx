@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { DashboardTopBar } from "../components/dashboard-top-bar";
 import {
@@ -8,9 +7,6 @@ import {
   CalendarIcon,
   GridViewIcon,
   ListIcon,
-  PeopleIcon,
-  SchoolIcon,
-  ViewIcon,
 } from "../components/icons-more";
 import { ArrowDropDownIcon } from "../components/icons-addition";
 import { TEACHER_COMMON_TEXT } from "../components/teacher-ui";
