@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { BellIcon, SearchIcon } from "./icons";
+import { BellIcon } from "./icons";
+import { SearchIcon } from "./icons-ic";
 
 type TopSearchBarProps = {
   searchPlaceholder: string;
@@ -10,6 +11,7 @@ type TopSearchBarProps = {
   searchWidthClassName?: string;
   leftWidthClassName?: string;
   centered?: boolean;
+  leadingIcon?: ReactNode;
   filters?: ReactNode;
   actions?: ReactNode;
   showBell?: boolean;
@@ -22,6 +24,7 @@ export function TopSearchBar({
   searchWidthClassName = "w-[448px]",
   leftWidthClassName = "w-[608px]",
   centered = false,
+  leadingIcon,
   filters,
   actions,
   showBell = true,
@@ -37,6 +40,11 @@ export function TopSearchBar({
           .filter(Boolean)
           .join(" ")}
       >
+        {leadingIcon ? (
+          <div className="flex h-[42px] w-[42px] items-center justify-center text-[#52555B]">
+            {leadingIcon}
+          </div>
+        ) : null}
         <label className={`relative block h-[42px] ${searchWidthClassName}`}>
           <span className="sr-only">{searchPlaceholder}</span>
           <SearchIcon className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#52555B]" />
@@ -56,7 +64,7 @@ export function TopSearchBar({
           <button
             type="button"
             aria-label="Notifications"
-            className="flex h-[40px] w-[40px] items-center justify-center rounded-[12px] text-[#52555B] transition hover:bg-white"
+            className="flex h-[40px] w-[40px] items-center justify-center rounded-[12px] text-[#52555B] transition hover:text-[#3A3D42]"
           >
             <BellIcon className="h-6 w-6" />
           </button>

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import CastForEducationIcon from "../../components/icons/CastForEducationIcon";
-import { ClassManagementIcon } from "../../components/icons";
+import { CalendarIcon, PeopleAltIcon } from "../../components/icons-extra";
+import { SchoolHatIcon, ViewMoreEyeIcon } from "../../components/icons-ic";
 
 type ClassCardProps = {
   href: string;
@@ -19,27 +19,53 @@ export function ClassCard({
   upcomingLabel,
   completedLabel,
 }: ClassCardProps) {
+  const [subject = "", grade = ""] = meta.split(" · ");
+  const completedCount = completedLabel.split(" ")[0] ?? completedLabel;
+  const averageLabel = "72% Дундаж дүн";
+
   return (
-    <article className="flex h-[182px] w-[352px] flex-col items-center gap-3 rounded-[16px] border border-[#F1F2F3] bg-white p-[10px] pb-4 shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)]">
-      <div className="flex h-[108px] w-full flex-col items-start gap-[10px] rounded-[16px] rounded-b-[4px] bg-[#6F90FF] px-[14px] py-[18px]">
-        <h2 className="text-[18px] font-bold leading-5 text-white">{name}</h2>
-        <div className="flex items-center gap-1.5 text-[14px] leading-4 text-[#F5F5F5]">
-          <CastForEducationIcon className="h-4 w-4" />
-          <span>{meta}</span>
+    <article className="flex h-[233.6px] w-[268px] flex-col gap-[10px] rounded-[6px] border border-[#E4E4E4] bg-white p-[20px_16px] shadow-[0px_3.22191px_4.83286px_rgba(0,0,0,0.09)]">
+      <div className="flex flex-1 flex-col gap-[16px]">
+        <div className="flex h-[21.6px] items-start justify-between">
+          <span className="inline-flex h-[21.6px] items-center justify-center rounded-[8.4px] border border-[#E4E4E7] px-[7.8px] text-[11.1px] font-semibold leading-4 text-[#231D17]">
+            {subject}
+          </span>
+          <span className="text-[11.3px] leading-4 text-[#71717B]">{grade}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-[14px] leading-4 text-[#F5F5F5]">
-          <ClassManagementIcon className="h-4 w-4" />
-          <span>{studentCountLabel}</span>
+
+        <div className="flex flex-col gap-[24px]">
+          <h2 className="text-[18px] font-bold leading-[22px] text-[#211C37]">
+            {name}
+          </h2>
+          <div className="relative h-[36px] text-[10px] leading-[13px] text-[#1C1D1D]">
+            <div className="absolute left-0 top-0 flex items-center gap-1">
+              <PeopleAltIcon className="h-[12px] w-[12px]" />
+              <span>{studentCountLabel}</span>
+            </div>
+            <div className="absolute right-0 top-0 flex items-center gap-1">
+              <SchoolHatIcon className="h-[12px] w-[12px] text-[#1C1D1D]" />
+              <span>{averageLabel}</span>
+            </div>
+            <div className="absolute left-0 top-[24px] flex items-center gap-1">
+              <CalendarIcon className="h-[12px] w-[12px]" />
+              <span>{completedCount} Нийт авсан шалгалт</span>
+            </div>
+          </div>
         </div>
+
+        <div className="h-px w-full bg-[#E4E4E4]" />
+        <p className="text-[10px] leading-[12px] text-[#71717B]">
+          Сүүлд авсан шалгалт: 12 өдрийн өмнө
+        </p>
       </div>
+
       <Link
         href={href}
-        className="inline-flex h-[36px] w-full items-center justify-center rounded-[8px] border border-[#52555B] bg-white text-[12px] font-semibold leading-5 text-[#52555B]"
+        className="inline-flex h-[24px] w-full items-center justify-center gap-[4px] rounded-[4px] bg-[#6434F8] px-[12px] py-[6px] text-[10px] font-semibold leading-[12px] text-white"
       >
-        Ангийг харах
+        <ViewMoreEyeIcon className="h-[12px] w-[12px] text-white" />
+        Дэлгэрэнгүй харах
       </Link>
-      <span className="sr-only">{upcomingLabel}</span>
-      <span className="sr-only">{completedLabel}</span>
     </article>
   );
 }

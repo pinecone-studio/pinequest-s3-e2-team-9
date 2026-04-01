@@ -59,3 +59,101 @@ export function DownPressIcon({ className }: IconProps) {
     </svg>
   );
 }
+export function ListIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 15 9"
+      fill="currentColor"
+    >
+      <path d="M0 5h1.667V3.333H0V5Zm0 3.333h1.667V6.667H0v1.666Zm0-6.666h1.667V0H0v1.667ZM3.333 5H15V3.333H3.333V5Zm0 3.333H15V6.667H3.333v1.666Zm0-8.333v1.667H15V0H3.333ZM0 5h1.667V3.333H0V5Zm0 3.333h1.667V6.667H0v1.666Zm0-6.666h1.667V0H0v1.667ZM3.333 5H15V3.333H3.333V5Zm0 3.333H15V6.667H3.333v1.666Zm0-8.333v1.667H15V0H3.333Z" />
+    </svg>
+  );
+}
+export function GridViewIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 15 15"
+      fill="currentColor"
+    >
+      <path d="M0 0v6.667h6.667V0H0Zm5 5H1.667V1.667H5V5ZM0 8.333V15h6.667V8.333H0Zm5 5H1.667V10H5v3.333ZM8.333 0v6.667H15V0H8.333Zm5 5H10V1.667h3.333V5Zm-5 3.333V15H15V8.333H8.333Zm5 5H10V10h3.333v3.333Z" />
+    </svg>
+  );
+}
+export function ViewMoreEyeIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 13 9"
+      fill="currentColor"
+    >
+      <path d="M6.417 1.167a5.7 5.7 0 0 1 5.145 3.208 5.693 5.693 0 0 1-5.145 3.208 5.693 5.693 0 0 1-5.145-3.208 5.7 5.7 0 0 1 5.145-3.208Zm0-1.167A6.899 6.899 0 0 0 0 4.375 6.899 6.899 0 0 0 6.417 8.75a6.899 6.899 0 0 0 6.416-4.375A6.899 6.899 0 0 0 6.417 0Zm0 2.917a1.459 1.459 0 1 1-.001 2.917 1.459 1.459 0 0 1 0-2.917Zm0-1.167a2.629 2.629 0 0 0-2.625 2.625A2.629 2.629 0 0 0 6.417 7a2.629 2.629 0 0 0 2.625-2.625A2.629 2.629 0 0 0 6.417 1.75Z" />
+    </svg>
+  );
+}
+export function ArrowDropDownIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 7.5 3.75"
+      fill="currentColor"
+    >
+      <path d="m0 0 3.75 3.75L7.5 0H0Z" />
+    </svg>
+  );
+}
+export function SearchIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 12 12"
+      fill="currentColor"
+    >
+      <path d="M8.334 7.334h-.527l-.187-.18a4.334 4.334 0 0 0 .987-3.56C8.294 1.74 6.747.26 4.88.034A4.337 4.337 0 0 0 .034 4.88C.26 6.747 1.74 8.294 3.594 8.607a4.334 4.334 0 0 0 3.56-.987l.18.187v.527l2.833 2.833c.273.273.72.273.993 0a.704.704 0 0 0 0-.993l-2.826-2.84Zm-4 0c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3Z" />
+    </svg>
+  );
+}
+export function MenuOpenIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 18 12"
+      fill="currentColor"
+    >
+      <path d="M0 12h13v-2H0v2Zm0-5h10V5H0v2Zm0-7v2h13V0H0Zm18 9.59L14.42 6 18 2.41 16.59 1l-5 5 5 5L18 9.59Z" />
+    </svg>
+  );
+}
+export function PlusIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 16 16"
+      fill="currentColor"
+    >
+      <path d="M8 1.333A6.67 6.67 0 0 0 1.335 8a6.67 6.67 0 0 0 6.667 6.667A6.67 6.67 0 0 0 14.667 8a6.67 6.67 0 0 0-6.666-6.667Zm3.334 7.334H8.667v2.666H7.334V8.667H4.667V7.333h2.667V4.667h1.333v2.666h2.667v1.334Z" />
+    </svg>
+  );
+}
+export function SchoolHatIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 11 9"
+      fill="currentColor"
+    >
+      <path
+        d="M5.5 0 0 3l2 1.09v3L5.5 9 9 7.09v-3l1-.545V7h1V3L5.5 0Zm3.41 3L5.5 4.86 2.09 3 5.5 1.14 8.91 3ZM8 6.495 5.5 7.86 3 6.495v-1.86L5.5 6 8 4.635v1.86Z"
+      />
+    </svg>
+  );
+}
