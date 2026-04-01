@@ -14,7 +14,7 @@ const getLeadingNumber = (value: string) => value.match(/\d+/)?.[0] ?? "-";
 
 export function ClassesTable({ classes }: { classes: ClassRow[] }) {
   return (
-    <div className="h-[180.4px] w-[1120px] overflow-hidden rounded-[8px] border border-[#E4E4E7] bg-white [font-family:Inter]">
+    <div className="h-[180.4px] w-[1120px] overflow-hidden rounded-[8px] border border-[#E4E4E7] bg-white [font-family:var(--font-inter)]">
       <table className="w-[1120px] table-fixed border-collapse">
         <thead className="bg-[rgba(244,244,245,0.5)] text-left font-semibold text-[#231D17]">
           <tr className="h-[52px]">

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Geist } from "next/font/google";
+import { Geist, Inter } from "next/font/google";
 import "./globals.css";
 import { ApolloAppProvider } from "@/components/apollo-provider";
 import { ClerkSignOutFix } from "@/app/components/clerk-sign-out-fix";
@@ -8,6 +8,11 @@ import { ClerkSignOutFix } from "@/app/components/clerk-sign-out-fix";
 const geist = Geist({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+});
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -22,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={geist.className}>
+      <body className={`${geist.className} ${inter.variable}`}>
         <ClerkProvider
           afterSignOutUrl="/sign-in"
           signInUrl="/sign-in"
