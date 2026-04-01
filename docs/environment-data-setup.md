@@ -4,10 +4,9 @@
 
 Keep feature development predictable:
 
-- `prod` uses the real production database
-- the whole team uses one shared non-production D1 dataset for daily work
-- `preview` uses that same shared dataset by default
-- local sandbox mode is removed from the normal setup to avoid team drift
+- the whole team uses the same production data source
+- local sandbox mode is removed from the normal setup
+- local web and local API point to the same production backend by default
 
 ## Default workflow
 
@@ -16,7 +15,7 @@ This is the only setup the team should use day to day:
 - `npm run dev:api`
 - `npm run dev`
 
-If everyone uses the same branch, the same login account, and the commands above, everyone sees the same data.
+If everyone uses the same branch, the same login account, and the commands above, everyone sees the same production data.
 
 ### Web
 
@@ -24,7 +23,7 @@ If everyone uses the same branch, the same login account, and the commands above
 npm run dev
 ```
 
-The web app uses `apps/web/.env.local` and talks to the local API at `http://localhost:8787/graphql`.
+The web app uses `apps/web/.env.local` and talks to the production GraphQL endpoint unless you intentionally change it.
 
 ### API
 
@@ -32,7 +31,7 @@ The web app uses `apps/web/.env.local` and talks to the local API at `http://loc
 npm run dev:api
 ```
 
-This starts Wrangler in `--remote` mode with the default `apps/api/wrangler.toml` config, so local development reads the shared dev D1 database instead of a private sandbox.
+This starts Wrangler in `--remote --env production` mode, so local API behavior matches production instead of a preview sandbox.
 
 ## Optional PDF extraction service
 
@@ -63,15 +62,15 @@ This service is intentionally MVP-only:
 - OCR / scanned PDF: not handled by the service
 - when the service is not configured, the web app still falls back to client-side extraction
 
-## Shared dev database maintenance
+## Production database maintenance
 
-When the schema changes, apply migrations to the shared dev database:
+When the schema changes, apply migrations to the production database:
 
 ```bash
 npm run db:migrate:dev --workspace @pinequest/api
 ```
 
-If you need to re-apply the baseline seed for the shared dev database:
+If you need to re-apply the baseline seed for the production database:
 
 ```bash
 npm run db:seed:dev --workspace @pinequest/api
@@ -79,30 +78,26 @@ npm run db:seed:dev --workspace @pinequest/api
 
 ## Preview behavior
 
-CI preview deploys the API from the default `apps/api/wrangler.toml`, so preview and local default to the same non-production data source.
+The team now treats production as the single source of truth.
 
-This is intentional. It gives the team stable parity between:
-
-- local development
-- PR preview
-- shared review data
-
-Production remains isolated and should not be used as a development data source.
+- local web should use the production GraphQL endpoint
+- local API should run with `--env production`
+- preview data should not be relied on for day-to-day work
 
 ## Production deployment
 
 The same Wrangler config file also contains the production environment.
 
-- local development uses the default shared dev bindings
+- local API uses `--env production`
 - production deploys use `--env production`
 
-This keeps one source of truth for configuration while still isolating production data.
+This keeps the team on one data source and avoids local/preview drift.
 
 ## R2 image uploads
 
 The API now expects private R2 buckets for image-answer uploads:
 
 - `pinequest-uploads` for production
-- `pinequest-uploads-preview` for shared dev / preview
+- `pinequest-uploads-preview` for preview-only environments
 
 Before using image upload locally or in preview, create those buckets in Cloudflare R2. The API stores only the R2 object key in D1, and the web app fetches the image back through authenticated API routes.
