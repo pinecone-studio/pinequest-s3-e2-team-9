@@ -2,13 +2,16 @@ mutation CreateExamImportJobMutation(
   $fileName: String!
   $fileSizeBytes: Int!
   $extractedText: String!
+  $storageKey: String
 ) {
   createExamImportJob(
     fileName: $fileName
     fileSizeBytes: $fileSizeBytes
     extractedText: $extractedText
+    storageKey: $storageKey
   ) {
     id
+    storageKey
     fileName
     fileSizeBytes
     sourceType

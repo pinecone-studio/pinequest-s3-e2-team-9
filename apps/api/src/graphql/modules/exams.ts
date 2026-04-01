@@ -86,6 +86,38 @@ const insertExamQuestions = async (
   }
 };
 
+export const appendQuestionToExam = async (
+  db: D1DatabaseLike,
+  examId: string,
+  questionId: string,
+  points: number,
+) => {
+  const existing = await first<ExamQuestionRow>(
+    db,
+    `SELECT id, exam_id, question_id, points, display_order
+     FROM exam_questions
+     WHERE exam_id = ? AND question_id = ?`,
+    [examId, questionId],
+  );
+  invariant(!existing, "This question is already attached to the exam.");
+
+  const nextOrder =
+    (
+      await first<{ next_order: number }>(
+        db,
+        "SELECT COALESCE(MAX(display_order), 0) + 1 AS next_order FROM exam_questions WHERE exam_id = ?",
+        [examId],
+      )
+    )?.next_order ?? 1;
+
+  await run(
+    db,
+    `INSERT INTO exam_questions (id, exam_id, question_id, points, display_order)
+     VALUES (?, ?, ?, ?, ?)`,
+    [makeId("exam_question"), examId, questionId, points, nextOrder],
+  );
+};
+
 const replaceExamQuestions = async (
   db: D1DatabaseLike,
   examId: string,
@@ -523,30 +555,7 @@ export const createExamQueriesAndMutations = ({
     }
     await findQuestion(db, questionId);
 
-    const existing = await first<ExamQuestionRow>(
-      db,
-      `SELECT id, exam_id, question_id, points, display_order
-       FROM exam_questions
-       WHERE exam_id = ? AND question_id = ?`,
-      [examId, questionId],
-    );
-    invariant(!existing, "This question is already attached to the exam.");
-
-    const nextOrder =
-      (
-        await first<{ next_order: number }>(
-          db,
-          "SELECT COALESCE(MAX(display_order), 0) + 1 AS next_order FROM exam_questions WHERE exam_id = ?",
-          [examId],
-        )
-      )?.next_order ?? 1;
-
-    await run(
-      db,
-      `INSERT INTO exam_questions (id, exam_id, question_id, points, display_order)
-       VALUES (?, ?, ?, ?, ?)`,
-      [makeId("exam_question"), examId, questionId, points, nextOrder],
-    );
+    await appendQuestionToExam(db, examId, questionId, points);
 
     return toExam(db, await findExamById(db, examId));
   },

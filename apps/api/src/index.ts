@@ -67,6 +67,7 @@ type R2HttpMetadata = {
 
 type R2ObjectBodyLike = {
   body: ReadableStream | null;
+  customMetadata?: Record<string, string>;
   httpMetadata?: R2HttpMetadata;
   writeHttpMetadata?: (headers: Headers) => void;
 };
@@ -101,6 +102,10 @@ type PdfExtractionResponse = {
   extractedText: string;
   provider: string;
   strategy: string;
+};
+
+type PdfExtractionStorageRequest = {
+  storageKey?: string | null;
 };
 
 const isPdfExtractionResponse = (
@@ -653,24 +658,75 @@ const handlePdfExtraction = async (
     );
   }
 
-  const formData = await request.formData().catch(() => null);
-  if (!formData) {
-    return json(
-      {
-        error: "Invalid multipart form data.",
-      },
-      { status: 400 },
-    );
-  }
+  let file: File | null = null;
+  const contentType = request.headers.get("content-type")?.trim().toLowerCase() ?? "";
+  if (contentType.includes("application/json")) {
+    const payload = (await request.json().catch(() => null)) as
+      | PdfExtractionStorageRequest
+      | null;
+    const storageKey = payload?.storageKey?.trim();
 
-  const file = formData.get("file");
-  if (!(file instanceof File)) {
-    return json(
-      {
-        error: "PDF file is required.",
-      },
-      { status: 400 },
-    );
+    if (!storageKey) {
+      return json(
+        {
+          error: "storageKey is required.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (actor.user.role !== "ADMIN" && !storageKey.includes(`/${actor.user.id}/`)) {
+      return json(
+        {
+          error: "You do not have access to this uploaded PDF.",
+        },
+        { status: 403 },
+      );
+    }
+
+    const bucket = requireUploadsBucket(env);
+    const object = await bucket.get(storageKey);
+    if (!object?.body) {
+      return json(
+        {
+          error: "Uploaded PDF not found.",
+        },
+        { status: 404 },
+      );
+    }
+
+    const arrayBuffer = await new Response(object.body).arrayBuffer();
+    const originalName =
+      object.customMetadata?.originalName?.trim() ||
+      storageKey.split("/").pop() ||
+      "import.pdf";
+    const storedContentType =
+      object.httpMetadata?.contentType?.trim() || "application/pdf";
+    file = new File([arrayBuffer], originalName, {
+      type: storedContentType,
+    });
+  } else {
+    const formData = await request.formData().catch(() => null);
+    if (!formData) {
+      return json(
+        {
+          error: "Invalid multipart form data.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const uploadedFile = formData.get("file");
+    if (!(uploadedFile instanceof File)) {
+      return json(
+        {
+          error: "PDF file is required.",
+        },
+        { status: 400 },
+      );
+    }
+
+    file = uploadedFile;
   }
 
   if (!file.name.toLowerCase().endsWith(".pdf")) {
@@ -722,6 +778,7 @@ const handlePdfExtraction = async (
 };
 
 const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MAX_PDF_IMPORT_UPLOAD_BYTES = 25 * 1024 * 1024;
 
 const getImageExtension = (
   contentType: string,
@@ -765,7 +822,7 @@ const requireAuthenticatedActor = async (
   return actor;
 };
 
-const requireImageUploadsBucket = (env: Env): R2BucketLike => {
+const requireUploadsBucket = (env: Env): R2BucketLike => {
   if (!env.IMAGE_UPLOADS) {
     throw new ApiAuthError(
       503,
@@ -774,6 +831,98 @@ const requireImageUploadsBucket = (env: Env): R2BucketLike => {
   }
 
   return env.IMAGE_UPLOADS;
+};
+
+const sanitizeUploadFileName = (value: string) =>
+  value.replace(/\"/g, "") || "upload";
+
+const handlePdfImportUpload = async (
+  request: Request,
+  env: Env,
+): Promise<Response> => {
+  if (request.method === "OPTIONS") {
+    return empty({ status: 204 });
+  }
+
+  if (request.method !== "POST") {
+    return json(
+      {
+        error: "Method Not Allowed",
+      },
+      { status: 405 },
+    );
+  }
+
+  try {
+    const actor = await requireAuthenticatedActor(request, env);
+    if (actor.user.role !== "ADMIN" && actor.user.role !== "TEACHER") {
+      throw new ApiAuthError(403, "Only teachers and admins can upload exam PDFs.");
+    }
+
+    const bucket = requireUploadsBucket(env);
+    const formData = await request.formData();
+    const file = formData.get("file");
+
+    if (!(file instanceof File)) {
+      return json(
+        {
+          error: "PDF file is required.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      return json(
+        {
+          error: "Only PDF files are supported.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (file.size > MAX_PDF_IMPORT_UPLOAD_BYTES) {
+      return json(
+        {
+          error: "PDF size must be 25MB or less.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const key = `imports/pdf/${actor.user.role.toLowerCase()}/${actor.user.id}/${crypto.randomUUID()}.pdf`;
+    const contentType = file.type.trim() || "application/pdf";
+
+    await bucket.put(key, await file.arrayBuffer(), {
+      httpMetadata: {
+        contentDisposition: `inline; filename="${sanitizeUploadFileName(file.name)}"`,
+        contentType,
+      },
+      customMetadata: {
+        actorId: actor.user.id,
+        originalName: file.name,
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+
+    return json({
+      key,
+      fileName: file.name,
+      fileSizeBytes: file.size,
+      contentType,
+    });
+  } catch (error) {
+    const status = error instanceof ApiAuthError ? error.status : 500;
+    const message =
+      error instanceof Error ? error.message : "PDF upload failed.";
+
+    return json(
+      {
+        error: message,
+      },
+      { status },
+    );
+  }
 };
 
 const handleImageUpload = async (
@@ -795,7 +944,7 @@ const handleImageUpload = async (
 
   try {
     const actor = await requireAuthenticatedActor(request, env);
-    const bucket = requireImageUploadsBucket(env);
+    const bucket = requireUploadsBucket(env);
     const formData = await request.formData();
     const file = formData.get("file");
 
@@ -831,7 +980,7 @@ const handleImageUpload = async (
 
     await bucket.put(key, await file.arrayBuffer(), {
       httpMetadata: {
-        contentDisposition: `inline; filename="${file.name.replace(/\"/g, "") || "upload"}"`,
+        contentDisposition: `inline; filename="${sanitizeUploadFileName(file.name)}"`,
         contentType: file.type,
       },
       customMetadata: {
@@ -879,7 +1028,7 @@ const handleImageDownload = async (
 
   try {
     await requireAuthenticatedActor(request, env);
-    const bucket = requireImageUploadsBucket(env);
+    const bucket = requireUploadsBucket(env);
     const object = await bucket.get(key);
 
     if (!object?.body) {
@@ -936,6 +1085,8 @@ export default {
           hello: "/api/hello",
           loginEligibility: "/auth/login-eligibility",
           session: "/auth/session",
+          pdfImportUpload: "/uploads/pdf-import",
+          pdfExtraction: "/imports/pdf/extract",
           imageUpload: "/uploads/image",
           imageDownload: "/uploads/image/:key",
           classExamEvents: "/events/classes/:classId/exams",
@@ -970,6 +1121,10 @@ export default {
 
     if (pathname === "/imports/pdf/extract") {
       return handlePdfExtraction(request, env);
+    }
+
+    if (pathname === "/uploads/pdf-import") {
+      return handlePdfImportUpload(request, env);
     }
 
     if (pathname === "/uploads/image") {

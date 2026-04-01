@@ -34,6 +34,35 @@ npm run dev:api
 
 This starts Wrangler in `--remote` mode with the default `apps/api/wrangler.toml` config, so local development reads the shared dev D1 database instead of a private sandbox.
 
+## Optional PDF extraction service
+
+If you want PDF import to run through a separate local service instead of browser-side fallback, start:
+
+```bash
+npm run dev:pdf-service
+```
+
+Then point the API at it in `apps/api/.dev.vars`:
+
+```bash
+PDF_EXTRACTION_SERVICE_URL=http://127.0.0.1:8788/extract
+PDF_EXTRACTION_SERVICE_TOKEN=choose-a-shared-secret
+```
+
+Start the service with the same shared secret in its own shell:
+
+```bash
+PORT=8788
+PDF_EXTRACTION_SERVICE_TOKEN=choose-a-shared-secret
+npm run dev:pdf-service
+```
+
+This service is intentionally MVP-only:
+
+- selectable text PDF: supported
+- OCR / scanned PDF: not handled by the service
+- when the service is not configured, the web app still falls back to client-side extraction
+
 ## Shared dev database maintenance
 
 When the schema changes, apply migrations to the shared dev database:

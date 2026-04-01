@@ -11,6 +11,7 @@
     "dev": "npm run dev --workspace @pinequest/web",
     "dev:web": "npm run dev --workspace @pinequest/web",
     "dev:api": "npm run dev --workspace @pinequest/api",
+    "dev:pdf-service": "node --env-file=apps/pdf-extraction-service/.env apps/pdf-extraction-service/server.mjs",
     "build": "npm run build --workspace @pinequest/web",
     "build:web": "npm run build --workspace @pinequest/web",
     "build:worker": "npm run build:worker --workspace @pinequest/web",

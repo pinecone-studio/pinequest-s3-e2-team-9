@@ -14,7 +14,10 @@ import {
   type CreateExamImportJobMutationMutation,
   type CreateExamImportJobMutationMutationVariables,
 } from "@/graphql/generated";
-import { extractPdfImportContent } from "./pdf-import-extraction-service";
+import {
+  createPdfImportDraft,
+  getPdfImportErrorMessage,
+} from "./pdf-import-dialog-actions";
 import { buildExamEditHref, buildReviewSummary, toApprovedQuestionInput } from "./pdf-import-review-helpers";
 import { buildImportJobView, type ImportJobView, type ImportQuestionView } from "./pdf-import-dialog-utils";
 
@@ -84,35 +87,19 @@ export function usePdfImportDialog(selectedFile: File | null, open: boolean) {
       setErrorMessage(null);
       setInfoMessage(null);
       setIsExtractingText(true);
-      const extraction = await extractPdfImportContent(selectedFile, getToken);
-      const extractedText = extraction.extractedText;
-      if (!extractedText.trim()) {
-        throw new Error("PDF файлаас selectable text олдсонгүй.");
-      }
-      const result = await createImportJob({
-        variables: {
-          fileName: selectedFile.name,
-          fileSizeBytes: selectedFile.size,
-          extractedText,
-        },
+      const result = await createPdfImportDraft({
+        selectedFile,
+        getToken,
+        createImportJob: (options) =>
+          createImportJob({
+            variables: options.variables,
+          }),
       });
-      const nextJob = result.data?.createExamImportJob;
-      if (!nextJob) {
-        throw new Error("PDF import job үүсгэсэн мэдээлэл ирсэнгүй.");
-      }
-      setInfoMessage(
-        extraction.strategy === "browser-ocr"
-          ? extraction.provider === "api"
-            ? "Scan PDF илэрсэн тул extraction service OCR ашиглаж уншлаа. Хэрэв зарим текст зөрүүтэй бол review дээр засаад хадгална уу."
-            : "Scan PDF илэрсэн тул browser OCR ашиглаж уншлаа. Хэрэв зарим текст зөрүүтэй бол review дээр засаад хадгална уу."
-          : extraction.provider === "api"
-            ? "PDF extraction API ашиглан файлын text-ийг уншлаа."
-            : null,
-      );
-      setJobView(buildImportJobView(nextJob));
+      setInfoMessage(result.infoMessage);
+      setJobView(buildImportJobView(result.job));
     } catch (error) {
       console.error("Failed to create PDF import job", error);
-      setErrorMessage(error instanceof Error ? error.message : "PDF импорт бэлтгэх үед алдаа гарлаа.");
+      setErrorMessage(getPdfImportErrorMessage(error));
     } finally {
       setIsExtractingText(false);
     }
@@ -144,7 +131,7 @@ export function usePdfImportDialog(selectedFile: File | null, open: boolean) {
       setJobView(buildImportJobView(nextJob));
     } catch (error) {
       console.error("Failed to approve PDF import job", error);
-      setErrorMessage(error instanceof Error ? error.message : "PDF импортын асуултуудыг хадгалах үед алдаа гарлаа.");
+      setErrorMessage(getPdfImportErrorMessage(error));
     }
   };
 

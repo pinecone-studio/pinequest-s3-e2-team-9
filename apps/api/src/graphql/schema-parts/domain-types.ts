@@ -141,6 +141,7 @@ export const schemaDomainTypes = /* GraphQL */ `
 
   type ExamImportJob {
     id: ID!
+    storageKey: String
     fileName: String!
     fileSizeBytes: Int!
     sourceType: ExamImportSourceType!

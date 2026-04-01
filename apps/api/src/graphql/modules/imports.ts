@@ -1,6 +1,7 @@
 import { all, first, invariant, run, runMany, type D1DatabaseLike } from "../../lib/d1";
 import type { RequestContext } from "../../auth";
 import { parseImportedExamText, type ParsedImportQuestion } from "./imports-parser";
+import { appendQuestionToExam } from "./exams";
 import {
   makeId,
   now,
@@ -22,6 +23,7 @@ const importJobSelectFields = `id,
       teacher_id,
       question_bank_id,
       exam_id,
+      storage_key,
       file_name,
       file_size_bytes,
       source_type,
@@ -276,6 +278,7 @@ export const createImportQueriesAndMutations = ({
 
   const toExamImportJob = (row: ExamImportJobRow) => ({
     id: row.id,
+    storageKey: row.storage_key,
     fileName: row.file_name,
     fileSizeBytes: row.file_size_bytes,
     sourceType: row.source_type,
@@ -335,7 +338,7 @@ export const createImportQueriesAndMutations = ({
       return row ? toExamImportJob(row) : null;
     },
     createExamImportJob: async (
-      { fileName, fileSizeBytes, extractedText }: CreateExamImportJobArgs,
+      { fileName, fileSizeBytes, extractedText, storageKey }: CreateExamImportJobArgs,
       context: RequestContext,
     ) => {
       const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
@@ -351,6 +354,7 @@ export const createImportQueriesAndMutations = ({
           teacher_id,
           question_bank_id,
           exam_id,
+          storage_key,
           file_name,
           file_size_bytes,
           source_type,
@@ -362,16 +366,17 @@ export const createImportQueriesAndMutations = ({
           created_at,
           updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           actor.id,
           null,
           null,
+          storageKey?.trim() || null,
           fileName.trim(),
           fileSizeBytes,
           "PDF",
-          "PROCESSING",
+          "UPLOADED",
           fallbackTitle,
           normalizedExtractedText || null,
           toParsedExamJson(fallbackTitle, []),
@@ -379,6 +384,14 @@ export const createImportQueriesAndMutations = ({
           createdAt,
           createdAt,
         ],
+      );
+
+      await run(
+        db,
+        `UPDATE exam_import_jobs
+         SET status = ?, updated_at = ?
+         WHERE id = ?`,
+        ["PROCESSING", createdAt, id],
       );
 
       if (!normalizedExtractedText) {
@@ -557,21 +570,10 @@ export const createImportQueriesAndMutations = ({
         ],
       );
 
-      for (const [index, question] of questions.entries()) {
-        const insertedQuestionId = insertedQuestionIds[index];
+      for (const [questionIndex, question] of questions.entries()) {
+        const insertedQuestionId = insertedQuestionIds[questionIndex];
         invariant(insertedQuestionId, "Импортолсон асуултыг шалгалттай холбоход алдаа гарлаа.");
-        await run(
-          db,
-          `INSERT INTO exam_questions (id, exam_id, question_id, points, display_order)
-           VALUES (?, ?, ?, ?, ?)`,
-          [
-            makeId("exam_question"),
-            examId,
-            insertedQuestionId,
-            question.score,
-            index + 1,
-          ],
-        );
+        await appendQuestionToExam(db, examId, insertedQuestionId, question.score);
       }
 
       await run(

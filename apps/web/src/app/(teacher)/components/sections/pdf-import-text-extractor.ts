@@ -1,6 +1,12 @@
 "use client";
 
 import type { PDFDocumentProxy } from "pdfjs-dist/types/src/display/api";
+import {
+  buildStructuredPageText,
+  normalizeBlock,
+  type OcrLineLike,
+  type TextItemLike,
+} from "./pdf-import-text-layout";
 
 export type PdfImportExtractionResult = {
   extractedText: string;
@@ -8,16 +14,19 @@ export type PdfImportExtractionResult = {
 };
 
 const OCR_PAGE_SCALE = 2;
+const LINE_Y_TOLERANCE = 4;
+const OCR_LINE_Y_TOLERANCE = 8;
 
 const extractPageText = async (pdf: PDFDocumentProxy, pageNumber: number) => {
   const page = await pdf.getPage(pageNumber);
   const content = await page.getTextContent();
-  return content.items
-    .map((item) => ("str" in item ? item.str : ""))
-    .filter(Boolean)
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const viewport = page.getViewport({ scale: 1 });
+  const segments = (content.items as TextItemLike[]).map((item) => ({
+    x: Array.isArray(item.transform) ? item.transform[4] ?? 0 : 0,
+    y: Array.isArray(item.transform) ? item.transform[5] ?? 0 : 0,
+    text: item.str ?? "",
+  }));
+  return buildStructuredPageText(segments, viewport.width, LINE_Y_TOLERANCE, "bottom-up");
 };
 
 const renderPdfPageToCanvas = async (pdf: PDFDocumentProxy, pageNumber: number) => {
@@ -50,7 +59,18 @@ const extractPdfTextWithOcr = async (pdf: PDFDocumentProxy) => {
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
       const canvas = await renderPdfPageToCanvas(pdf, pageNumber);
       const result = await worker.recognize(canvas, { rotateAuto: true });
-      const pageText = result.data.text.replace(/\s+/g, " ").trim();
+      const ocrData = result.data as { lines?: OcrLineLike[]; text?: string };
+      const lines = Array.isArray(ocrData.lines)
+        ? ocrData.lines.map((line: OcrLineLike) => ({
+            x: line.bbox?.x0 ?? 0,
+            y: line.bbox?.y0 ?? 0,
+            text: line.text ?? "",
+          }))
+        : [];
+      const pageText =
+        lines.length > 0
+          ? buildStructuredPageText(lines, canvas.width, OCR_LINE_Y_TOLERANCE, "top-down")
+          : normalizeBlock(ocrData.text ?? "");
       if (pageText) {
         pages.push(`Page ${pageNumber}`);
         pages.push(pageText);

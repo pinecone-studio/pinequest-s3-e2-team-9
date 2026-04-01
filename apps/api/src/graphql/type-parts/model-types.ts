@@ -153,6 +153,7 @@ export type ExamImportJobRow = {
   teacher_id: string;
   question_bank_id: string | null;
   exam_id: string | null;
+  storage_key: string | null;
   file_name: string;
   file_size_bytes: number;
   source_type: ExamImportSourceType;

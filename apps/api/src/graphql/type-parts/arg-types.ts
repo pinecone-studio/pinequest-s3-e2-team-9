@@ -127,6 +127,7 @@ export type CreateExamImportJobArgs = {
   fileName: string;
   fileSizeBytes: number;
   extractedText: string;
+  storageKey?: string | null;
 };
 export type ReviewedExamImportQuestionInput = {
   id: string;

@@ -220,6 +220,7 @@ export type ExamImportJob = {
   reviewCount: Scalars['Int']['output'];
   sourceType: ExamImportSourceType;
   status: ExamImportJobStatus;
+  storageKey?: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
   totalQuestions: Scalars['Int']['output'];
   updatedAt: Scalars['String']['output'];
@@ -413,6 +414,7 @@ export type MutationCreateExamImportJobArgs = {
   extractedText: Scalars['String']['input'];
   fileName: Scalars['String']['input'];
   fileSizeBytes: Scalars['Int']['input'];
+  storageKey?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -704,10 +706,11 @@ export type CreateExamImportJobMutationMutationVariables = Exact<{
   fileName: Scalars['String']['input'];
   fileSizeBytes: Scalars['Int']['input'];
   extractedText: Scalars['String']['input'];
+  storageKey?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type CreateExamImportJobMutationMutation = { __typename?: 'Mutation', createExamImportJob: { __typename?: 'ExamImportJob', id: string, fileName: string, fileSizeBytes: number, sourceType: ExamImportSourceType, status: ExamImportJobStatus, title: string, errorMessage?: string | null, totalQuestions: number, reviewCount: number, createdAt: string, updatedAt: string, questions: Array<{ __typename?: 'ExamImportQuestion', id: string, order: number, type: QuestionType, title: string, prompt: string, options: Array<string>, answers: Array<string>, score: number, difficulty: Difficulty, sourcePage?: number | null, confidence: number, needsReview: boolean, createdAt: string }> } };
+export type CreateExamImportJobMutationMutation = { __typename?: 'Mutation', createExamImportJob: { __typename?: 'ExamImportJob', id: string, storageKey?: string | null, fileName: string, fileSizeBytes: number, sourceType: ExamImportSourceType, status: ExamImportJobStatus, title: string, errorMessage?: string | null, totalQuestions: number, reviewCount: number, createdAt: string, updatedAt: string, questions: Array<{ __typename?: 'ExamImportQuestion', id: string, order: number, type: QuestionType, title: string, prompt: string, options: Array<string>, answers: Array<string>, score: number, difficulty: Difficulty, sourcePage?: number | null, confidence: number, needsReview: boolean, createdAt: string }> } };
 
 export type CreateExamMutationVariables = Exact<{
   classId: Scalars['ID']['input'];
@@ -1208,13 +1211,15 @@ export type CreateExamDraftVariantsMutationMutationHookResult = ReturnType<typeo
 export type CreateExamDraftVariantsMutationMutationResult = ApolloReactCommon.MutationResult<CreateExamDraftVariantsMutationMutation>;
 export type CreateExamDraftVariantsMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateExamDraftVariantsMutationMutation, CreateExamDraftVariantsMutationMutationVariables>;
 export const CreateExamImportJobMutationDocument = gql`
-    mutation CreateExamImportJobMutation($fileName: String!, $fileSizeBytes: Int!, $extractedText: String!) {
+    mutation CreateExamImportJobMutation($fileName: String!, $fileSizeBytes: Int!, $extractedText: String!, $storageKey: String) {
   createExamImportJob(
     fileName: $fileName
     fileSizeBytes: $fileSizeBytes
     extractedText: $extractedText
+    storageKey: $storageKey
   ) {
     id
+    storageKey
     fileName
     fileSizeBytes
     sourceType
@@ -1261,6 +1266,7 @@ export type CreateExamImportJobMutationMutationFn = ApolloReactCommon.MutationFu
  *      fileName: // value for 'fileName'
  *      fileSizeBytes: // value for 'fileSizeBytes'
  *      extractedText: // value for 'extractedText'
+ *      storageKey: // value for 'storageKey'
  *   },
  * });
  */

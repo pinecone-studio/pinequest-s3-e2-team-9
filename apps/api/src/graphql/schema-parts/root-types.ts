@@ -114,7 +114,12 @@ export const schemaRootTypes = /* GraphQL */ `
     ): Exam!
     publishExam(examId: ID!): Exam!
     closeExam(examId: ID!): Exam!
-    createExamImportJob(fileName: String!, fileSizeBytes: Int!, extractedText: String!): ExamImportJob!
+    createExamImportJob(
+      fileName: String!
+      fileSizeBytes: Int!
+      extractedText: String!
+      storageKey: String
+    ): ExamImportJob!
     approveExamImportJob(
       id: ID!
       classId: ID!
