@@ -1,0 +1,33 @@
+query CommunityOverview {
+  me {
+    id
+  }
+  communities {
+    id
+    name
+    description
+    subject
+    grade
+    visibility
+    viewerRole
+    memberCount
+    sharedBankCount
+    createdAt
+  }
+  questionBanks {
+    id
+    title
+    description
+    grade
+    subject
+    topic
+    topics
+    visibility
+    questionCount
+    createdAt
+    owner {
+      id
+      fullName
+    }
+  }
+}

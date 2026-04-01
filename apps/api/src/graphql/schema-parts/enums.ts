@@ -24,6 +24,23 @@ export const schemaEnums = /* GraphQL */ `
     PUBLIC
   }
 
+  enum CommunityVisibility {
+    PRIVATE
+    PUBLIC
+  }
+
+  enum CommunityMemberRole {
+    OWNER
+    MODERATOR
+    MEMBER
+  }
+
+  enum CommunitySharedBankStatus {
+    ACTIVE
+    ARCHIVED
+    FEATURED
+  }
+
   enum ExamMode {
     SCHEDULED
     OPEN_WINDOW

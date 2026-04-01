@@ -115,6 +115,57 @@ export enum ClassStudentStatus {
   NotStarted = 'NOT_STARTED'
 }
 
+export type Community = {
+  __typename?: 'Community';
+  createdAt: Scalars['String']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  grade: Scalars['Int']['output'];
+  id: Scalars['ID']['output'];
+  memberCount: Scalars['Int']['output'];
+  members: Array<CommunityMember>;
+  name: Scalars['String']['output'];
+  owner: User;
+  sharedBankCount: Scalars['Int']['output'];
+  sharedBanks: Array<CommunitySharedBank>;
+  subject: Scalars['String']['output'];
+  viewerRole?: Maybe<CommunityMemberRole>;
+  visibility: CommunityVisibility;
+};
+
+export type CommunityMember = {
+  __typename?: 'CommunityMember';
+  id: Scalars['ID']['output'];
+  joinedAt: Scalars['String']['output'];
+  role: CommunityMemberRole;
+  user: User;
+};
+
+export enum CommunityMemberRole {
+  Member = 'MEMBER',
+  Moderator = 'MODERATOR',
+  Owner = 'OWNER'
+}
+
+export type CommunitySharedBank = {
+  __typename?: 'CommunitySharedBank';
+  bank: QuestionBank;
+  createdAt: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  sharedBy: User;
+  status: CommunitySharedBankStatus;
+};
+
+export enum CommunitySharedBankStatus {
+  Active = 'ACTIVE',
+  Archived = 'ARCHIVED',
+  Featured = 'FEATURED'
+}
+
+export enum CommunityVisibility {
+  Private = 'PRIVATE',
+  Public = 'PUBLIC'
+}
+
 export type DashboardMetricSummary = {
   __typename?: 'DashboardMetricSummary';
   draftExamCount: Scalars['Int']['output'];
@@ -336,7 +387,9 @@ export type Mutation = {
   approveExamImportJob: ExamImportJob;
   assignExamToClass: Exam;
   closeExam: Exam;
+  copyCommunitySharedBankToMyBank: QuestionBank;
   createClass: Class;
+  createCommunity: Community;
   createExam: Exam;
   createExamDraftVariants: Array<Question>;
   createExamImportJob: ExamImportJob;
@@ -345,11 +398,13 @@ export type Mutation = {
   createQuestionVariants: Array<Question>;
   deleteQuestion: Scalars['Boolean']['output'];
   groupQuestionsAsVariants: Array<Question>;
+  joinCommunity: Community;
   publishExam: Exam;
   recordAttemptIntegrityEvent: Scalars['Boolean']['output'];
   reviewAnswer: Answer;
   reviewAttempt: Attempt;
   saveAnswer: Attempt;
+  shareQuestionBankToCommunity: CommunitySharedBank;
   startAttempt: Attempt;
   submitAttempt: Attempt;
   updateExamDraft: Exam;
@@ -382,9 +437,23 @@ export type MutationCloseExamArgs = {
 };
 
 
+export type MutationCopyCommunitySharedBankToMyBankArgs = {
+  sharedBankId: Scalars['ID']['input'];
+};
+
+
 export type MutationCreateClassArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
+};
+
+
+export type MutationCreateCommunityArgs = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  grade?: InputMaybe<Scalars['Int']['input']>;
+  name: Scalars['String']['input'];
+  subject?: InputMaybe<Scalars['String']['input']>;
+  visibility?: InputMaybe<CommunityVisibility>;
 };
 
 
@@ -456,6 +525,11 @@ export type MutationGroupQuestionsAsVariantsArgs = {
 };
 
 
+export type MutationJoinCommunityArgs = {
+  communityId: Scalars['ID']['input'];
+};
+
+
 export type MutationPublishExamArgs = {
   examId: Scalars['ID']['input'];
 };
@@ -485,6 +559,12 @@ export type MutationSaveAnswerArgs = {
   attemptId: Scalars['ID']['input'];
   questionId: Scalars['ID']['input'];
   value: Scalars['String']['input'];
+};
+
+
+export type MutationShareQuestionBankToCommunityArgs = {
+  bankId: Scalars['ID']['input'];
+  communityId: Scalars['ID']['input'];
 };
 
 
@@ -539,6 +619,8 @@ export type Query = {
   attempts: Array<Attempt>;
   class?: Maybe<Class>;
   classes: Array<Class>;
+  communities: Array<Community>;
+  community?: Maybe<Community>;
   dashboardOverview: DashboardOverview;
   exam?: Maybe<Exam>;
   examImportJob?: Maybe<ExamImportJob>;
@@ -560,6 +642,11 @@ export type QueryAttemptArgs = {
 
 
 export type QueryClassArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryCommunityArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -686,6 +773,13 @@ export type CloseExamMutationVariables = Exact<{
 
 export type CloseExamMutation = { __typename?: 'Mutation', closeExam: { __typename?: 'Exam', id: string, status: ExamStatus } };
 
+export type CopyCommunitySharedBankToMyBankActionMutationVariables = Exact<{
+  sharedBankId: Scalars['ID']['input'];
+}>;
+
+
+export type CopyCommunitySharedBankToMyBankActionMutation = { __typename?: 'Mutation', copyCommunitySharedBankToMyBank: { __typename?: 'QuestionBank', id: string, title: string, grade: number, subject: string, topic: string, visibility: QuestionBankVisibility, questionCount: number, owner: { __typename?: 'User', id: string, fullName: string } } };
+
 export type CreateClassMutationVariables = Exact<{
   name: Scalars['String']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
@@ -693,6 +787,17 @@ export type CreateClassMutationVariables = Exact<{
 
 
 export type CreateClassMutation = { __typename?: 'Mutation', createClass: { __typename?: 'Class', id: string, name: string, subject: string, grade: number } };
+
+export type CreateCommunityActionMutationVariables = Exact<{
+  name: Scalars['String']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  subject: Scalars['String']['input'];
+  grade: Scalars['Int']['input'];
+  visibility: CommunityVisibility;
+}>;
+
+
+export type CreateCommunityActionMutation = { __typename?: 'Mutation', createCommunity: { __typename?: 'Community', id: string, name: string, description?: string | null, subject: string, grade: number, visibility: CommunityVisibility, viewerRole?: CommunityMemberRole | null, memberCount: number, sharedBankCount: number, createdAt: string } };
 
 export type CreateExamDraftVariantsMutationMutationVariables = Exact<{
   sourceQuestionId: Scalars['ID']['input'];
@@ -778,6 +883,13 @@ export type GroupQuestionsAsVariantsMutationMutationVariables = Exact<{
 
 export type GroupQuestionsAsVariantsMutationMutation = { __typename?: 'Mutation', groupQuestionsAsVariants: Array<{ __typename?: 'Question', id: string }> };
 
+export type JoinCommunityActionMutationVariables = Exact<{
+  communityId: Scalars['ID']['input'];
+}>;
+
+
+export type JoinCommunityActionMutation = { __typename?: 'Mutation', joinCommunity: { __typename?: 'Community', id: string, viewerRole?: CommunityMemberRole | null, memberCount: number, sharedBankCount: number } };
+
 export type PublishExamMutationVariables = Exact<{
   examId: Scalars['ID']['input'];
 }>;
@@ -819,6 +931,14 @@ export type SaveAnswerMutationVariables = Exact<{
 
 
 export type SaveAnswerMutation = { __typename?: 'Mutation', saveAnswer: { __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, startedAt: string, submittedAt?: string | null, answers: Array<{ __typename?: 'Answer', id: string, value: string, question: { __typename?: 'Question', id: string } }> } };
+
+export type ShareQuestionBankToCommunityActionMutationVariables = Exact<{
+  communityId: Scalars['ID']['input'];
+  bankId: Scalars['ID']['input'];
+}>;
+
+
+export type ShareQuestionBankToCommunityActionMutation = { __typename?: 'Mutation', shareQuestionBankToCommunity: { __typename?: 'CommunitySharedBank', id: string, status: CommunitySharedBankStatus, createdAt: string, sharedBy: { __typename?: 'User', id: string, fullName: string }, bank: { __typename?: 'QuestionBank', id: string, title: string, questionCount: number, owner: { __typename?: 'User', id: string, fullName: string } } } };
 
 export type StartAttemptMutationVariables = Exact<{
   examId: Scalars['ID']['input'];
@@ -880,6 +1000,18 @@ export type ClassesListQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type ClassesListQuery = { __typename?: 'Query', classes: Array<{ __typename?: 'Class', id: string, name: string, subject: string, grade: number, studentCount: number, upcomingExamCount: number, completedExamCount: number }> };
+
+export type CommunityDetailQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type CommunityDetailQuery = { __typename?: 'Query', community?: { __typename?: 'Community', id: string, name: string, description?: string | null, subject: string, grade: number, visibility: CommunityVisibility, viewerRole?: CommunityMemberRole | null, memberCount: number, sharedBankCount: number, members: Array<{ __typename?: 'CommunityMember', id: string, role: CommunityMemberRole, joinedAt: string, user: { __typename?: 'User', id: string, fullName: string } }>, sharedBanks: Array<{ __typename?: 'CommunitySharedBank', id: string, status: CommunitySharedBankStatus, createdAt: string, sharedBy: { __typename?: 'User', id: string, fullName: string }, bank: { __typename?: 'QuestionBank', id: string, title: string, description?: string | null, grade: number, subject: string, topic: string, visibility: QuestionBankVisibility, questionCount: number, createdAt: string, owner: { __typename?: 'User', id: string, fullName: string } } }> } | null };
+
+export type CommunityOverviewQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type CommunityOverviewQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string } | null, communities: Array<{ __typename?: 'Community', id: string, name: string, description?: string | null, subject: string, grade: number, visibility: CommunityVisibility, viewerRole?: CommunityMemberRole | null, memberCount: number, sharedBankCount: number, createdAt: string }>, questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, description?: string | null, grade: number, subject: string, topic: string, topics: Array<string>, visibility: QuestionBankVisibility, questionCount: number, createdAt: string, owner: { __typename?: 'User', id: string, fullName: string } }> };
 
 export type CreateExamOptionsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1129,6 +1261,49 @@ export function useCloseExamMutation(baseOptions?: ApolloReactHooks.MutationHook
 export type CloseExamMutationHookResult = ReturnType<typeof useCloseExamMutation>;
 export type CloseExamMutationResult = ApolloReactCommon.MutationResult<CloseExamMutation>;
 export type CloseExamMutationOptions = ApolloReactCommon.BaseMutationOptions<CloseExamMutation, CloseExamMutationVariables>;
+export const CopyCommunitySharedBankToMyBankActionDocument = gql`
+    mutation CopyCommunitySharedBankToMyBankAction($sharedBankId: ID!) {
+  copyCommunitySharedBankToMyBank(sharedBankId: $sharedBankId) {
+    id
+    title
+    grade
+    subject
+    topic
+    visibility
+    questionCount
+    owner {
+      id
+      fullName
+    }
+  }
+}
+    `;
+export type CopyCommunitySharedBankToMyBankActionMutationFn = ApolloReactCommon.MutationFunction<CopyCommunitySharedBankToMyBankActionMutation, CopyCommunitySharedBankToMyBankActionMutationVariables>;
+
+/**
+ * __useCopyCommunitySharedBankToMyBankActionMutation__
+ *
+ * To run a mutation, you first call `useCopyCommunitySharedBankToMyBankActionMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCopyCommunitySharedBankToMyBankActionMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [copyCommunitySharedBankToMyBankActionMutation, { data, loading, error }] = useCopyCommunitySharedBankToMyBankActionMutation({
+ *   variables: {
+ *      sharedBankId: // value for 'sharedBankId'
+ *   },
+ * });
+ */
+export function useCopyCommunitySharedBankToMyBankActionMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CopyCommunitySharedBankToMyBankActionMutation, CopyCommunitySharedBankToMyBankActionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<CopyCommunitySharedBankToMyBankActionMutation, CopyCommunitySharedBankToMyBankActionMutationVariables>(CopyCommunitySharedBankToMyBankActionDocument, options);
+      }
+export type CopyCommunitySharedBankToMyBankActionMutationHookResult = ReturnType<typeof useCopyCommunitySharedBankToMyBankActionMutation>;
+export type CopyCommunitySharedBankToMyBankActionMutationResult = ApolloReactCommon.MutationResult<CopyCommunitySharedBankToMyBankActionMutation>;
+export type CopyCommunitySharedBankToMyBankActionMutationOptions = ApolloReactCommon.BaseMutationOptions<CopyCommunitySharedBankToMyBankActionMutation, CopyCommunitySharedBankToMyBankActionMutationVariables>;
 export const CreateClassDocument = gql`
     mutation CreateClass($name: String!, $description: String) {
   createClass(name: $name, description: $description) {
@@ -1166,6 +1341,58 @@ export function useCreateClassMutation(baseOptions?: ApolloReactHooks.MutationHo
 export type CreateClassMutationHookResult = ReturnType<typeof useCreateClassMutation>;
 export type CreateClassMutationResult = ApolloReactCommon.MutationResult<CreateClassMutation>;
 export type CreateClassMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateClassMutation, CreateClassMutationVariables>;
+export const CreateCommunityActionDocument = gql`
+    mutation CreateCommunityAction($name: String!, $description: String, $subject: String!, $grade: Int!, $visibility: CommunityVisibility!) {
+  createCommunity(
+    name: $name
+    description: $description
+    subject: $subject
+    grade: $grade
+    visibility: $visibility
+  ) {
+    id
+    name
+    description
+    subject
+    grade
+    visibility
+    viewerRole
+    memberCount
+    sharedBankCount
+    createdAt
+  }
+}
+    `;
+export type CreateCommunityActionMutationFn = ApolloReactCommon.MutationFunction<CreateCommunityActionMutation, CreateCommunityActionMutationVariables>;
+
+/**
+ * __useCreateCommunityActionMutation__
+ *
+ * To run a mutation, you first call `useCreateCommunityActionMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateCommunityActionMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createCommunityActionMutation, { data, loading, error }] = useCreateCommunityActionMutation({
+ *   variables: {
+ *      name: // value for 'name'
+ *      description: // value for 'description'
+ *      subject: // value for 'subject'
+ *      grade: // value for 'grade'
+ *      visibility: // value for 'visibility'
+ *   },
+ * });
+ */
+export function useCreateCommunityActionMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreateCommunityActionMutation, CreateCommunityActionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<CreateCommunityActionMutation, CreateCommunityActionMutationVariables>(CreateCommunityActionDocument, options);
+      }
+export type CreateCommunityActionMutationHookResult = ReturnType<typeof useCreateCommunityActionMutation>;
+export type CreateCommunityActionMutationResult = ApolloReactCommon.MutationResult<CreateCommunityActionMutation>;
+export type CreateCommunityActionMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateCommunityActionMutation, CreateCommunityActionMutationVariables>;
 export const CreateExamDraftVariantsMutationDocument = gql`
     mutation CreateExamDraftVariantsMutation($sourceQuestionId: ID!, $totalVariants: Int!) {
   createExamDraftVariants(
@@ -1556,6 +1783,42 @@ export function useGroupQuestionsAsVariantsMutationMutation(baseOptions?: Apollo
 export type GroupQuestionsAsVariantsMutationMutationHookResult = ReturnType<typeof useGroupQuestionsAsVariantsMutationMutation>;
 export type GroupQuestionsAsVariantsMutationMutationResult = ApolloReactCommon.MutationResult<GroupQuestionsAsVariantsMutationMutation>;
 export type GroupQuestionsAsVariantsMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<GroupQuestionsAsVariantsMutationMutation, GroupQuestionsAsVariantsMutationMutationVariables>;
+export const JoinCommunityActionDocument = gql`
+    mutation JoinCommunityAction($communityId: ID!) {
+  joinCommunity(communityId: $communityId) {
+    id
+    viewerRole
+    memberCount
+    sharedBankCount
+  }
+}
+    `;
+export type JoinCommunityActionMutationFn = ApolloReactCommon.MutationFunction<JoinCommunityActionMutation, JoinCommunityActionMutationVariables>;
+
+/**
+ * __useJoinCommunityActionMutation__
+ *
+ * To run a mutation, you first call `useJoinCommunityActionMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useJoinCommunityActionMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [joinCommunityActionMutation, { data, loading, error }] = useJoinCommunityActionMutation({
+ *   variables: {
+ *      communityId: // value for 'communityId'
+ *   },
+ * });
+ */
+export function useJoinCommunityActionMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<JoinCommunityActionMutation, JoinCommunityActionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<JoinCommunityActionMutation, JoinCommunityActionMutationVariables>(JoinCommunityActionDocument, options);
+      }
+export type JoinCommunityActionMutationHookResult = ReturnType<typeof useJoinCommunityActionMutation>;
+export type JoinCommunityActionMutationResult = ApolloReactCommon.MutationResult<JoinCommunityActionMutation>;
+export type JoinCommunityActionMutationOptions = ApolloReactCommon.BaseMutationOptions<JoinCommunityActionMutation, JoinCommunityActionMutationVariables>;
 export const PublishExamDocument = gql`
     mutation PublishExam($examId: ID!) {
   publishExam(examId: $examId) {
@@ -1761,6 +2024,55 @@ export function useSaveAnswerMutation(baseOptions?: ApolloReactHooks.MutationHoo
 export type SaveAnswerMutationHookResult = ReturnType<typeof useSaveAnswerMutation>;
 export type SaveAnswerMutationResult = ApolloReactCommon.MutationResult<SaveAnswerMutation>;
 export type SaveAnswerMutationOptions = ApolloReactCommon.BaseMutationOptions<SaveAnswerMutation, SaveAnswerMutationVariables>;
+export const ShareQuestionBankToCommunityActionDocument = gql`
+    mutation ShareQuestionBankToCommunityAction($communityId: ID!, $bankId: ID!) {
+  shareQuestionBankToCommunity(communityId: $communityId, bankId: $bankId) {
+    id
+    status
+    createdAt
+    sharedBy {
+      id
+      fullName
+    }
+    bank {
+      id
+      title
+      questionCount
+      owner {
+        id
+        fullName
+      }
+    }
+  }
+}
+    `;
+export type ShareQuestionBankToCommunityActionMutationFn = ApolloReactCommon.MutationFunction<ShareQuestionBankToCommunityActionMutation, ShareQuestionBankToCommunityActionMutationVariables>;
+
+/**
+ * __useShareQuestionBankToCommunityActionMutation__
+ *
+ * To run a mutation, you first call `useShareQuestionBankToCommunityActionMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useShareQuestionBankToCommunityActionMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [shareQuestionBankToCommunityActionMutation, { data, loading, error }] = useShareQuestionBankToCommunityActionMutation({
+ *   variables: {
+ *      communityId: // value for 'communityId'
+ *      bankId: // value for 'bankId'
+ *   },
+ * });
+ */
+export function useShareQuestionBankToCommunityActionMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ShareQuestionBankToCommunityActionMutation, ShareQuestionBankToCommunityActionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ShareQuestionBankToCommunityActionMutation, ShareQuestionBankToCommunityActionMutationVariables>(ShareQuestionBankToCommunityActionDocument, options);
+      }
+export type ShareQuestionBankToCommunityActionMutationHookResult = ReturnType<typeof useShareQuestionBankToCommunityActionMutation>;
+export type ShareQuestionBankToCommunityActionMutationResult = ApolloReactCommon.MutationResult<ShareQuestionBankToCommunityActionMutation>;
+export type ShareQuestionBankToCommunityActionMutationOptions = ApolloReactCommon.BaseMutationOptions<ShareQuestionBankToCommunityActionMutation, ShareQuestionBankToCommunityActionMutationVariables>;
 export const StartAttemptDocument = gql`
     mutation StartAttempt($examId: ID!, $studentId: ID!) {
   startAttempt(examId: $examId, studentId: $studentId) {
@@ -2120,6 +2432,160 @@ export type ClassesListQueryHookResult = ReturnType<typeof useClassesListQuery>;
 export type ClassesListLazyQueryHookResult = ReturnType<typeof useClassesListLazyQuery>;
 export type ClassesListSuspenseQueryHookResult = ReturnType<typeof useClassesListSuspenseQuery>;
 export type ClassesListQueryResult = ApolloReactCommon.QueryResult<ClassesListQuery, ClassesListQueryVariables>;
+export const CommunityDetailDocument = gql`
+    query CommunityDetail($id: ID!) {
+  community(id: $id) {
+    id
+    name
+    description
+    subject
+    grade
+    visibility
+    viewerRole
+    memberCount
+    sharedBankCount
+    members {
+      id
+      role
+      joinedAt
+      user {
+        id
+        fullName
+      }
+    }
+    sharedBanks {
+      id
+      status
+      createdAt
+      sharedBy {
+        id
+        fullName
+      }
+      bank {
+        id
+        title
+        description
+        grade
+        subject
+        topic
+        visibility
+        questionCount
+        createdAt
+        owner {
+          id
+          fullName
+        }
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useCommunityDetailQuery__
+ *
+ * To run a query within a React component, call `useCommunityDetailQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCommunityDetailQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCommunityDetailQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useCommunityDetailQuery(baseOptions: ApolloReactHooks.QueryHookOptions<CommunityDetailQuery, CommunityDetailQueryVariables> & ({ variables: CommunityDetailQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<CommunityDetailQuery, CommunityDetailQueryVariables>(CommunityDetailDocument, options);
+      }
+export function useCommunityDetailLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CommunityDetailQuery, CommunityDetailQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<CommunityDetailQuery, CommunityDetailQueryVariables>(CommunityDetailDocument, options);
+        }
+// @ts-ignore
+export function useCommunityDetailSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<CommunityDetailQuery, CommunityDetailQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CommunityDetailQuery, CommunityDetailQueryVariables>;
+export function useCommunityDetailSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CommunityDetailQuery, CommunityDetailQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CommunityDetailQuery | undefined, CommunityDetailQueryVariables>;
+export function useCommunityDetailSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CommunityDetailQuery, CommunityDetailQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<CommunityDetailQuery, CommunityDetailQueryVariables>(CommunityDetailDocument, options);
+        }
+export type CommunityDetailQueryHookResult = ReturnType<typeof useCommunityDetailQuery>;
+export type CommunityDetailLazyQueryHookResult = ReturnType<typeof useCommunityDetailLazyQuery>;
+export type CommunityDetailSuspenseQueryHookResult = ReturnType<typeof useCommunityDetailSuspenseQuery>;
+export type CommunityDetailQueryResult = ApolloReactCommon.QueryResult<CommunityDetailQuery, CommunityDetailQueryVariables>;
+export const CommunityOverviewDocument = gql`
+    query CommunityOverview {
+  me {
+    id
+  }
+  communities {
+    id
+    name
+    description
+    subject
+    grade
+    visibility
+    viewerRole
+    memberCount
+    sharedBankCount
+    createdAt
+  }
+  questionBanks {
+    id
+    title
+    description
+    grade
+    subject
+    topic
+    topics
+    visibility
+    questionCount
+    createdAt
+    owner {
+      id
+      fullName
+    }
+  }
+}
+    `;
+
+/**
+ * __useCommunityOverviewQuery__
+ *
+ * To run a query within a React component, call `useCommunityOverviewQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCommunityOverviewQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCommunityOverviewQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useCommunityOverviewQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<CommunityOverviewQuery, CommunityOverviewQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<CommunityOverviewQuery, CommunityOverviewQueryVariables>(CommunityOverviewDocument, options);
+      }
+export function useCommunityOverviewLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CommunityOverviewQuery, CommunityOverviewQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<CommunityOverviewQuery, CommunityOverviewQueryVariables>(CommunityOverviewDocument, options);
+        }
+// @ts-ignore
+export function useCommunityOverviewSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<CommunityOverviewQuery, CommunityOverviewQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CommunityOverviewQuery, CommunityOverviewQueryVariables>;
+export function useCommunityOverviewSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CommunityOverviewQuery, CommunityOverviewQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CommunityOverviewQuery | undefined, CommunityOverviewQueryVariables>;
+export function useCommunityOverviewSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CommunityOverviewQuery, CommunityOverviewQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<CommunityOverviewQuery, CommunityOverviewQueryVariables>(CommunityOverviewDocument, options);
+        }
+export type CommunityOverviewQueryHookResult = ReturnType<typeof useCommunityOverviewQuery>;
+export type CommunityOverviewLazyQueryHookResult = ReturnType<typeof useCommunityOverviewLazyQuery>;
+export type CommunityOverviewSuspenseQueryHookResult = ReturnType<typeof useCommunityOverviewSuspenseQuery>;
+export type CommunityOverviewQueryResult = ApolloReactCommon.QueryResult<CommunityOverviewQuery, CommunityOverviewQueryVariables>;
 export const CreateExamOptionsDocument = gql`
     query CreateExamOptions {
   me {

@@ -1,0 +1,26 @@
+mutation CreateCommunityAction(
+  $name: String!
+  $description: String
+  $subject: String!
+  $grade: Int!
+  $visibility: CommunityVisibility!
+) {
+  createCommunity(
+    name: $name
+    description: $description
+    subject: $subject
+    grade: $grade
+    visibility: $visibility
+  ) {
+    id
+    name
+    description
+    subject
+    grade
+    visibility
+    viewerRole
+    memberCount
+    sharedBankCount
+    createdAt
+  }
+}

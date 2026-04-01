@@ -1,0 +1,20 @@
+mutation ShareQuestionBankToCommunityAction($communityId: ID!, $bankId: ID!) {
+  shareQuestionBankToCommunity(communityId: $communityId, bankId: $bankId) {
+    id
+    status
+    createdAt
+    sharedBy {
+      id
+      fullName
+    }
+    bank {
+      id
+      title
+      questionCount
+      owner {
+        id
+        fullName
+      }
+    }
+  }
+}

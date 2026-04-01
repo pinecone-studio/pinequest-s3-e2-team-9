@@ -1,5 +1,6 @@
 import type {
   AttemptIntegrityEventType,
+  CommunityVisibility,
   Difficulty,
   ExamGenerationMode,
   ExamGenerationRule,
@@ -18,6 +19,14 @@ export type CreateQuestionBankArgs = {
   subject?: string;
   topic?: string;
   visibility?: QuestionBankVisibility;
+};
+
+export type CreateCommunityArgs = {
+  name: string;
+  description?: string;
+  subject?: string;
+  grade?: number;
+  visibility?: CommunityVisibility;
 };
 
 export type CreateQuestionArgs = {
@@ -44,6 +53,19 @@ export type UpdateQuestionArgs = {
 
 export type DeleteQuestionArgs = {
   id: string;
+};
+
+export type JoinCommunityArgs = {
+  communityId: string;
+};
+
+export type ShareQuestionBankToCommunityArgs = {
+  communityId: string;
+  bankId: string;
+};
+
+export type CopyCommunitySharedBankToMyBankArgs = {
+  sharedBankId: string;
 };
 
 export type CreateQuestionVariantsArgs = {
