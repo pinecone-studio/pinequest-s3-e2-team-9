@@ -25,6 +25,9 @@ const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   [QuestionType.ImageUpload]: "Зураг оруулах",
 };
 
+const SHORT_ANSWER_HELP_TEXT =
+  "Хэрэв тоон хариулттай асуулт бол нэгжийг алгасаж болно. Нэгжийг кирилл эсвэл англи үсгээр бичсэн ч зөв тооцно.";
+
 type StudentExamQuestionCardProps = {
   draftValue: string;
   isDirty: boolean;
@@ -208,7 +211,21 @@ export function StudentExamQuestionCard({
           </div>
         ) : null}
 
-        {isShortAnswer ? <input className="h-12 w-full rounded-[14px] border border-[#D0D5DD] px-4 text-[14px] outline-none focus:border-[#2466D0]" disabled={!isInProgress} onChange={(event) => onChange(event.target.value)} placeholder="Хариултаа оруулна уу" type="text" value={draftValue} /> : null}
+        {isShortAnswer ? (
+          <div className="space-y-2">
+            <input
+              className="h-12 w-full rounded-[14px] border border-[#D0D5DD] px-4 text-[14px] outline-none focus:border-[#2466D0]"
+              disabled={!isInProgress}
+              onChange={(event) => onChange(event.target.value)}
+              placeholder="Хариултаа оруулна уу"
+              type="text"
+              value={draftValue}
+            />
+            <p className="rounded-[12px] border border-[#D9E6FF] bg-[#F5F8FF] px-3 py-2 text-[12px] leading-5 text-[#475467]">
+              {SHORT_ANSWER_HELP_TEXT}
+            </p>
+          </div>
+        ) : null}
         {isEssay ? (
           <div className="space-y-3 rounded-[14px] border border-[#D0D5DD] bg-[#F8FAFF] px-4 py-4">
             <textarea

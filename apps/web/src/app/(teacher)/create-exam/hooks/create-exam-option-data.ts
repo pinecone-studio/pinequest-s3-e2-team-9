@@ -33,6 +33,7 @@ export const getQuestionOptions = (
     prompt: question.prompt,
     type: question.type,
     difficulty: question.difficulty,
+    createdAt: question.createdAt,
     options: question.options,
     correctAnswer: question.correctAnswer,
     tags: question.tags,

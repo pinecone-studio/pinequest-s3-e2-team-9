@@ -19,6 +19,7 @@ query CreateExamOptions {
     prompt
     type
     difficulty
+    createdAt
     options
     correctAnswer
     tags

@@ -53,6 +53,7 @@ export type CreateExamQuestionOption = {
   prompt: string;
   type: string;
   difficulty: string;
+  createdAt: string;
   options: string[];
   correctAnswer?: string | null;
   tags: string[];
@@ -82,6 +83,14 @@ export type CreateExamRuleSourceOption = {
   easyQuestions: number;
   mediumQuestions: number;
   hardQuestions: number;
+};
+
+export type CreateExamRulePreviewItem = {
+  ruleId: string;
+  label: string;
+  difficultyLabel: string;
+  count: number;
+  questions: CreateExamQuestionOption[];
 };
 
 export type CreateExamSubmitState =

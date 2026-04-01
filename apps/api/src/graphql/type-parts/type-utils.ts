@@ -49,19 +49,21 @@ const normalizeCompact = (value: string) =>
 export const normalizeShortAnswer = (value: string): string =>
   normalizeCompact(value);
 
-export const parseNumericAnswer = (value: string): number | null => {
-  const normalized = normalizeCompact(value);
-  if (!normalized) {
-    return null;
-  }
+const parseNumberLike = (value: string): number | null => {
+  const normalizedValue =
+    value.includes(",") && !value.includes(".")
+      ? value.replace(/,/gu, ".")
+      : value;
 
-  const percentMatch = normalized.match(/^([+-]?\d+(?:\.\d+)?)%$/u);
+  const percentMatch = normalizedValue.match(/^([+-]?\d+(?:\.\d+)?)%$/u);
   if (percentMatch) {
     const parsed = Number(percentMatch[1]);
     return Number.isFinite(parsed) ? parsed / 100 : null;
   }
 
-  const fractionMatch = normalized.match(/^([+-]?\d+(?:\.\d+)?)\/([+-]?\d+(?:\.\d+)?)$/u);
+  const fractionMatch = normalizedValue.match(
+    /^([+-]?\d+(?:\.\d+)?)\/([+-]?\d+(?:\.\d+)?)$/u,
+  );
   if (fractionMatch) {
     const numerator = Number(fractionMatch[1]);
     const denominator = Number(fractionMatch[2]);
@@ -72,6 +74,36 @@ export const parseNumericAnswer = (value: string): number | null => {
     return numerator / denominator;
   }
 
-  const parsed = Number(normalized);
+  const parsed = Number(normalizedValue);
   return Number.isFinite(parsed) ? parsed : null;
+};
+
+export const parseNumericAnswer = (value: string): number | null => {
+  const normalized = normalizeCompact(value);
+  if (!normalized) {
+    return null;
+  }
+
+  const directMatch = parseNumberLike(normalized);
+  if (directMatch !== null) {
+    return directMatch;
+  }
+
+  const tokenMatch = normalized.match(
+    /^([+-]?\d+(?:[.,]\d+)?(?:\/[+-]?\d+(?:[.,]\d+)?)?%?)(.*)$/u,
+  );
+  if (!tokenMatch) {
+    return null;
+  }
+
+  const [, token, residue = ""] = tokenMatch;
+  if (!token) {
+    return null;
+  }
+
+  if (/\d/u.test(residue)) {
+    return null;
+  }
+
+  return parseNumberLike(token);
 };

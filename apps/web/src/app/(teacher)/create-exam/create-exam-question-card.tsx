@@ -14,6 +14,7 @@ import { CreateExamQuestionComposer } from "./create-exam-question-composer";
 import { CreateExamQuestionDrawer } from "./create-exam-question-drawer";
 import { CreateExamQuestionLibrary } from "./create-exam-question-library";
 import { CreateExamRuleBuilder } from "./create-exam-rule-builder";
+import { buildRulePreview } from "./create-exam-rule-preview";
 import { CreateExamSelectedQuestions } from "./create-exam-selected-questions";
 
 type CreateExamQuestionCardProps = {
@@ -74,6 +75,12 @@ export function CreateExamQuestionCard({
     values.generationMode === ExamGenerationMode.RuleBased
       ? values.generationRules.reduce((sum, rule) => sum + (Number(rule.count) || 0), 0)
       : Object.keys(selectedQuestionPoints).length;
+  const rulePreview = buildRulePreview({
+    mode: values.mode,
+    questionOptions,
+    rules: values.generationRules,
+    sourceOptions: ruleSourceOptions,
+  });
 
   const openLibrary = () => {
     setDrawerSelectedIds(Object.keys(selectedQuestionPoints));
@@ -92,6 +99,7 @@ export function CreateExamQuestionCard({
           disabled={disabled}
           error={errors.generationRules}
           mode={values.mode}
+          previewItems={rulePreview}
           rules={values.generationRules}
           onAddRule={onAddGenerationRule}
           onRemoveRule={onRemoveGenerationRule}
@@ -129,9 +137,8 @@ export function CreateExamQuestionCard({
               disabled={disabled}
               initialBankId={initialBankId}
               onOpenLibrary={openLibrary}
-              onQuestionCreated={(questionId, points) => {
+              onQuestionCreated={(questionId) => {
                 onAddQuestion(questionId);
-                onPointsChange(questionId, points);
                 setIsComposerOpen(false);
               }}
               onQuestionsRefresh={onQuestionsRefresh}
@@ -157,6 +164,7 @@ export function CreateExamQuestionCard({
             <CreateExamQuestionLibrary
               questionBankOptions={questionBankOptions}
               questionOptions={questionOptions}
+              mode={values.mode}
               disabled={disabled}
               checkedQuestionIds={drawerSelectedIds}
               variantCount={values.variantCount}

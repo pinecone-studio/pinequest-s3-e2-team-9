@@ -40,6 +40,10 @@ query StudentExamRoom($id: ID!) {
         type
         difficulty
         options
+        bank {
+          id
+          topic
+        }
       }
     }
   }

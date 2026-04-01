@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Difficulty, ExamMode } from "@/graphql/generated";
 import type {
   CreateExamGenerationRule,
+  CreateExamRulePreviewItem,
   CreateExamRuleSourceOption,
 } from "./create-exam-types";
 
@@ -13,6 +14,7 @@ type CreateExamRuleBuilderProps = {
   disabled: boolean;
   error?: string;
   mode: ExamMode;
+  previewItems: CreateExamRulePreviewItem[];
   rules: CreateExamGenerationRule[];
   onAddRule: () => void;
   onRemoveRule: (ruleId: string) => void;
@@ -35,6 +37,7 @@ export function CreateExamRuleBuilder({
   disabled,
   error,
   mode,
+  previewItems,
   rules,
   onAddRule,
   onRemoveRule,
@@ -245,6 +248,38 @@ export function CreateExamRuleBuilder({
                     </span>
                   ) : null}
                 </div>
+
+                {previewItems.find((item) => item.ruleId === rule.id)?.questions.length ? (
+                  <div className="mt-4 rounded-[10px] border border-[#E4E7EC] bg-[#F8FAFC] p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[13px] font-medium text-[#0F1216]">
+                          Урьдчилсан сонгогдох асуултууд
+                        </p>
+                        <p className="mt-1 text-[12px] text-[#667085]">
+                          Save хийхээс өмнөх preview. Rule-д тулгуурласан тогтвортой санамсаргүй сонголт.
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-white px-2.5 py-1 text-[12px] text-[#344054]">
+                        {previewItems.find((item) => item.ruleId === rule.id)?.difficultyLabel}
+                      </span>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {previewItems
+                        .find((item) => item.ruleId === rule.id)
+                        ?.questions.map((question, previewIndex) => (
+                          <div
+                            key={question.id}
+                            className="rounded-[8px] border border-[#E4E7EC] bg-white px-3 py-2"
+                          >
+                            <p className="text-[12px] font-medium text-[#344054]">
+                              {previewIndex + 1}. {question.prompt.trim() || question.title.trim()}
+                            </p>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             );
           })()

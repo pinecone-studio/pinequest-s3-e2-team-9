@@ -1,5 +1,9 @@
 import { Difficulty, ExamMode } from "@/graphql/generated";
 import type { StudentExamAttempt, StudentExamData } from "./student-exam-room-types";
+import {
+  getAdaptiveTargetDifficulty,
+  getPreferredWeakTopic,
+} from "./student-exam-practice-mastery";
 
 const difficultyRank: Record<Difficulty, number> = {
   [Difficulty.Easy]: 0,
@@ -7,15 +11,10 @@ const difficultyRank: Record<Difficulty, number> = {
   [Difficulty.Hard]: 2,
 };
 
-const getDifficultyByRank = (rank: number): Difficulty =>
-  rank <= 0 ? Difficulty.Easy : rank >= 2 ? Difficulty.Hard : Difficulty.Medium;
-
-const getNextTargetDifficulty = (difficulty: Difficulty, isCorrect: boolean): Difficulty =>
-  getDifficultyByRank(difficultyRank[difficulty] + (isCorrect ? 1 : -1));
-
 const pickNextQuestionIndex = (
   remaining: StudentExamData["questions"],
   targetDifficulty: Difficulty,
+  preferredTopic: string | null,
 ) => {
   const targetRank = difficultyRank[targetDifficulty];
 
@@ -30,12 +29,18 @@ const pickNextQuestionIndex = (
         Math.abs(difficultyRank[item.question.difficulty] - targetRank);
       const bestDistance =
         Math.abs(difficultyRank[best.question.difficulty] - targetRank);
+      const topicPenalty =
+        preferredTopic && (item.question.bank?.topic ?? "Ерөнхий") !== preferredTopic ? 2 : 0;
+      const bestTopicPenalty =
+        preferredTopic && (best.question.bank?.topic ?? "Ерөнхий") !== preferredTopic ? 2 : 0;
+      const score = distance * 10 + topicPenalty;
+      const bestScore = bestDistance * 10 + bestTopicPenalty;
 
-      if (distance < bestDistance) {
+      if (score < bestScore) {
         return index;
       }
 
-      if (distance === bestDistance) {
+      if (score === bestScore) {
         return item.order < best.order ? index : bestIndex;
       }
 
@@ -59,9 +64,16 @@ export const applyAdaptivePracticeOrdering = (
   const ordered: StudentExamData["questions"] = [];
   const remaining = [...exam.questions];
   let targetDifficulty = Difficulty.Medium;
+  let adaptiveStreak = 0;
 
   while (remaining.length > 0) {
-    const nextIndex = pickNextQuestionIndex(remaining, targetDifficulty);
+    const remainingQuestionIds = new Set(remaining.map((item) => item.question.id));
+    const preferredTopic = getPreferredWeakTopic(exam, attempt, remainingQuestionIds);
+    const nextIndex = pickNextQuestionIndex(
+      remaining,
+      targetDifficulty,
+      preferredTopic,
+    );
     const [nextQuestion] = remaining.splice(nextIndex, 1);
     ordered.push(nextQuestion);
 
@@ -72,9 +84,13 @@ export const applyAdaptivePracticeOrdering = (
 
     const earnedScore = (answer.autoScore ?? 0) + (answer.manualScore ?? 0);
     const isCorrect = earnedScore >= nextQuestion.points;
-    targetDifficulty = getNextTargetDifficulty(
+    adaptiveStreak = isCorrect
+      ? Math.max(1, adaptiveStreak + 1)
+      : Math.min(-1, adaptiveStreak - 1);
+    targetDifficulty = getAdaptiveTargetDifficulty(
       nextQuestion.question.difficulty,
       isCorrect,
+      Math.abs(adaptiveStreak),
     );
   }
 

@@ -26,7 +26,7 @@ type CreateExamQuestionComposerProps = {
   bankOptions: CreateExamQuestionBankOption[];
   disabled: boolean;
   initialBankId?: string;
-  onQuestionCreated: (questionId: string, points: string) => void;
+  onQuestionCreated: (questionId: string) => void;
   onQuestionsRefresh: () => Promise<unknown>;
   onClose: () => void;
   onOpenLibrary?: () => void;
@@ -35,7 +35,6 @@ type CreateExamQuestionComposerProps = {
 export function CreateExamQuestionComposer(props: CreateExamQuestionComposerProps) {
   const [bankId, setBankId] = useState("");
   const [bankSelection, setBankSelection] = useState(EMPTY_BANK_SELECTION);
-  const [points, setPoints] = useState("10");
   const {
     prompt, setPrompt,
     questionType, setQuestionType,
@@ -126,9 +125,8 @@ export function CreateExamQuestionComposer(props: CreateExamQuestionComposerProp
         throw new Error("Асуулт үүсгэсэн хариу ирсэнгүй.");
       }
       await props.onQuestionsRefresh();
-      props.onQuestionCreated(createdQuestion.id, points);
+      props.onQuestionCreated(createdQuestion.id);
       resetState();
-      setPoints("10");
     } catch (error) {
       console.error("Failed to create question for exam", error);
       setErrorMessage("Асуулт нэмэх үед алдаа гарлаа.");
@@ -172,11 +170,9 @@ export function CreateExamQuestionComposer(props: CreateExamQuestionComposerProp
           disabled={props.disabled}
           isBankLocked={Boolean(props.initialBankId)}
           loading={loading}
-          points={points}
           questionType={questionType}
           onBankSelectionChange={handleBankSelectionChange}
           onDifficultyChange={setDifficulty}
-          onPointsChange={setPoints}
           onQuestionTypeChange={setQuestionType}
         />
 

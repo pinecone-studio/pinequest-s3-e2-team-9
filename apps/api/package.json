@@ -8,6 +8,8 @@
     "start": "wrangler dev --remote --port 8787",
     "type-check": "tsc -p tsconfig.json --noEmit",
     "seed:generate": "tsx ./scripts/generate-question-bank-seed.ts",
+    "seed:topup:dev": "tsx ./scripts/topup-rule-based-mock-data.ts",
+    "seed:topup:prod": "tsx ./scripts/topup-rule-based-mock-data.ts --env production",
     "deploy": "wrangler deploy --env production",
     "db:migrate:dev": "wrangler d1 migrations apply DB --remote",
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote --env production",

@@ -1,7 +1,9 @@
+/* eslint-disable max-lines */
 "use client";
 
-import { type FormEvent } from "react";
+import { type FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ExamMode } from "@/graphql/generated";
 import { CreateExamDetailsCard } from "./create-exam-details-card";
 import { CreateExamHeader } from "./create-exam-header";
 import { CreateExamQuestionCard } from "./create-exam-question-card";
@@ -16,6 +18,60 @@ type CreateExamContentProps = {
   examId?: string;
   returnTo?: string;
 };
+
+type ModeChooserProps = {
+  onSelect: (mode: ExamMode) => void;
+};
+
+function CreateExamModeChooser({ onSelect }: ModeChooserProps) {
+  return (
+    <section className="rounded-[20px] border border-[#DFE1E5] bg-white p-6 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] sm:p-7">
+      <div className="space-y-2">
+        <h2 className="text-[24px] font-semibold leading-8 text-[#101828]">
+          Ямар төрлийн шалгалт үүсгэх вэ?
+        </h2>
+        <p className="max-w-[560px] text-[15px] leading-6 text-[#667085]">
+          Эхлээд урсгалаа сонговол дараагийн алхмууд илүү ойлгомжтой болно.
+        </p>
+      </div>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <button
+          type="button"
+          className="rounded-[18px] border border-[#D0D5DD] bg-white p-6 text-left transition hover:border-[#2466D0] hover:bg-[#F8FAFF]"
+          onClick={() => onSelect(ExamMode.Scheduled)}
+        >
+          <div className="inline-flex rounded-full bg-[#EEF4FF] px-3 py-1 text-[12px] font-semibold text-[#2466D0]">
+            Ангитай
+          </div>
+          <h3 className="mt-4 text-[18px] font-semibold leading-7 text-[#101828]">
+            Ангийн шалгалт
+          </h3>
+          <p className="mt-2 text-[14px] leading-6 text-[#667085]">
+            Тодорхой ангид оноож, хугацаатай явуулна. Дууссаны дараа багш үр дүн, тайлан,
+            гараар үнэлгээгээ хийнэ.
+          </p>
+        </button>
+
+        <button
+          type="button"
+          className="rounded-[18px] border border-[#D0D5DD] bg-white p-6 text-left transition hover:border-[#16A34A] hover:bg-[#F6FEF9]"
+          onClick={() => onSelect(ExamMode.Practice)}
+        >
+          <div className="inline-flex rounded-full bg-[#ECFDF3] px-3 py-1 text-[12px] font-semibold text-[#16A34A]">
+            Нээлттэй
+          </div>
+          <h3 className="mt-4 text-[18px] font-semibold leading-7 text-[#101828]">
+            Free test / Practice
+          </h3>
+          <p className="mt-2 text-[14px] leading-6 text-[#667085]">
+            Сурагчид шууд ажиллаж болно. Дуусмагц оноо, зөв хариу, feedback-ээ тэр дор нь харна.
+          </p>
+        </button>
+      </div>
+    </section>
+  );
+}
 
 export function CreateExamContent({
   initialClassId = "",
@@ -35,6 +91,8 @@ export function CreateExamContent({
     flow.isOptionsLoading ||
     !flow.classOptions.length ||
     !flow.questionBankOptions.length;
+  const isEditMode = flow.isEditMode;
+  const [isModeChosen, setIsModeChosen] = useState(Boolean(isEditMode));
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -47,11 +105,41 @@ export function CreateExamContent({
   };
 
   const backHref = returnTo || (initialBankId ? `/question-bank/${initialBankId}` : "/my-exams");
+  const handleModeSelect = (mode: ExamMode) => {
+    flow.setFieldValue("mode", mode);
+    setIsModeChosen(true);
+  };
 
   return (
     <div className="mx-auto w-full max-w-[836px]">
       <form className="space-y-6" onSubmit={handleSubmit}>
         <TeacherBackButton fallbackHref={backHref} />
+        {!isEditMode && !isModeChosen ? (
+          <CreateExamModeChooser onSelect={handleModeSelect} />
+        ) : null}
+
+        {!isEditMode && isModeChosen ? (
+          <div className="flex items-center justify-between rounded-[12px] border border-[#DFE1E5] bg-white px-4 py-3 text-[14px] shadow-[0px_1px_2px_rgba(0,0,0,0.05)]">
+            <span className="text-[#344054]">
+              Одоогийн төрөл:{" "}
+              <span className="font-semibold text-[#101828]">
+                {flow.formValues.mode === ExamMode.Practice
+                  ? "Free test / Practice"
+                  : "Ангийн шалгалт"}
+              </span>
+            </span>
+            <button
+              type="button"
+              className="text-[13px] font-medium text-[#2466D0]"
+              onClick={() => setIsModeChosen(false)}
+            >
+              Төрөл солих
+            </button>
+          </div>
+        ) : null}
+
+        {!isModeChosen && !isEditMode ? null : (
+          <>
         <CreateExamHeader
           isSubmitting={flow.isSubmitting}
           disabled={isDisabled}
@@ -91,6 +179,7 @@ export function CreateExamContent({
           values={flow.formValues}
           errors={flow.errors}
           disabled={isDisabled}
+          showModeSelector={isEditMode}
           onFieldChange={flow.setFieldValue}
         />
         <CreateExamSettingsCard
@@ -119,6 +208,8 @@ export function CreateExamContent({
           onQuestionsRefresh={flow.refetchOptions}
           initialBankId={flow.resolvedBankId}
         />
+          </>
+        )}
       </form>
     </div>
   );

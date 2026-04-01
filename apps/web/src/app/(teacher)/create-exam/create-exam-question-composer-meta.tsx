@@ -16,14 +16,12 @@ type CreateExamQuestionComposerMetaProps = {
   disabled: boolean;
   isBankLocked: boolean;
   loading: boolean;
-  points: string;
   questionType: QuestionType;
   onBankSelectionChange: (
     field: keyof BankSelectionValues,
     value: string,
   ) => void;
   onDifficultyChange: (value: Difficulty) => void;
-  onPointsChange: (value: string) => void;
   onQuestionTypeChange: (value: QuestionType) => void;
 };
 
@@ -37,11 +35,9 @@ export function CreateExamQuestionComposerMeta({
   disabled,
   isBankLocked,
   loading,
-  points,
   questionType,
   onBankSelectionChange,
   onDifficultyChange,
-  onPointsChange,
   onQuestionTypeChange,
 }: CreateExamQuestionComposerMetaProps) {
   const gradeOptions = getBankGradeOptions(bankOptions);
@@ -54,24 +50,7 @@ export function CreateExamQuestionComposerMeta({
   const bankDisabled = disabled || loading || isBankLocked;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between rounded-[8px] border border-[rgba(111,144,255,0.3)] bg-[rgba(111,144,255,0.05)] px-[11.8px] py-[11.8px]">
-        <p className="text-[14px] font-medium leading-5 text-[#0F1216]">
-          Энэ асуултын оноо
-        </p>
-        <div className="flex items-center gap-2">
-          <input
-            value={points}
-            onChange={(event) => onPointsChange(event.target.value)}
-            disabled={disabled || loading}
-            inputMode="numeric"
-            className="h-10 w-24 rounded-[6px] border border-[#DFE1E5] bg-white px-[11.8px] text-center text-[14px] font-semibold leading-[18px] text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] outline-none"
-          />
-          <span className="text-[14px] leading-5 text-[#52555B]">оноо</span>
-        </div>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[141.6px_1fr_1fr_1fr_93.6px]">
+    <div className="grid gap-4 xl:grid-cols-[141.6px_1fr_1fr_1fr_93.6px]">
         <label className="relative block w-[141.6px]">
           <select
             value={questionType}
@@ -160,7 +139,6 @@ export function CreateExamQuestionComposerMeta({
           </select>
           <ChevronDownIcon className="pointer-events-none absolute right-[11.8px] top-1/2 h-4 w-4 -translate-y-1/2 text-[#52555B] opacity-50" />
         </label>
-      </div>
     </div>
   );
 }

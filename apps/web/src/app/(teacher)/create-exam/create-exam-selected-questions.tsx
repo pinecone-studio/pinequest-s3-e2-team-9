@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  PreviewFileIcon,
   PreviewPencilIcon,
   PreviewTrashIcon,
 } from "../components/icons";
@@ -25,6 +24,7 @@ const TYPE_LABELS: Record<string, string> = {
   TRUE_FALSE: "Үнэн/Худал",
   SHORT_ANSWER: "Тоо бодолт",
   ESSAY: "Задгай",
+  IMAGE_UPLOAD: "Зураг",
 };
 
 const DIFFICULTY_STYLES: Record<string, string> = {
@@ -69,78 +69,90 @@ export function CreateExamSelectedQuestions({
       {selectedQuestions.map((question, index) => (
         <article
           key={question.id}
-          className="flex items-start gap-4 rounded-[12px] border border-[#DFE1E5] bg-white p-4 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
+          className="rounded-[12px] border border-[#DFE1E5] bg-white p-4 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
         >
-          <div className="flex-1 space-y-2">
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-2 text-[14px] leading-5">
-                <span className="font-medium text-[#0F1216]">Асуулт {index + 1}</span>
-                <span className="text-[16px] leading-6 text-[#52555B]">—</span>
-                <label className="inline-flex items-center gap-1 font-semibold text-[#6F90FF]">
-                  <input
-                    type="text"
-                    value={selectedQuestionPoints[question.id] ?? ""}
-                    onChange={(event) => onPointsChange(question.id, event.target.value)}
-                    disabled={disabled}
-                    inputMode="numeric"
-                    className="w-8 bg-transparent text-right outline-none"
-                  />
-                  <span>оноо</span>
-                </label>
-              </div>
-              <p className="text-[14px] leading-[23px] text-[#52555B]">{promptFor(question)}</p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-[6px]">
-              {question.type === "MCQ" ? (
-                <McqBadge />
-              ) : (
-                <span className="rounded-[6px] border border-[#DFE1E5] px-[5.8px] py-[0.62px] text-[12px] font-medium leading-4 text-[#0F1216]">
-                  {TYPE_LABELS[question.type] ?? question.type}
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div className="min-w-0 flex-1 space-y-3">
+              <div className="flex flex-wrap items-center gap-3 text-[14px] leading-5">
+                <span className="text-[14px] font-medium leading-5 text-[#0F1216]">
+                  Асуулт {index + 1}
                 </span>
-              )}
-              <span className="rounded-[6px] bg-[#6F90FF] px-[5.8px] py-[0.62px] text-[12px] font-medium leading-4 text-white">
-                {question.bankSubject}
-              </span>
-              <span
-                className={[
-                  "rounded-[6px] px-[5.8px] py-[0.62px] text-[12px] font-medium leading-4 capitalize",
-                  DIFFICULTY_STYLES[question.difficulty] ??
-                    "border border-[#DFE1E5] bg-white text-[#52555B]",
-                ].join(" ")}
-              >
-                {question.difficulty === "EASY"
-                  ? "Хялбар"
-                  : question.difficulty === "MEDIUM"
-                    ? "Дунд"
-                    : question.difficulty === "HARD"
-                      ? "Хүнд"
-                      : question.difficulty}
-              </span>
+                <span className="text-[16px] leading-6 text-[#52555B]">—</span>
+                <span className="text-[14px] font-semibold leading-5 text-[#6F90FF]">
+                  {selectedQuestionPoints[question.id] ?? "1"} оноо
+                </span>
+              </div>
+
+              <p className="text-[14px] leading-[23px] text-[#52555B]">{promptFor(question)}</p>
+
+              <div className="flex flex-wrap items-center gap-[6px]">
+                {question.type === "MCQ" ? (
+                  <McqBadge />
+                ) : (
+                  <span className="rounded-[6px] border border-[#D0D5DD] bg-white px-[5.8px] py-[0.62px] text-[12px] font-medium leading-4 text-[#0F1216]">
+                    {TYPE_LABELS[question.type] ?? question.type}
+                  </span>
+                )}
+                <span className="rounded-[6px] bg-[#6F90FF] px-[5.8px] py-[0.62px] text-[12px] font-medium leading-4 text-white">
+                  {question.bankSubject}
+                </span>
+                <span
+                  className={[
+                    "rounded-[6px] px-[5.8px] py-[0.62px] text-[12px] font-medium leading-4 capitalize",
+                    DIFFICULTY_STYLES[question.difficulty] ??
+                      "border border-[#DFE1E5] bg-white text-[#52555B]",
+                  ].join(" ")}
+                >
+                  {question.difficulty === "EASY"
+                    ? "Хялбар"
+                    : question.difficulty === "MEDIUM"
+                      ? "Дунд"
+                      : question.difficulty === "HARD"
+                        ? "Хүнд"
+                        : question.difficulty}
+                </span>
+              </div>
             </div>
 
-            {errors.pointsByQuestionId[question.id] ? (
-              <p className="text-[12px] text-[#B42318]">
-                {errors.pointsByQuestionId[question.id]}
-              </p>
-            ) : null}
-          </div>
+            <div className="flex w-full shrink-0 flex-col gap-3 xl:w-auto xl:min-w-[220px]">
+              <div className="flex items-start justify-between gap-3 xl:justify-end">
+                <div className="rounded-[12px] border border-[rgba(111,144,255,0.3)] bg-[rgba(111,144,255,0.05)] p-4 xl:min-w-[220px]">
+                  <p className="text-[12px] font-medium leading-4 text-[#0F1216]">
+                    Энэ асуултын оноо
+                  </p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={selectedQuestionPoints[question.id] ?? ""}
+                      onChange={(event) => onPointsChange(question.id, event.target.value)}
+                      disabled={disabled}
+                      inputMode="numeric"
+                      className="h-10 w-24 rounded-[10px] border border-[#D0D5DD] bg-white px-3 text-center text-[18px] font-semibold leading-6 text-[#0F1216] shadow-[0px_1px_2px_rgba(16,24,40,0.05)] outline-none"
+                    />
+                    <span className="text-[14px] leading-5 text-[#52555B]">оноо</span>
+                  </div>
+                  {errors.pointsByQuestionId[question.id] ? (
+                    <p className="mt-3 text-[12px] text-[#B42318]">
+                      {errors.pointsByQuestionId[question.id]}
+                    </p>
+                  ) : null}
+                </div>
 
-          <div className="flex items-center gap-3 text-[#52555B]">
-            <button type="button" className="disabled:opacity-40" disabled>
-              <PreviewPencilIcon className="h-5 w-5" />
-            </button>
-            <button type="button" className="disabled:opacity-40" disabled>
-              <PreviewFileIcon className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              className="disabled:opacity-40"
-              onClick={() => onRemove(question.id)}
-              disabled={disabled}
-            >
-              <PreviewTrashIcon className="h-5 w-5" />
-            </button>
+                <div className="flex items-center gap-3 pt-1 text-[#52555B]">
+                  <button type="button" className="disabled:opacity-40" disabled>
+                    <PreviewPencilIcon className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    className="disabled:opacity-40"
+                    onClick={() => onRemove(question.id)}
+                    disabled={disabled}
+                  >
+                    <PreviewTrashIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </article>
       ))}

@@ -4,6 +4,7 @@ import { AttemptStatus, ExamMode } from "@/graphql/generated";
 import { useProtectedImageSource } from "@/lib/image-answer";
 import { parseOpenTaskAnswer } from "@/lib/open-task-answer";
 import { getQuestionPromptImageValue } from "@/lib/question-prompt-image";
+import { buildPracticeMasterySummary } from "./student-exam-practice-mastery";
 import type { StudentExamAttempt, StudentExamData } from "./student-exam-room-types";
 import { formatClock, formatMonthDay } from "./student-home-time";
 
@@ -166,6 +167,9 @@ export function StudentExamSubmittedScreen({
   const weakTopics = [...weakTopicCounts.entries()]
     .sort((left, right) => right[1] - left[1])
     .slice(0, 3);
+  const practiceMastery = isPractice
+    ? buildPracticeMasterySummary(exam, currentAttempt)
+    : null;
   const details = [
     {
       label: "Төлөв",
@@ -180,6 +184,12 @@ export function StudentExamSubmittedScreen({
     },
     { label: "Нийт асуултын тоо", value: String(exam.questions.length) },
     { label: "Хариулсан асуултын тоо", value: String(answeredCount) },
+    ...(practiceMastery
+      ? [
+          { label: "Ерөнхий mastery", value: `${practiceMastery.overallMasteryPercent}%` },
+          { label: "Тооцсон түвшин", value: practiceMastery.estimatedLevel },
+        ]
+      : []),
   ];
 
   return (
@@ -241,6 +251,83 @@ export function StudentExamSubmittedScreen({
                 ? "Хэрэв багш нэмэлт тайлбар үлдээсэн бол доорх асуулт бүрийн card дээрээс уншина уу."
                 : "Review хийгдсэний дараа энэ хуудас автоматаар Reviewed төлөв, final score, feedback-тайгаар шинэчлэгдэнэ."}
           </p>
+          {practiceMastery ? (
+            <div className="mt-5 space-y-4 rounded-[20px] border border-[#D5E3FF] bg-[#F8FAFF] p-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-[16px] bg-white px-4 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#2466D0]">
+                    Тооцсон түвшин
+                  </p>
+                  <p className="mt-2 text-[20px] font-semibold text-[#101828]">
+                    {practiceMastery.estimatedLevel}
+                  </p>
+                  <p className="mt-1 text-[13px] text-[#475467]">
+                    Итгэлцүүр: {practiceMastery.confidenceLabel}
+                  </p>
+                </div>
+
+                <div className="rounded-[16px] bg-white px-4 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#2466D0]">
+                    Дараагийн санал болгож буй түвшин
+                  </p>
+                  <p className="mt-2 text-[20px] font-semibold text-[#101828]">
+                    {practiceMastery.recommendedDifficulty}
+                  </p>
+                  <p className="mt-1 text-[13px] text-[#475467]">
+                    Mastery: {practiceMastery.overallMasteryPercent}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-[16px] bg-white px-4 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#B54708]">
+                    Илүү анхаарах сэдэв
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {practiceMastery.weakTopics.length ? (
+                      practiceMastery.weakTopics.map((topic) => (
+                        <div
+                          key={topic.topic}
+                          className="flex items-center justify-between rounded-xl border border-[#F2F4F7] bg-[#FFFAEB] px-3 py-2 text-[13px]"
+                        >
+                          <span className="font-medium text-[#344054]">{topic.topic}</span>
+                          <span className="text-[#B54708]">{topic.masteryPercent}%</span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[13px] text-[#475467]">
+                        Сул сэдэв одоогоор тод илрээгүй байна.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-[16px] bg-white px-4 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#027A48]">
+                    Хүчтэй сэдэв
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {practiceMastery.strongTopics.length ? (
+                      practiceMastery.strongTopics.map((topic) => (
+                        <div
+                          key={topic.topic}
+                          className="flex items-center justify-between rounded-xl border border-[#ECFDF3] bg-[#F6FEF9] px-3 py-2 text-[13px]"
+                        >
+                          <span className="font-medium text-[#344054]">{topic.topic}</span>
+                          <span className="text-[#027A48]">{topic.masteryPercent}%</span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[13px] text-[#475467]">
+                        Хүчтэй сэдвийг тогтооход илүү олон хариулт хэрэгтэй.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
           {isPractice ? (
             <button
               className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-[16px] bg-[#16A34A] text-[15px] font-semibold text-white shadow-[0_16px_36px_rgba(22,163,74,0.28)] transition hover:bg-[#15803D] disabled:cursor-not-allowed disabled:bg-[#98A2B3]"

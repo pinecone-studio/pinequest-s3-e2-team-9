@@ -4,6 +4,7 @@
 import { useMemo, useState } from "react";
 import { getCurriculumTopicGroupName, getCurriculumTopicGroups } from "../components/question-bank-curriculum";
 import {
+  ExamMode,
   Difficulty as GraphqlDifficulty,
   QuestionType as GraphqlQuestionType,
   useCreateQuestionMutationMutation,
@@ -36,6 +37,7 @@ const DIFFICULTY_LABELS: Record<string, string> = {
 type CreateExamQuestionLibraryProps = {
   questionBankOptions: CreateExamQuestionBankOption[];
   questionOptions: CreateExamQuestionOption[];
+  mode: ExamMode;
   disabled: boolean;
   checkedQuestionIds: string[];
   variantCount: 1 | 2 | 4;
@@ -455,6 +457,7 @@ const matchesFilter = (
 export function CreateExamQuestionLibrary({
   questionBankOptions,
   questionOptions,
+  mode,
   disabled,
   checkedQuestionIds,
   variantCount,
@@ -488,6 +491,8 @@ export function CreateExamQuestionLibrary({
       questionOptions.filter(
         (question) =>
           !question.tags.includes("variant_draft:true") &&
+          (mode !== ExamMode.Practice ||
+            (question.type !== "ESSAY" && question.type !== "IMAGE_UPLOAD")) &&
           matchesFilter(
             question,
             searchTerm.trim().toLowerCase(),
@@ -498,7 +503,7 @@ export function CreateExamQuestionLibrary({
             type,
           ),
       ),
-    [difficulty, grade, questionOptions, searchTerm, subject, topic, type],
+    [difficulty, grade, mode, questionOptions, searchTerm, subject, topic, type],
   );
   const selectedQuestion = useMemo(
     () => questionOptions.find((question) => question.id === checkedQuestionIds[0]),
@@ -667,9 +672,20 @@ export function CreateExamQuestionLibrary({
             <option value="MCQ">Олон сонголт</option>
             <option value="TRUE_FALSE">Үнэн/Худал</option>
             <option value="SHORT_ANSWER">Тоо бодолт</option>
-            <option value="ESSAY">Задгай даалгавар</option>
+            {mode !== ExamMode.Practice ? (
+              <>
+                <option value="ESSAY">Задгай даалгавар</option>
+                <option value="IMAGE_UPLOAD">Зураг оруулах</option>
+              </>
+            ) : null}
           </select>
         </div>
+
+        {mode === ExamMode.Practice ? (
+          <p className="text-[12px] text-[#667085]">
+            Practice mode дээр зөвхөн автоматаар үнэлэгдэх асуултууд харагдана.
+          </p>
+        ) : null}
       </div>
 
       {variantCount > 1 ? (
