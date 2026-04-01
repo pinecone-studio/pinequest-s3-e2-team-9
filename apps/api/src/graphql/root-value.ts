@@ -2,6 +2,7 @@ import { all, first, type D1DatabaseLike } from "../lib/d1";
 import { requireActor, type RequestContext } from "../auth";
 import { getClassSelectFields, insertClassRow } from "./class-schema";
 import { createAttemptMutations } from "./modules/attempts";
+import { createCommunityQueriesAndMutations } from "./modules/communities";
 import { closeExpiredExams, createExamQueriesAndMutations, findExamById } from "./modules/exams";
 import { createDashboardOverviewQuery } from "./modules/dashboard";
 import { createImportQueriesAndMutations } from "./modules/imports";
@@ -193,6 +194,14 @@ export const createRootValue = ({ db, env }: CreateRootValueArgs) => {
       return attempt ? toAttempt(attempt) : null;
     },
     ...createDashboardOverviewQuery({ db, requireActor }),
+    ...createCommunityQueriesAndMutations({
+      db,
+      requireActor,
+      findQuestionBank: findQuestionBankById,
+      findUser,
+      toQuestionBank: (_, bank) => toQuestionBank(bank),
+      toUser,
+    }),
     createClass: async (
       { name, description }: CreateClassArgs,
       context: RequestContext,

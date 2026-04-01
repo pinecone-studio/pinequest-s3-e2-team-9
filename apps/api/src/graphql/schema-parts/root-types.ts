@@ -32,6 +32,8 @@ export const schemaRootTypes = /* GraphQL */ `
     hello(name: String): Hello!
     me: User
     users: [User!]!
+    communities: [Community!]!
+    community(id: ID!): Community
     classes: [Class!]!
     class(id: ID!): Class
     questionBanks: [QuestionBank!]!
@@ -48,6 +50,16 @@ export const schemaRootTypes = /* GraphQL */ `
 
   type Mutation {
     createClass(name: String!, description: String): Class!
+    createCommunity(
+      name: String!
+      description: String
+      subject: String = "Ерөнхий"
+      grade: Int = 0
+      visibility: CommunityVisibility = PUBLIC
+    ): Community!
+    joinCommunity(communityId: ID!): Community!
+    shareQuestionBankToCommunity(communityId: ID!, bankId: ID!): CommunitySharedBank!
+    copyCommunitySharedBankToMyBank(sharedBankId: ID!): QuestionBank!
     createQuestionBank(
       title: String!
       description: String

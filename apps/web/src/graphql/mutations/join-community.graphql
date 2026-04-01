@@ -1,0 +1,8 @@
+mutation JoinCommunityAction($communityId: ID!) {
+  joinCommunity(communityId: $communityId) {
+    id
+    viewerRole
+    memberCount
+    sharedBankCount
+  }
+}

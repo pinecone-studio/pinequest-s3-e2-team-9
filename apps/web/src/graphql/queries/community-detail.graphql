@@ -1,0 +1,46 @@
+query CommunityDetail($id: ID!) {
+  community(id: $id) {
+    id
+    name
+    description
+    subject
+    grade
+    visibility
+    viewerRole
+    memberCount
+    sharedBankCount
+    members {
+      id
+      role
+      joinedAt
+      user {
+        id
+        fullName
+      }
+    }
+    sharedBanks {
+      id
+      status
+      createdAt
+      sharedBy {
+        id
+        fullName
+      }
+      bank {
+        id
+        title
+        description
+        grade
+        subject
+        topic
+        visibility
+        questionCount
+        createdAt
+        owner {
+          id
+          fullName
+        }
+      }
+    }
+  }
+}

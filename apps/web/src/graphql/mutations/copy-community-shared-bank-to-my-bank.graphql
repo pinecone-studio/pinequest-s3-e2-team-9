@@ -1,0 +1,15 @@
+mutation CopyCommunitySharedBankToMyBankAction($sharedBankId: ID!) {
+  copyCommunitySharedBankToMyBank(sharedBankId: $sharedBankId) {
+    id
+    title
+    grade
+    subject
+    topic
+    visibility
+    questionCount
+    owner {
+      id
+      fullName
+    }
+  }
+}

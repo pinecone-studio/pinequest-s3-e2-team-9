@@ -91,6 +91,37 @@ export const schemaDomainTypes = /* GraphQL */ `
     createdAt: String!
   }
 
+  type CommunityMember {
+    id: ID!
+    role: CommunityMemberRole!
+    joinedAt: String!
+    user: User!
+  }
+
+  type CommunitySharedBank {
+    id: ID!
+    status: CommunitySharedBankStatus!
+    createdAt: String!
+    sharedBy: User!
+    bank: QuestionBank!
+  }
+
+  type Community {
+    id: ID!
+    name: String!
+    description: String
+    subject: String!
+    grade: Int!
+    visibility: CommunityVisibility!
+    viewerRole: CommunityMemberRole
+    memberCount: Int!
+    sharedBankCount: Int!
+    owner: User!
+    members: [CommunityMember!]!
+    sharedBanks: [CommunitySharedBank!]!
+    createdAt: String!
+  }
+
   type DashboardMetricSummary {
     pendingReviewCount: Int!
     draftExamCount: Int!

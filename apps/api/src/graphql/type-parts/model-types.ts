@@ -1,5 +1,8 @@
 export type Role = "ADMIN" | "TEACHER" | "STUDENT";
 export type QuestionBankVisibility = "PRIVATE" | "PUBLIC";
+export type CommunityVisibility = "PRIVATE" | "PUBLIC";
+export type CommunityMemberRole = "OWNER" | "MODERATOR" | "MEMBER";
+export type CommunitySharedBankStatus = "ACTIVE" | "ARCHIVED" | "FEATURED";
 export type QuestionType =
   | "MCQ"
   | "TRUE_FALSE"
@@ -65,6 +68,34 @@ export type QuestionBankRow = {
   topic: string;
   visibility: QuestionBankVisibility;
   owner_id: string;
+  created_at: string;
+};
+
+export type CommunityRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  subject: string;
+  grade: number;
+  visibility: CommunityVisibility;
+  owner_id: string;
+  created_at: string;
+};
+
+export type CommunityMemberRow = {
+  id: string;
+  community_id: string;
+  user_id: string;
+  role: CommunityMemberRole;
+  joined_at: string;
+};
+
+export type CommunitySharedBankRow = {
+  id: string;
+  community_id: string;
+  bank_id: string;
+  shared_by_id: string;
+  status: CommunitySharedBankStatus;
   created_at: string;
 };
 
