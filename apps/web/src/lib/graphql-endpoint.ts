@@ -1,6 +1,9 @@
 const DEFAULT_GRAPHQL_ENDPOINT =
   "https://pinequest-api.b94889340.workers.dev/graphql";
 
+const shouldUseLocalProxy = () =>
+  typeof window !== "undefined" && process.env.NODE_ENV === "development";
+
 const getConfiguredGraphqlEndpoint = (): string => {
   const configuredEndpoint = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT?.trim();
 
@@ -11,9 +14,19 @@ const getConfiguredGraphqlEndpoint = (): string => {
   return DEFAULT_GRAPHQL_ENDPOINT;
 };
 
-export const getGraphqlEndpoint = (): string => getConfiguredGraphqlEndpoint();
+export const getGraphqlEndpoint = (): string => {
+  if (shouldUseLocalProxy()) {
+    return "/graphql";
+  }
+
+  return getConfiguredGraphqlEndpoint();
+};
 
 export const getApiBaseUrl = (): string => {
+  if (shouldUseLocalProxy()) {
+    return "";
+  }
+
   const endpoint = getConfiguredGraphqlEndpoint().trim();
 
   try {

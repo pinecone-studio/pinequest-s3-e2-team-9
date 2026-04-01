@@ -7,6 +7,7 @@ query MyExamsQuery {
   }
   exams {
     id
+    mode
     isTemplate
     sourceExamId
     title

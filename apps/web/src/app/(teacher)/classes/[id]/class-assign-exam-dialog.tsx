@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ExamStatus, useAssignExamToClassMutation, useMyExamsQueryQuery } from "@/graphql/generated";
+import {
+  ExamMode,
+  ExamStatus,
+  useAssignExamToClassMutation,
+  useMyExamsQueryQuery,
+} from "@/graphql/generated";
+import { toErrorMessage } from "../../create-exam/hooks/create-exam-flow-helpers";
 
 type ClassAssignExamDialogProps = {
   classId: string;
@@ -40,6 +46,7 @@ export function ClassAssignExamDialog({ classId, className, open, onClose, onAss
       ? (data?.exams ?? []).filter(
           (exam) =>
             exam.createdBy.id === actorId &&
+            exam.mode !== ExamMode.Practice &&
             (exam.isTemplate || (!exam.sourceExamId && exam.status === ExamStatus.Draft)),
         )
       : [];
@@ -68,7 +75,7 @@ export function ClassAssignExamDialog({ classId, className, open, onClose, onAss
       onClose();
     } catch (error) {
       console.error("Failed to assign exam to class", error);
-      setErrorMessage("Шалгалт онооход алдаа гарлаа.");
+      setErrorMessage(toErrorMessage(error));
     }
   };
 

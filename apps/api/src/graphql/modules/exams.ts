@@ -208,6 +208,9 @@ const getExamEndTimestamp = (startedAt: string, durationMinutes: number): string
   return new Date(startedAtMs + durationMinutes * 60_000).toISOString();
 };
 
+const canReuseAsAssignmentSource = (exam: ExamRow) =>
+  exam.is_template === 1 || (!exam.source_exam_id && exam.status === "DRAFT");
+
 export const closeExpiredExams = async (db: D1DatabaseLike): Promise<void> => {
   const currentTime = now();
   await run(
@@ -442,7 +445,10 @@ export const createExamQueriesAndMutations = ({
     }
 
     const sourceExam = await findExamById(db, examId);
-    invariant(sourceExam.is_template === 1, "Зөвхөн ноорог шалгалтыг ангид оноож болно.");
+    invariant(
+      canReuseAsAssignmentSource(sourceExam),
+      "Зөвхөн reusable ноорог шалгалтыг ангид оноож болно.",
+    );
     if (actor.role === "TEACHER") {
       const sourceClass = await findClass(db, sourceExam.class_id);
       invariant(

@@ -10,5 +10,7 @@ node_modules
 .wrangler
 apps/api/.wrangler
 apps/api/.dev.vars
+apps/api/*before-restore.sql
+apps/api/*before-undo-*.sql
 apps/web/.vercel/output
 apps/web/tsconfig.tsbuildinfo

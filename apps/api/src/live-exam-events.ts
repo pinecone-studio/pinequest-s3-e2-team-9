@@ -188,13 +188,21 @@ const publishLiveRoomEvent = async (
     return;
   }
 
-  await getRoomStub(env, roomKey).fetch("https://live-exam-events/publish", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(event),
-  });
+  try {
+    await getRoomStub(env, roomKey).fetch("https://live-exam-events/publish", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(event),
+    });
+  } catch (error) {
+    console.error("Failed to publish live room event", {
+      roomKey,
+      eventType: event.type,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 };
 
 export const connectLiveExamEvents = async (

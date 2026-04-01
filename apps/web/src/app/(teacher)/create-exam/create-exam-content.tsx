@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ExamMode } from "@/graphql/generated";
 import { CreateExamDetailsCard } from "./create-exam-details-card";
@@ -80,9 +80,10 @@ export function CreateExamContent({
   returnTo = "",
 }: CreateExamContentProps) {
   const router = useRouter();
+  const isClassAssignmentFlow = Boolean(initialClassId && returnTo);
   const flow = useCreateExamFlow(
     initialClassId,
-    returnTo ? initialClassId : "",
+    isClassAssignmentFlow ? initialClassId : "",
     initialBankId,
     examId,
   );
@@ -92,7 +93,9 @@ export function CreateExamContent({
     !flow.classOptions.length ||
     !flow.questionBankOptions.length;
   const isEditMode = flow.isEditMode;
-  const [isModeChosen, setIsModeChosen] = useState(Boolean(isEditMode));
+  const [isModeChosen, setIsModeChosen] = useState(
+    Boolean(isEditMode || isClassAssignmentFlow),
+  );
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -109,6 +112,16 @@ export function CreateExamContent({
     flow.setFieldValue("mode", mode);
     setIsModeChosen(true);
   };
+  const currentMode = flow.formValues.mode;
+  const setFieldValue = flow.setFieldValue;
+
+  useEffect(() => {
+    if (!isClassAssignmentFlow || currentMode === ExamMode.Scheduled) {
+      return;
+    }
+
+    setFieldValue("mode", ExamMode.Scheduled);
+  }, [currentMode, isClassAssignmentFlow, setFieldValue]);
 
   return (
     <div className="mx-auto w-full max-w-[836px]">
@@ -128,13 +141,15 @@ export function CreateExamContent({
                   : "Ангийн шалгалт"}
               </span>
             </span>
-            <button
-              type="button"
-              className="text-[13px] font-medium text-[#2466D0]"
-              onClick={() => setIsModeChosen(false)}
-            >
-              Төрөл солих
-            </button>
+            {!isClassAssignmentFlow ? (
+              <button
+                type="button"
+                className="text-[13px] font-medium text-[#2466D0]"
+                onClick={() => setIsModeChosen(false)}
+              >
+                Төрөл солих
+              </button>
+            ) : null}
           </div>
         ) : null}
 
