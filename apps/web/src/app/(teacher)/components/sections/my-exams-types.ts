@@ -68,6 +68,7 @@ export type MyExamStudentRow = {
 
 export type MyExamListView = {
   id: string;
+  classId: string;
   title: string;
   subject: string;
   className: string;

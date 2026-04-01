@@ -96,7 +96,10 @@ export function ClassDetailPageContent({
         ))}
       </div>
 
-      <section className="rounded-xl border border-[#DFE1E5] bg-white p-6 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
+      <section
+        id="students-section"
+        className="rounded-xl border border-[#DFE1E5] bg-white p-6 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
+      >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <h2 className="text-[16px] font-semibold text-[#0F1216]">Сурагчид</h2>
           <div className="flex flex-wrap gap-2">
