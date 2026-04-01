@@ -7,21 +7,31 @@ import {
 
 type AppShellProps = PropsWithChildren<{
   contentClassName?: string;
+  contentInnerClassName?: string;
+  contentOuterClassName?: string;
+  fixedHeight?: boolean;
 }>;
 
-export function AppShell({ children, contentClassName }: AppShellProps) {
+export function AppShell({
+  children,
+  contentClassName,
+  contentInnerClassName,
+  contentOuterClassName,
+  fixedHeight,
+}: AppShellProps) {
+  const heightClasses = fixedHeight ? "lg:h-[900px] lg:w-[1440px] lg:mx-auto lg:overflow-hidden" : "min-h-screen";
   return (
-    <main className="min-h-screen bg-[#F7F7FB]">
-      <div className="flex min-h-screen flex-col lg:flex-row">
+    <main className={`bg-[#FAFAFA] ${heightClasses}`.trim()}>
+      <div className={`flex flex-col lg:flex-row ${fixedHeight ? "lg:h-[900px] lg:w-[1440px]" : "min-h-screen"}`.trim()}>
         <Sidebar />
-        <section className="flex-1 overflow-y-auto">
+        <section className={`flex-1 overflow-y-auto ${fixedHeight ? "lg:h-[900px] lg:w-[1184px]" : ""}`.trim()}>
           <div
             className={[
-              TEACHER_CONTENT_OUTER_CLASS,
+              contentOuterClassName ?? TEACHER_CONTENT_OUTER_CLASS,
               contentClassName ?? "lg:px-[36px] lg:py-[32px]",
             ].join(" ")}
           >
-            <div className={TEACHER_CONTENT_INNER_CLASS}>{children}</div>
+            <div className={contentInnerClassName ?? TEACHER_CONTENT_INNER_CLASS}>{children}</div>
           </div>
         </section>
       </div>

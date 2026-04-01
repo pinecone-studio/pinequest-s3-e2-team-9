@@ -1,5 +1,5 @@
 import {
-  CheckCircleIcon,
+  CheckCirclesIcon,
   ClockIcon,
   DetailsIcon,
   EyeIcon,
@@ -43,7 +43,7 @@ export function ActiveExamSection({
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-2">
-              <CheckCircleIcon className="h-4 w-4 text-[#31AA40]" />
+              <CheckCirclesIcon className="h-4 w-4 text-[#31AA40]" />
               <h3 className="text-[18px] font-semibold text-[#101828]">
                 {exam.title}
               </h3>

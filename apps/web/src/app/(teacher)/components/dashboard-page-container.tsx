@@ -57,26 +57,28 @@ export function DashboardPageContainer() {
   }
 
   return (
-    <section className="mx-auto max-w-[1184px] space-y-6">
+    <section className="h-[900px] w-[1184px]">
       <DashboardTopBar onChange={setSearchValue} value={searchValue} />
 
-      {error ? (
-        <div className="rounded-[20px] border border-[#F2E6B5] bg-[#FFF8E8] px-4 py-3 text-[14px] text-[#8A6C17]">
-          Зарим өгөгдөл шинэчлэгдэх үед алдаа гарсан ч dashboard сүүлийн амжилттай мэдээллээр үргэлжилж байна.
-        </div>
-      ) : null}
+      <div className="h-[816px] space-y-9 px-8 pt-[26px]">
+        {error ? (
+          <div className="rounded-[20px] border border-[#F2E6B5] bg-[#FFF8E8] px-4 py-3 text-[14px] text-[#8A6C17]">
+            Зарим өгөгдөл шинэчлэгдэх үед алдаа гарсан ч dashboard сүүлийн амжилттай мэдээллээр үргэлжилж байна.
+          </div>
+        ) : null}
 
-      {viewModel.hasAnyData ? (
-        <DashboardMainGrid
-          actions={viewModel.quickActions}
-          pendingReviewCount={viewModel.pendingReviewCount}
-          recentResults={filteredRecent}
-          searchActive={deferredSearch.length > 0}
-          upcomingExams={filteredUpcoming}
-        />
-      ) : (
-        <DashboardEmptyState />
-      )}
+        {viewModel.hasAnyData ? (
+          <DashboardMainGrid
+            actions={viewModel.quickActions}
+            pendingReviewCount={viewModel.pendingReviewCount}
+            recentResults={filteredRecent}
+            searchActive={deferredSearch.length > 0}
+            upcomingExams={filteredUpcoming}
+          />
+        ) : (
+          <DashboardEmptyState />
+        )}
+      </div>
     </section>
   );
 }

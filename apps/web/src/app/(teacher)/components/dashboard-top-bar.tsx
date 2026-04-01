@@ -1,7 +1,8 @@
 "use client";
 
-import { BellIcon } from "./icons-ui";
-import { SearchIcon } from "./icons-actions";
+import { NotificationIcon } from "./icons-ui";
+import { MenuOpenIcon } from "./icons";
+import { SearchIcon } from "./icons-more";
 
 type DashboardTopBarProps = {
   value: string;
@@ -10,21 +11,18 @@ type DashboardTopBarProps = {
 
 export function DashboardTopBar({ value, onChange }: DashboardTopBarProps) {
   return (
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+    <div className="flex h-[84px] w-full flex-col gap-3 backdrop-blur-[4px] lg:flex-row lg:items-center lg:gap-[34px] lg:px-[32px] lg:py-[22px]">
       <button
         aria-label="Цэс"
-        className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#ECEAF8] bg-white text-[#605B71] shadow-[0_10px_30px_rgba(15,23,42,0.05)] transition hover:border-[#D8D2F7]"
+        className="flex h-6 w-6 items-center justify-center text-[#52555B]"
         type="button"
       >
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <path d="M4 7h10M4 12h16M4 17h12" strokeLinecap="round" />
-          <path d="m16 7 4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <MenuOpenIcon className="h-6 w-6" />
       </button>
-      <label className="group relative flex-1">
-        <SearchIcon className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8B879A]" />
+      <label className="group relative flex-1 lg:flex-none lg:w-[988px]">
+        <SearchIcon className="pointer-events-none absolute left-[14px] top-1/2 h-4 w-4 -translate-y-1/2 text-[#52555B]" />
         <input
-          className="h-14 w-full rounded-[22px] border border-[#ECEAF8] bg-white px-14 pr-5 text-[15px] text-[#18161F] shadow-[0_10px_30px_rgba(15,23,42,0.05)] outline-none transition placeholder:text-[#8B879A] focus:border-[#B8A8FF] focus:ring-4 focus:ring-[#EEE9FF]"
+          className="h-10 w-full rounded-[12px] bg-[rgba(240,242,245,0.5)] px-[42px] pr-[14px] text-[14px] leading-[18px] text-[#18161F] shadow-[0_1px_2px_rgba(0,0,0,0.05)] outline-none placeholder:text-[#52555B] font-[var(--font-geist)]"
           onChange={(event) => onChange(event.target.value)}
           placeholder="Шалгалт, Анги, Сурагч хайх"
           value={value}
@@ -33,10 +31,10 @@ export function DashboardTopBar({ value, onChange }: DashboardTopBarProps) {
 
       <button
         aria-label="Мэдэгдэл"
-        className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#ECEAF8] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.05)] transition hover:border-[#D8D2F7]"
+        className="flex h-10 w-10 items-center justify-center rounded-[12px] text-[#52555B]"
         type="button"
       >
-        <BellIcon className="h-5 w-5" />
+        <NotificationIcon className="h-6 w-6" />
       </button>
     </div>
   );

@@ -1,13 +1,14 @@
 import type { ReactElement } from "react";
 import type { IconProps } from "./icons";
 import {
-  BookIcon,
-  CheckCircleIcon,
-  ClipboardIcon,
-  GridIcon,
-  MonitorIcon,
+  AssignmentIcon,
+  CheckCirclesIcon,
+  HexagonIcon,
+  CommunityButtonIcon,
+  MenuIcon,
+  PeopleAltIcon,
   PlusIcon,
-  HomeIcon,
+  HomesIcon,
   UsersIcon,
 } from "./icons";
 type IconComponent = (props: IconProps) => ReactElement;
@@ -25,13 +26,13 @@ export type QuickAction = {
 };
 
 export const navItems: NavItem[] = [
-  { label: "Нүүр", href: "/", icon: HomeIcon },
-  { label: "Миний шалгалтууд", href: "/my-exams", icon: ClipboardIcon },
-  { label: "Шалгалт авах", href: "/create-exam", icon: MonitorIcon },
-  { label: "Ангиуд", href: "/classes", icon: UsersIcon },
-  { label: "Асуултын сан", href: "/question-bank", icon: BookIcon },
-  { label: "Community", href: "/community", icon: GridIcon },
-  { label: "Үнэлгээ", href: "/evaluation", icon: CheckCircleIcon },
+  { label: "Нүүр", href: "/", icon: HomesIcon },
+  { label: "Миний шалгалтууд", href: "/my-exams", icon: AssignmentIcon },
+  { label: "Шалгалт авах", href: "/create-exam", icon: HexagonIcon },
+  { label: "Ангиуд", href: "/classes", icon: PeopleAltIcon },
+  { label: "Асуултын сан", href: "/question-bank", icon: MenuIcon },
+  { label: "Community", href: "/community", icon: CommunityButtonIcon },
+  { label: "Үнэлгээ", href: "/evaluation", icon: CheckCirclesIcon },
 ];
 
 export const quickActions: QuickAction[] = [
@@ -48,11 +49,11 @@ export const quickActions: QuickAction[] = [
   {
     label: "Шалгах хэсэг рүү орох",
     tone: "bg-[#FAFAFA] text-[#0F1216] border-[#DFE1E5]",
-    icon: CheckCircleIcon,
+    icon: CheckCirclesIcon,
   },
   {
     label: "Асуултын сан руу орох",
     tone: "bg-[#FAFAFA] text-[#0F1216] border-[#DFE1E5]",
-    icon: BookIcon,
+    icon: MenuIcon,
   },
 ];

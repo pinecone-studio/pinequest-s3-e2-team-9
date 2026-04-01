@@ -212,7 +212,11 @@ export const connectToLiveExamEvents = async ({
         return;
       }
 
-      console.error("Live exam SSE connection failed", error);
+      const isNetworkError =
+        error instanceof TypeError && error.message === "Failed to fetch";
+      if (!isNetworkError) {
+        console.error("Live exam SSE connection failed", error);
+      }
       attempt += 1;
       await waitForReconnect(Math.min(10_000, 1_000 * 2 ** attempt), signal);
     }

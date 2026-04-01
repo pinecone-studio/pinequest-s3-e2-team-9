@@ -1,4 +1,4 @@
-import { CheckCircleIcon, CloseIcon, DetailsIcon } from "../icons";
+import { CheckCirclesIcon, CloseIcon, DetailsIcon } from "../icons";
 import type { ExamFooterData } from "./my-exams-types";
 
 export function ExamResultsSummary({
@@ -55,7 +55,7 @@ export function ExamResultsSummary({
         <div className="mt-3 space-y-2 text-[14px] text-[#0F1216]">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <CheckCircleIcon className="h-4 w-4 text-[#31AA40]" />
+              <CheckCirclesIcon className="h-4 w-4 text-[#31AA40]" />
               Тэнцсэн
             </span>
             <span className="font-medium text-[#31AA40]">

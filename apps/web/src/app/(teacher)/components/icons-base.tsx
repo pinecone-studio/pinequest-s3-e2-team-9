@@ -63,21 +63,6 @@ export function UsersIcon({ className }: IconProps) {
   );
 }
 
-export function BookIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-    >
-      <path d="M5 5h10a3 3 0 0 1 3 3v11H8a3 3 0 0 0-3 3V5z" />
-      <path d="M5 19h10" />
-    </svg>
-  );
-}
-
 export function ChartIcon({ className }: IconProps) {
   return (
     <svg
@@ -104,21 +89,6 @@ export function MonitorIcon({ className }: IconProps) {
     >
       <rect x="4" y="5" width="16" height="11" rx="2" />
       <path d="M9 19h6" />
-    </svg>
-  );
-}
-
-export function CheckCircleIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path d="m8 12 2.5 2.5L16 9" />
     </svg>
   );
 }

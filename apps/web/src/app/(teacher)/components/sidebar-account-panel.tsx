@@ -1,7 +1,6 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { AuthSignOutButton } from "@/components/auth-sign-out-button";
 
 const getDisplayName = ({
   firstName,
@@ -60,15 +59,14 @@ export function SidebarAccountPanel() {
 
   if (!isLoaded || !user) {
     return (
-      <div className="space-y-3">
-        <div className="flex h-[64px] items-center gap-3 rounded-[20px] border border-[#F0EEFA] bg-white px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-          <div className="h-11 w-11 animate-pulse rounded-full bg-[#EEE9FF]" />
+      <div className="h-[84px] p-4">
+        <div className="flex h-[52px] items-center gap-3 rounded-[12px] px-3">
+          <div className="h-9 w-9 animate-pulse rounded-full bg-[#EEE9FF]" />
           <div className="flex-1 space-y-2">
             <div className="h-3 w-24 animate-pulse rounded-full bg-[#EEE9FF]" />
             <div className="h-3 w-20 animate-pulse rounded-full bg-[#EEE9FF]" />
           </div>
         </div>
-        <div className="h-11 animate-pulse rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,23,42,0.05)]" />
       </div>
     );
   }
@@ -95,22 +93,21 @@ export function SidebarAccountPanel() {
   );
 
   return (
-    <div className="space-y-3">
-      <div className="flex min-h-[64px] w-full items-center gap-3 rounded-[20px] border border-[#F0EEFA] bg-white px-4 py-3 text-left shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,#8A63FF_0%,#6434F8_100%)] text-[13px] font-semibold text-white">
+    <div className="h-[84px] p-4">
+      <div className="flex h-[52px] items-center gap-3 rounded-[12px] px-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,#8A63FF_0%,#6434F8_100%)] text-[13px] font-semibold text-white">
           {initials}
         </div>
         <div className="min-w-0">
-          <p className="truncate text-[14px] font-semibold leading-5 text-[#17151F]">
+          <p className="truncate text-[14px] font-medium leading-5 text-[#0F1216] font-[var(--font-geist)]">
             {displayName}
           </p>
-          <p className="truncate text-[12px] leading-4 text-[#8B879A]">
+          <p className="truncate text-[12px] leading-4 text-[rgba(15,18,22,0.5)] font-[var(--font-geist)]">
             {secondaryLabel}
           </p>
         </div>
         <span className="sr-only">{primaryEmail}</span>
       </div>
-      <AuthSignOutButton className="inline-flex h-11 w-full items-center justify-center rounded-[16px] border border-[#ECEAF8] bg-white px-4 text-[14px] font-semibold text-[#17151F] shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:border-[#D8D2F7] hover:bg-[#F8F6FF]" />
     </div>
   );
 }

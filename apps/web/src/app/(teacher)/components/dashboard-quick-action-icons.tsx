@@ -2,7 +2,7 @@ import type { IconProps } from "./icons-base";
 
 export function CreateExamQuickActionIcon({ className }: IconProps) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 14 14" fill="none">
       <path d="M6.66667 0C2.98667 0 0 2.98667 0 6.66667C0 10.3467 2.98667 13.3333 6.66667 13.3333C10.3467 13.3333 13.3333 10.3467 13.3333 6.66667C13.3333 2.98667 10.3467 0 6.66667 0ZM10 7.33333H7.33333V10H6V7.33333H3.33333V6H6V3.33333H7.33333V6H10V7.33333Z" fill="white" />
     </svg>
   );
@@ -10,7 +10,7 @@ export function CreateExamQuickActionIcon({ className }: IconProps) {
 
 export function CreateQuestionBankQuickActionIcon({ className }: IconProps) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 14 14" fill="none">
       <path d="M1.33333 2.66667H0V12C0 12.7333 0.6 13.3333 1.33333 13.3333H10.6667V12H1.33333V2.66667ZM12 0H4C3.26667 0 2.66667 0.6 2.66667 1.33333V9.33333C2.66667 10.0667 3.26667 10.6667 4 10.6667H12C12.7333 10.6667 13.3333 10.0667 13.3333 9.33333V1.33333C13.3333 0.6 12.7333 0 12 0ZM12 9.33333H4V1.33333H12V9.33333ZM7.33333 8H8.66667V6H10.6667V4.66667H8.66667V2.66667H7.33333V4.66667H5.33333V6H7.33333V8Z" fill="black" />
     </svg>
   );
@@ -18,7 +18,7 @@ export function CreateQuestionBankQuickActionIcon({ className }: IconProps) {
 
 export function TakeExamQuickActionIcon({ className }: IconProps) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="15" height="11" viewBox="0 0 15 11" fill="none">
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 15 11" fill="none">
       <path d="M10.4467 6.08667C11.36 6.70667 12 7.54667 12 8.66667V10.6667H14.6667V8.66667C14.6667 7.21333 12.2867 6.35333 10.4467 6.08667Z" fill="black" />
       <path d="M9.33333 5.33333C10.8067 5.33333 12 4.14 12 2.66667C12 1.19333 10.8067 0 9.33333 0C9.02 0 8.72667 0.0666665 8.44667 0.16C9 0.846667 9.33333 1.72 9.33333 2.66667C9.33333 3.61333 9 4.48667 8.44667 5.17333C8.72667 5.26667 9.02 5.33333 9.33333 5.33333Z" fill="black" />
       <path d="M5.33333 5.33333C6.80667 5.33333 8 4.14 8 2.66667C8 1.19333 6.80667 0 5.33333 0C3.86 0 2.66667 1.19333 2.66667 2.66667C2.66667 4.14 3.86 5.33333 5.33333 5.33333ZM5.33333 1.33333C6.06667 1.33333 6.66667 1.93333 6.66667 2.66667C6.66667 3.4 6.06667 4 5.33333 4C4.6 4 4 3.4 4 2.66667C4 1.93333 4.6 1.33333 5.33333 1.33333Z" fill="black" />
@@ -29,7 +29,7 @@ export function TakeExamQuickActionIcon({ className }: IconProps) {
 
 export function GradeQuickActionIcon({ className }: IconProps) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 14 14" fill="none">
       <path d="M6.66667 0C2.98667 0 0 2.98667 0 6.66667C0 10.3467 2.98667 13.3333 6.66667 13.3333C10.3467 13.3333 13.3333 10.3467 13.3333 6.66667C13.3333 2.98667 10.3467 0 6.66667 0ZM6.66667 12C3.72667 12 1.33333 9.60667 1.33333 6.66667C1.33333 3.72667 3.72667 1.33333 6.66667 1.33333C9.60667 1.33333 12 3.72667 12 6.66667C12 9.60667 9.60667 12 6.66667 12ZM9.72667 3.72L5.33333 8.11333L3.60667 6.39333L2.66667 7.33333L5.33333 10L10.6667 4.66667L9.72667 3.72Z" fill="black" />
     </svg>
   );

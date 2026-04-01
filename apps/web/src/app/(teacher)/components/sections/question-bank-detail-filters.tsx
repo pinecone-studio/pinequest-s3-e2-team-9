@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronDownIcon, FilterIcon, SearchIcon } from "../icons";
+import { ChevronDownIcon, FilterIcon } from "../icons";
+import { SearchIcon } from "../icons-more";
 
 const SELECT_STYLE =
   "h-9 w-full cursor-pointer appearance-none rounded-md border border-[#DFE1E5] bg-white px-3 pr-9 text-[14px] text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)]";

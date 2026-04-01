@@ -138,7 +138,7 @@ export function MyExamsIcon({ className }: IconProps) {
     </svg>
   );
 }
-export function HomeIcon({ className }: IconProps) {
+export function HomesIcon({ className }: IconProps) {
   return (
     <svg
       className={className}
@@ -148,9 +148,26 @@ export function HomeIcon({ className }: IconProps) {
       fill="none"
     >
       <path
-        fill="#6B6E72"
+        fill="currentColor"
         d="M5.398 11.741v-3.75h3v3.75c0 .413.338.75.75.75h2.25c.413 0 .75-.337.75-.75v-5.25h1.275c.345 0 .51-.427.248-.652L7.4.19a.756.756 0 0 0-1.005 0L.126 5.84a.373.373 0 0 0 .247.652h1.275v5.25c0 .413.338.75.75.75h2.25c.413 0 .75-.337.75-.75Z"
       />
+    </svg>
+  );
+}
+export function MenuOpenIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
+      <g transform="translate(3 6)">
+        <path
+          fill="currentColor"
+          d="M0 12h13v-2H0v2Zm0-5h10V5H0v2Zm0-7v2h13V0H0Zm18 9.59L14.42 6 18 2.41 16.59 1l-5 5 5 5L18 9.59Z"
+        />
+      </g>
     </svg>
   );
 }

@@ -1,10 +1,10 @@
 import type { ReactElement } from "react";
-import type { IconProps } from "@/app/(teacher)/components/icons-base";
+import type { IconProps } from "@/app/(teacher)/components/icons";
 import {
-  CheckCircleIcon,
+  CheckCirclesIcon,
   ClipboardIcon,
   HomeIcon,
-} from "@/app/(teacher)/components/icons-base";
+} from "@/app/(teacher)/components/icons";
 
 type IconComponent = (props: IconProps) => ReactElement;
 
@@ -18,5 +18,5 @@ export type StudentNavItem = {
 export const studentNavItems: StudentNavItem[] = [
   { label: "Нүүр", href: "/student", icon: HomeIcon, exact: true },
   { label: "Миний шалгалтууд", href: "/student/my-exams", icon: ClipboardIcon },
-  { label: "Үнэлгээ", href: "/student/results", icon: CheckCircleIcon },
+  { label: "Үнэлгээ", href: "/student/results", icon: CheckCirclesIcon },
 ];

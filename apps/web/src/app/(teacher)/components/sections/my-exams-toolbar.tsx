@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDownIcon, PlusIcon } from "../icons";
+import { PlusIcon } from "../icons";
+import { ArrowDropDownIcon } from "../icons-addition";
 import { PdfImportDialog } from "./pdf-import-dialog";
 
 type MyExamsToolbarProps = {
@@ -49,7 +50,7 @@ export function MyExamsToolbar({
               </option>
             ))}
           </select>
-          <ChevronDownIcon className="pointer-events-none absolute right-3 h-[18px] w-[18px] text-[#0F1216]" />
+          <ArrowDropDownIcon className="pointer-events-none absolute right-3 top-1/2 h-2 w-4 -translate-y-1/2 text-[#0F1216]" />
         </label>
         <label className="relative inline-flex h-10 w-full items-center rounded-full bg-white px-3 shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)] sm:w-[136px]">
           <select
@@ -63,7 +64,7 @@ export function MyExamsToolbar({
               </option>
             ))}
           </select>
-          <ChevronDownIcon className="pointer-events-none absolute right-3 h-[18px] w-[18px] text-[#0F1216]" />
+          <ArrowDropDownIcon className="pointer-events-none absolute right-3 top-1/2 h-2 w-4 -translate-y-1/2 text-[#0F1216]" />
         </label>
       </div>
 

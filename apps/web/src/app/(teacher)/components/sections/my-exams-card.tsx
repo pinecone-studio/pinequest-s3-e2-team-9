@@ -3,8 +3,8 @@ import {
   ClockIcon,
   DetailsIcon,
   PreviewPencilIcon,
-  QuestionBoxIcon,
 } from "../icons";
+import { StickyNoteIcon } from "../icons-addition";
 import type { MyExamsSectionMode } from "./my-exams-section-config";
 import type { MyExamListView } from "./my-exams-types";
 
@@ -108,7 +108,7 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
               {durationLabel}
             </span>
             <span className="inline-flex items-center gap-1">
-              <QuestionBoxIcon className="h-3 w-3" />
+              <StickyNoteIcon className="h-3 w-3" />
               {exam.questionCount} асуулт
             </span>
             {exam.footer ? (

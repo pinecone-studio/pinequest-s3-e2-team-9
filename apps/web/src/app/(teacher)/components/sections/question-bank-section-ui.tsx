@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookIcon, ChevronDownIcon, PlusIcon, SearchIcon } from "../icons";
+import { MenuIcon, ChevronDownIcon, PlusIcon, SearchIcon } from "../icons-more";
 import {
   formatGradeLabel,
   formatVisibilityLabel,
@@ -100,7 +100,7 @@ export function QuestionBankTopicGrid({
             className="rounded-xl border border-[#DFE1E5] bg-white p-5 text-left shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition hover:-translate-y-0.5 hover:shadow-[0px_8px_24px_rgba(15,18,22,0.08)]"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#FFF4ED] text-[#B54708]">
-              <BookIcon className="h-5 w-5" />
+              <MenuIcon className="h-5 w-5" />
             </div>
             <h3 className="mt-4 text-[16px] font-medium text-[#0F1216]">{topic.name}</h3>
             <p className="mt-1 text-[14px] text-[#667085]">
@@ -156,7 +156,7 @@ export function QuestionBankBrowseGrid({
             className="rounded-xl border border-[#DFE1E5] bg-white p-5 text-left shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition hover:-translate-y-0.5 hover:shadow-[0px_8px_24px_rgba(15,18,22,0.08)]"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EEF4FF] text-[#175CD3]">
-              <BookIcon className="h-5 w-5" />
+              <MenuIcon className="h-5 w-5" />
             </div>
             <h3 className="mt-4 text-[16px] font-medium text-[#0F1216]">{item.label}</h3>
             <p className="mt-1 text-[14px] text-[#667085]">{item.subtitle}</p>
@@ -340,7 +340,7 @@ export function QuestionBankGrid({
             <>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1922301A] text-[#192230]">
-                  <BookIcon className="h-5 w-5" />
+                  <MenuIcon className="h-5 w-5" />
                 </div>
                 <span
                   className={`rounded-md px-2.5 py-1 text-[12px] font-medium ${

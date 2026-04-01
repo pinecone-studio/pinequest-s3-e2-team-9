@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { useDeferredValue, useMemo, useState } from "react";
-import { CheckCircleIcon, ClipboardIcon } from "@/app/(teacher)/components/icons-base";
-import { BellIcon } from "@/app/(teacher)/components/icons-ui";
+import {
+  CheckCirclesIcon,
+  ClipboardIcon,
+} from "@/app/(teacher)/components/icons";
+import { NotificationIcon } from "@/app/(teacher)/components/icons-ui";
 import { CompletedExamCard, ExamCard, SectionTitle } from "./student-exam-card";
 import { SearchIcon } from "./student-home-icons";
 import { OwlIllustration } from "./student-home-owl";
@@ -32,9 +35,16 @@ export function StudentHomeContent() {
       !deferredSearch || value.includes(deferredSearch);
 
     return {
-      availableExams: data.availableExams.filter((exam) => matches(exam.searchText)),
-      completedExams: data.completedExams.filter((exam) => matches(exam.searchText)),
-      liveExam: data.liveExam && matches(data.liveExam.searchText) ? data.liveExam : null,
+      availableExams: data.availableExams.filter((exam) =>
+        matches(exam.searchText),
+      ),
+      completedExams: data.completedExams.filter((exam) =>
+        matches(exam.searchText),
+      ),
+      liveExam:
+        data.liveExam && matches(data.liveExam.searchText)
+          ? data.liveExam
+          : null,
     };
   }, [data, deferredSearch]);
 
@@ -56,7 +66,7 @@ export function StudentHomeContent() {
           className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] text-[#52555B] transition hover:bg-white/70"
           type="button"
         >
-          <BellIcon className="h-6 w-6" />
+          <NotificationIcon className="h-6 w-6" />
         </button>
       </section>
 
@@ -88,7 +98,9 @@ export function StudentHomeContent() {
             icon={<span className="h-2 w-2 rounded-full bg-[#D40924]" />}
             title="Яг одоо болж буй шалгалтууд"
           />
-          {loading ? <div className="h-[270px] max-w-[410px] animate-pulse rounded-[16px] bg-white/80" /> : null}
+          {loading ? (
+            <div className="h-[270px] max-w-[410px] animate-pulse rounded-[16px] bg-white/80" />
+          ) : null}
           {!loading && filtered.liveExam ? (
             <div className="max-w-[410px]">
               <ExamCard card={filtered.liveExam} tone="live" />
@@ -108,7 +120,13 @@ export function StudentHomeContent() {
             icon={<ClipboardIcon className="h-5 w-5 text-[#F63D6B]" />}
             title="Available Exams"
           />
-          {loading ? <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3"><div className="h-[270px] animate-pulse rounded-[16px] bg-white/80" /><div className="hidden h-[270px] animate-pulse rounded-[16px] bg-white/80 lg:block" /><div className="hidden h-[270px] animate-pulse rounded-[16px] bg-white/80 xl:block" /></div> : null}
+          {loading ? (
+            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+              <div className="h-[270px] animate-pulse rounded-[16px] bg-white/80" />
+              <div className="hidden h-[270px] animate-pulse rounded-[16px] bg-white/80 lg:block" />
+              <div className="hidden h-[270px] animate-pulse rounded-[16px] bg-white/80 xl:block" />
+            </div>
+          ) : null}
           {!loading && filtered.availableExams.length ? (
             <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
               {filtered.availableExams.map((exam) => (
@@ -127,10 +145,12 @@ export function StudentHomeContent() {
           <SectionTitle
             badge={String(filtered.completedExams.length)}
             badgeTone="border border-[#DFE1E5] bg-white text-[#98A2B3]"
-            icon={<CheckCircleIcon className="h-5 w-5 text-[#52555B]" />}
+            icon={<CheckCirclesIcon className="h-5 w-5 text-[#52555B]" />}
             title="Өгсөн Шалгалтууд"
           />
-          {loading ? <div className="h-[218px] max-w-[373px] animate-pulse rounded-[12px] bg-white/80" /> : null}
+          {loading ? (
+            <div className="h-[218px] max-w-[373px] animate-pulse rounded-[12px] bg-white/80" />
+          ) : null}
           {!loading && filtered.completedExams.length ? (
             <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
               {filtered.completedExams.map((exam) => (
@@ -143,7 +163,11 @@ export function StudentHomeContent() {
               Өгсөн шалгалтын үр дүн хараахан алга.
             </div>
           ) : null}
-          {error ? <p className="text-[14px] text-[#B42318]">Student home өгөгдөл уншихад алдаа гарлаа.</p> : null}
+          {error ? (
+            <p className="text-[14px] text-[#B42318]">
+              Student home өгөгдөл уншихад алдаа гарлаа.
+            </p>
+          ) : null}
         </section>
       </div>
     </div>
