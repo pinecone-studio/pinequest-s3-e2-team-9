@@ -69,7 +69,7 @@ export function PeopleAltIcon({ className }: IconProps) {
     </svg>
   );
 }
-export function CalendarIcon({ className }: IconProps) {
+export function CalendarMiniIcon({ className }: IconProps) {
   return (
     <svg
       className={className}

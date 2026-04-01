@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarIcon, PeopleAltIcon } from "../../components/icons-extra";
+import { CalendarMiniIcon, PeopleAltIcon } from "../../components/icons-extra";
 import { SchoolHatIcon, ViewMoreEyeIcon } from "../../components/icons-ic";
 
 type ClassCardProps = {
@@ -47,7 +47,7 @@ export function ClassCard({
               <span>{averageLabel}</span>
             </div>
             <div className="absolute left-0 top-[24px] flex items-center gap-1">
-              <CalendarIcon className="h-[12px] w-[12px]" />
+              <CalendarMiniIcon className="h-[12px] w-[12px]" />
               <span>{completedCount} Нийт авсан шалгалт</span>
             </div>
           </div>
