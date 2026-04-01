@@ -21,8 +21,16 @@ const filterButtonClassName =
 export function ClassesPageContent() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const { classes, search, setSearch, loading, error, hasData, hasServerData, refetch } =
-    useClassesList();
+  const {
+    classes,
+    search,
+    setSearch,
+    loading,
+    error,
+    hasData,
+    hasServerData,
+    refetch,
+  } = useClassesList();
 
   if (loading && !hasServerData) {
     return (
@@ -49,25 +57,41 @@ export function ClassesPageContent() {
 
   return (
     <section className="relative mx-auto flex h-[900px] w-full max-w-[1184px] flex-col overflow-y-auto bg-[#FAFAFA]">
-      <CreateClassDialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} />
+      <CreateClassDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+      />
       <DashboardTopBar value={search} onChange={setSearch} />
       <div className="flex flex-1 flex-col gap-[36px] px-8 pt-[26px]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex h-10 w-[372px] items-center gap-[20px]">
-            <button type="button" className={`${filterButtonClassName} w-[135px] justify-center`}>
-              <span className="w-[77px] whitespace-nowrap text-center">Бүх Хичээл</span>
+            <button
+              type="button"
+              className={`${filterButtonClassName} w-[135px] justify-center`}
+            >
+              <span className="w-[77px] whitespace-nowrap text-center">
+                Бүх Хичээл
+              </span>
               <span className="flex h-5 w-5 items-center justify-center">
                 <ArrowDropDownIcon className="h-2 w-4 text-[#0F1216]" />
               </span>
             </button>
-            <button type="button" className={`${filterButtonClassName} w-[117px] justify-center`}>
-              <span className="w-[59px] whitespace-nowrap text-center">Бүх Анги</span>
+            <button
+              type="button"
+              className={`${filterButtonClassName} w-[117px] justify-center`}
+            >
+              <span className="w-[59px] whitespace-nowrap text-center">
+                Бүх Анги
+              </span>
               <span className="flex h-5 w-5 items-center justify-center">
                 <ArrowDropDownIcon className="h-2 w-4 text-[#0F1216]" />
               </span>
             </button>
             <div className="flex h-10 w-20 overflow-hidden rounded-full bg-white shadow-[0_4px_8px_-2px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.06)]">
-              {[{ key: "grid", icon: GridViewIcon, label: "Карт" }, { key: "list", icon: ListIcon, label: "Жагсаалт" }].map(({ key, icon: Icon, label }, index) => (
+              {[
+                { key: "grid", icon: GridViewIcon, label: "Карт" },
+                { key: "list", icon: ListIcon, label: "Жагсаалт" },
+              ].map(({ key, icon: Icon, label }, index) => (
                 <button
                   key={key}
                   type="button"
@@ -75,7 +99,9 @@ export function ClassesPageContent() {
                   aria-label={label}
                   onClick={() => setView(key as "grid" | "list")}
                   className={`flex h-10 w-10 items-center justify-center transition ${
-                    view === key ? "bg-[#EEEDFC] text-[#6434F8]" : "bg-[#FAFAFA] text-[#71717B]"
+                    view === key
+                      ? "bg-[#EEEDFC] text-[#6434F8]"
+                      : "bg-[#FAFAFA] text-[#71717B]"
                   } ${index === 0 ? "rounded-l-[8.4px]" : "rounded-r-[8.4px]"}`}
                 >
                   <Icon className="h-5 w-5" />

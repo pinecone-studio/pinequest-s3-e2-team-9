@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ComponentType } from "react";
 import { ViewIcon } from "../../components/icons-more";
 
 type ClassRow = {
@@ -12,7 +13,23 @@ type ClassRow = {
 
 const getLeadingNumber = (value: string) => value.match(/\d+/)?.[0] ?? "-";
 
-export function ClassesTable({ classes }: { classes: ClassRow[] }) {
+type ClassesTableProps = {
+  classes: ClassRow[];
+  view?: "grid" | "list";
+  searchValue?: string;
+  actions?: Array<{
+    label: string;
+    icon?: ComponentType<{ className?: string }>;
+    href?: string;
+    onClick?: () => void;
+  }>;
+  emptyState?: {
+    title?: string;
+    description?: string;
+  };
+};
+
+export function ClassesTable({ classes }: ClassesTableProps) {
   return (
     <div className="h-[180.4px] w-[1120px] overflow-hidden rounded-[8px] border border-[#E4E4E7] bg-white [font-family:var(--font-inter)]">
       <table className="w-[1120px] table-fixed border-collapse">
