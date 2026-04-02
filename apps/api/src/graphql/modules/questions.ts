@@ -284,6 +284,10 @@ const questionAccessRequestSelectFields = `id,
   created_at,
   reviewed_at`;
 
+const isMissingQuestionAccessRequestsTableError = (error: unknown) =>
+  error instanceof Error &&
+  /no such table:\s*question_access_requests/i.test(error.message);
+
 const findQuestionAccessRequestById = async (
   db: D1DatabaseLike,
   id: string,
@@ -304,18 +308,25 @@ const actorHasApprovedQuestionAccess = async (
   questionId: string,
   actorId: string,
 ) => {
-  const row = await first<{ id: string }>(
-    db,
-    `SELECT id
-     FROM question_access_requests
-     WHERE question_id = ?
-       AND requester_user_id = ?
-       AND status = 'APPROVED'
-     ORDER BY reviewed_at DESC, created_at DESC
-     LIMIT 1`,
-    [questionId, actorId],
-  );
-  return Boolean(row);
+  try {
+    const row = await first<{ id: string }>(
+      db,
+      `SELECT id
+       FROM question_access_requests
+       WHERE question_id = ?
+         AND requester_user_id = ?
+         AND status = 'APPROVED'
+       ORDER BY reviewed_at DESC, created_at DESC
+       LIMIT 1`,
+      [questionId, actorId],
+    );
+    return Boolean(row);
+  } catch (error) {
+    if (isMissingQuestionAccessRequestsTableError(error)) {
+      return false;
+    }
+    throw error;
+  }
 };
 
 const actorCanUseQuestion = async ({
@@ -486,22 +497,30 @@ export const createQuestionQueriesAndMutations = ({
   },
   questionAccessRequests: async (_args: unknown, context: RequestContext) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
-    const rows =
-      actor.role === "ADMIN"
-        ? await all<QuestionAccessRequestRow>(
-            db,
-            `SELECT ${questionAccessRequestSelectFields}
-             FROM question_access_requests
-             ORDER BY created_at DESC`,
-          )
-        : await all<QuestionAccessRequestRow>(
-            db,
-            `SELECT ${questionAccessRequestSelectFields}
-             FROM question_access_requests
-             WHERE requester_user_id = ? OR owner_user_id = ?
-             ORDER BY created_at DESC`,
-            [actor.id, actor.id],
-          );
+    let rows: QuestionAccessRequestRow[] = [];
+    try {
+      rows =
+        actor.role === "ADMIN"
+          ? await all<QuestionAccessRequestRow>(
+              db,
+              `SELECT ${questionAccessRequestSelectFields}
+               FROM question_access_requests
+               ORDER BY created_at DESC`,
+            )
+          : await all<QuestionAccessRequestRow>(
+              db,
+              `SELECT ${questionAccessRequestSelectFields}
+               FROM question_access_requests
+               WHERE requester_user_id = ? OR owner_user_id = ?
+               ORDER BY created_at DESC`,
+              [actor.id, actor.id],
+            );
+    } catch (error) {
+      if (!isMissingQuestionAccessRequestsTableError(error)) {
+        throw error;
+      }
+      rows = [];
+    }
 
     return Promise.all(
       rows.map(async (row) => ({
@@ -951,16 +970,24 @@ export const createQuestionQueriesAndMutations = ({
       "Нээлттэй асуултыг хүсэлтгүй ашиглаж болно.",
     );
 
-    const existingPending = await first<QuestionAccessRequestRow>(
-      db,
-      `SELECT ${questionAccessRequestSelectFields}
-       FROM question_access_requests
-       WHERE question_id = ?
-         AND requester_user_id = ?
-         AND status = 'PENDING'
-       LIMIT 1`,
-      [questionId, actor.id],
-    );
+    let existingPending: QuestionAccessRequestRow | null = null;
+    try {
+      existingPending = await first<QuestionAccessRequestRow>(
+        db,
+        `SELECT ${questionAccessRequestSelectFields}
+         FROM question_access_requests
+         WHERE question_id = ?
+           AND requester_user_id = ?
+           AND status = 'PENDING'
+         LIMIT 1`,
+        [questionId, actor.id],
+      );
+    } catch (error) {
+      if (isMissingQuestionAccessRequestsTableError(error)) {
+        invariant(false, "Асуултын хүсэлтийн feature хараахан идэвхжээгүй байна.");
+      }
+      throw error;
+    }
 
     if (existingPending) {
       return {
@@ -976,20 +1003,27 @@ export const createQuestionQueriesAndMutations = ({
 
     const createdAt = now();
     const id = makeId("question_access_request");
-    await run(
-      db,
-      `INSERT INTO question_access_requests (
-        id,
-        question_id,
-        requester_user_id,
-        owner_user_id,
-        status,
-        created_at,
-        reviewed_at
-      )
-      VALUES (?, ?, ?, ?, 'PENDING', ?, NULL)`,
-      [id, questionId, actor.id, bank.owner_id, createdAt],
-    );
+    try {
+      await run(
+        db,
+        `INSERT INTO question_access_requests (
+          id,
+          question_id,
+          requester_user_id,
+          owner_user_id,
+          status,
+          created_at,
+          reviewed_at
+        )
+        VALUES (?, ?, ?, ?, 'PENDING', ?, NULL)`,
+        [id, questionId, actor.id, bank.owner_id, createdAt],
+      );
+    } catch (error) {
+      if (isMissingQuestionAccessRequestsTableError(error)) {
+        invariant(false, "Асуултын хүсэлтийн feature хараахан идэвхжээгүй байна.");
+      }
+      throw error;
+    }
 
     return {
       id,
@@ -1006,7 +1040,15 @@ export const createQuestionQueriesAndMutations = ({
     context: RequestContext,
   ) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
-    const request = await findQuestionAccessRequestById(db, requestId);
+    let request: QuestionAccessRequestRow;
+    try {
+      request = await findQuestionAccessRequestById(db, requestId);
+    } catch (error) {
+      if (isMissingQuestionAccessRequestsTableError(error)) {
+        invariant(false, "Асуултын хүсэлтийн feature хараахан идэвхжээгүй байна.");
+      }
+      throw error;
+    }
     invariant(
       actor.role === "ADMIN" || request.owner_user_id === actor.id,
       "Зөвхөн асуултын эзэмшигч хүсэлтийг шийднэ.",
@@ -1015,13 +1057,20 @@ export const createQuestionQueriesAndMutations = ({
 
     const reviewedAt = now();
     const nextStatus = approve ? "APPROVED" : "REJECTED";
-    await run(
-      db,
-      `UPDATE question_access_requests
-       SET status = ?, reviewed_at = ?
-       WHERE id = ?`,
-      [nextStatus, reviewedAt, requestId],
-    );
+    try {
+      await run(
+        db,
+        `UPDATE question_access_requests
+         SET status = ?, reviewed_at = ?
+         WHERE id = ?`,
+        [nextStatus, reviewedAt, requestId],
+      );
+    } catch (error) {
+      if (isMissingQuestionAccessRequestsTableError(error)) {
+        invariant(false, "Асуултын хүсэлтийн feature хараахан идэвхжээгүй байна.");
+      }
+      throw error;
+    }
 
     const nextRequest = await findQuestionAccessRequestById(db, requestId);
     return {
