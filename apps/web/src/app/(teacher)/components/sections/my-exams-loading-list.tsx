@@ -6,25 +6,22 @@ export function MyExamsLoadingList() {
       key={row}
       className="h-[215px] w-[268px] max-w-full animate-pulse rounded-[6px] border border-[#E4E4E4] bg-white p-3 shadow-[0px_3.22px_4.83px_rgba(0,0,0,0.09)]"
     >
-      <div className="h-24 rounded-[4px] bg-[#F7F1E8] p-4">
-        <div className="flex items-center gap-3">
-          <div className="h-[88px] w-[88px] rounded-[4px] bg-[#F2D48A]" />
-          <div className="flex-1 space-y-3">
-            <div className="ml-auto h-5 w-28 rounded-full bg-white/80" />
-            <div className="h-6 w-24 rounded bg-white/80" />
+      <div className="flex h-full w-full flex-col gap-4">
+        <div className="relative h-24 rounded-[4px] bg-[linear-gradient(135deg,#F6EEFF_0%,#EEE6FF_48%,#E1D4FF_100%)]">
+          <div className="absolute right-[6px] top-[5px] h-5 w-[126px] rounded-[8.4px] bg-white/70" />
+          <div className="absolute left-6 top-6 h-16 w-[92px] rounded-[18px] bg-white/70" />
+        </div>
+        <div className="space-y-[10px]">
+          <div className="h-4 w-[88%] rounded bg-[#ECE7F8]" />
+          <div className="flex gap-[14px]">
+            <div className="h-3 w-[53px] rounded bg-[#ECE7F8]" />
+            <div className="h-3 w-[73px] rounded bg-[#ECE7F8]" />
           </div>
         </div>
-      </div>
-      <div className="mt-4 space-y-3">
-        <div className="h-4 w-[88%] rounded bg-[#ECE7F8]" />
-        <div className="flex gap-3">
-          <div className="h-3 w-14 rounded bg-[#ECE7F8]" />
-          <div className="h-3 w-16 rounded bg-[#ECE7F8]" />
+        <div className="mt-auto flex gap-3">
+          <div className="h-6 w-[70px] rounded-[4px] bg-[#E4D8FF]" />
+          <div className="h-6 w-[93px] rounded-[4px] bg-[#F8E9E3]" />
         </div>
-      </div>
-      <div className="mt-5 flex gap-3">
-        <div className="h-8 w-24 rounded-[4px] bg-[#E4D8FF]" />
-        <div className="h-8 w-28 rounded-[4px] bg-[#F8E9E3]" />
       </div>
     </div>
   ));

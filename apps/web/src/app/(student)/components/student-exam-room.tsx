@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ExamStatus } from "@/graphql/generated";
+import { ExamMode, ExamStatus } from "@/graphql/generated";
 import { StudentExamOverview } from "./student-exam-overview";
+import { StudentExamPracticeSession } from "./student-exam-practice-session";
 import { StudentExamQuestionCard } from "./student-exam-question-card";
 import { StudentExamRoomSkeleton } from "./student-exam-room-skeleton";
 import { StudentExamSessionHeader } from "./student-exam-session-header";
@@ -43,6 +44,17 @@ export function StudentExamRoom({ examId }: StudentExamRoomProps) {
           isRestarting={state.isStarting}
           onRestartAttempt={() => void state.handleStartAttempt()}
         />
+      ) : state.showQuestions && state.currentAttempt && state.exam.mode === ExamMode.Practice ? (
+        <StudentExamPracticeSession
+          attemptAnswers={state.attemptAnswers}
+          draftAnswers={state.draftAnswers}
+          errorMessage={state.errorMessage}
+          exam={state.exam}
+          onOpenSubmitDialog={() => setSubmitDialogOpen(true)}
+          remainingLabel={state.remainingLabel}
+          saveErrorByQuestion={state.saveErrorByQuestion}
+          setDraftAnswer={state.setDraftAnswer}
+        />
       ) : state.showQuestions && state.currentAttempt ? (
         <StudentExamSessionHeader
           answeredCount={state.answeredCount}
@@ -67,7 +79,7 @@ export function StudentExamRoom({ examId }: StudentExamRoomProps) {
         />
       )}
 
-      {state.isCompleted && state.currentAttempt ? null : state.showQuestions ? (
+      {state.isCompleted && state.currentAttempt ? null : state.showQuestions && state.exam.mode !== ExamMode.Practice ? (
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-[20px] font-semibold text-[#0F1216]">Асуултууд</h2>

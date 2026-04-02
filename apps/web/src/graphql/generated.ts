@@ -1251,7 +1251,7 @@ export type ClassDetailQueryVariables = Exact<{
 }>;
 
 
-export type ClassDetailQuery = { __typename?: 'Query', class?: { __typename?: 'Class', id: string, name: string, description?: string | null, subject: string, grade: number, studentCount: number, assignedExamCount: number, upcomingExamCount: number, completedExamCount: number, averageScore?: number | null, teacher: { __typename?: 'User', id: string, fullName: string }, studentInsights: Array<{ __typename?: 'ClassStudentInsight', status: ClassStudentStatus, lastActiveAt?: string | null, averageScore?: number | null, suspiciousEventCount: number, integrityRisk: IntegrityRiskLevel, lastIntegrityEventAt?: string | null, integritySignals: Array<{ __typename?: 'IntegritySignalCount', type: AttemptIntegrityEventType, severity: IntegritySeverity, count: number }>, integrityEvents: Array<{ __typename?: 'IntegrityEvent', id: string, type: AttemptIntegrityEventType, severity: IntegritySeverity, details: string, createdAt: string }>, student: { __typename?: 'User', id: string, fullName: string, email: string } }>, examInsights: Array<{ __typename?: 'ClassExamInsight', submittedCount: number, totalStudents: number, progressPercent: number, averageScore?: number | null, questionCount: number, exam: { __typename?: 'Exam', id: string, title: string, durationMinutes: number, status: ExamStatus } }> } | null };
+export type ClassDetailQuery = { __typename?: 'Query', class?: { __typename?: 'Class', id: string, name: string, description?: string | null, subject: string, grade: number, studentCount: number, assignedExamCount: number, upcomingExamCount: number, completedExamCount: number, averageScore?: number | null, teacher: { __typename?: 'User', id: string, fullName: string }, studentInsights: Array<{ __typename?: 'ClassStudentInsight', status: ClassStudentStatus, lastActiveAt?: string | null, averageScore?: number | null, suspiciousEventCount: number, integrityRisk: IntegrityRiskLevel, lastIntegrityEventAt?: string | null, integritySignals: Array<{ __typename?: 'IntegritySignalCount', type: AttemptIntegrityEventType, severity: IntegritySeverity, count: number }>, integrityEvents: Array<{ __typename?: 'IntegrityEvent', id: string, type: AttemptIntegrityEventType, severity: IntegritySeverity, details: string, createdAt: string }>, student: { __typename?: 'User', id: string, fullName: string, email: string } }>, examInsights: Array<{ __typename?: 'ClassExamInsight', submittedCount: number, totalStudents: number, progressPercent: number, averageScore?: number | null, questionCount: number, exam: { __typename?: 'Exam', id: string, title: string, durationMinutes: number, status: ExamStatus, createdAt: string, scheduledFor?: string | null, startedAt?: string | null, endsAt?: string | null } }> } | null };
 
 export type ClassesListQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1310,7 +1310,7 @@ export type MyExamDetailQueryQuery = { __typename?: 'Query', exam?: { __typename
 export type MyExamsSectionQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MyExamsSectionQueryQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, classes: Array<{ __typename?: 'Class', id: string }> } | null, exams: Array<{ __typename?: 'Exam', id: string, mode: ExamMode, isTemplate: boolean, sourceExamId?: string | null, title: string, status: ExamStatus, durationMinutes: number, passingCriteriaType: PassingCriteriaType, passingThreshold: number, createdAt: string, startedAt?: string | null, endsAt?: string | null, createdBy: { __typename?: 'User', id: string }, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, studentCount: number }, questions: Array<{ __typename?: 'ExamQuestion', id: string, points: number, order: number }>, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number }> }> };
+export type MyExamsSectionQueryQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, classes: Array<{ __typename?: 'Class', id: string }> } | null, exams: Array<{ __typename?: 'Exam', id: string, mode: ExamMode, isTemplate: boolean, sourceExamId?: string | null, title: string, status: ExamStatus, durationMinutes: number, passingCriteriaType: PassingCriteriaType, passingThreshold: number, createdAt: string, scheduledFor?: string | null, startedAt?: string | null, endsAt?: string | null, createdBy: { __typename?: 'User', id: string }, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, studentCount: number }, questions: Array<{ __typename?: 'ExamQuestion', id: string, points: number, order: number }>, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number }> }> };
 
 export type MyExamsQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1334,7 +1334,7 @@ export type StudentExamRoomQueryVariables = Exact<{
 }>;
 
 
-export type StudentExamRoomQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string } | null, exam?: { __typename?: 'Exam', id: string, title: string, description?: string | null, mode: ExamMode, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, shuffleQuestions: boolean, shuffleAnswers: boolean, passingCriteriaType: PassingCriteriaType, passingThreshold: number, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, order: number, points: number, question: { __typename?: 'Question', id: string, title: string, prompt: string, tags: Array<string>, type: QuestionType, difficulty: Difficulty, options: Array<string>, bank: { __typename?: 'QuestionBank', id: string, topic: string } } }> } | null, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, generationSeed?: string | null, startedAt: string, submittedAt?: string | null, exam: { __typename?: 'Exam', id: string }, answers: Array<{ __typename?: 'Answer', id: string, value: string, autoScore?: number | null, manualScore?: number | null, feedback?: string | null, question: { __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, correctAnswer?: string | null, tags: Array<string>, bank: { __typename?: 'QuestionBank', id: string, topic: string } } }> }> };
+export type StudentExamRoomQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string } | null, exam?: { __typename?: 'Exam', id: string, title: string, description?: string | null, mode: ExamMode, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, shuffleQuestions: boolean, shuffleAnswers: boolean, passingCriteriaType: PassingCriteriaType, passingThreshold: number, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, order: number, points: number, question: { __typename?: 'Question', id: string, title: string, prompt: string, tags: Array<string>, type: QuestionType, difficulty: Difficulty, options: Array<string>, correctAnswer?: string | null, bank: { __typename?: 'QuestionBank', id: string, topic: string } } }> } | null, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, generationSeed?: string | null, startedAt: string, submittedAt?: string | null, exam: { __typename?: 'Exam', id: string }, answers: Array<{ __typename?: 'Answer', id: string, value: string, autoScore?: number | null, manualScore?: number | null, feedback?: string | null, question: { __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, correctAnswer?: string | null, tags: Array<string>, bank: { __typename?: 'QuestionBank', id: string, topic: string } } }> }> };
 
 export type StudentHomeQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -2762,6 +2762,10 @@ export const ClassDetailDocument = gql`
         title
         durationMinutes
         status
+        createdAt
+        scheduledFor
+        startedAt
+        endsAt
       }
     }
   }
@@ -3624,6 +3628,7 @@ export const MyExamsSectionQueryDocument = gql`
     passingCriteriaType
     passingThreshold
     createdAt
+    scheduledFor
     startedAt
     endsAt
     createdBy {
@@ -3971,6 +3976,7 @@ export const StudentExamRoomDocument = gql`
         type
         difficulty
         options
+        correctAnswer
         bank {
           id
           topic

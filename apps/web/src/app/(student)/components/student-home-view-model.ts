@@ -19,7 +19,7 @@ export type StudentExamCardView = {
   duration: string;
   endLabel: string;
   id: string;
-  mode: QueryExam["mode"] | QueryAttempt["exam"]["mode"];
+  mode: ExamMode;
   points: string;
   progress: number;
   questionCount: string;
@@ -33,7 +33,7 @@ export type StudentExamCardView = {
 export type StudentCompletedExamView = {
   attemptId: string;
   id: string;
-  mode: QueryAttempt["exam"]["mode"];
+  mode: ExamMode;
   scoreLabel: string;
   scoreTone: string;
   searchText: string;
@@ -64,27 +64,21 @@ const buildExamCard = ({
   const end = getExamEnd(exam);
   const teacher = exam.class.teacher.fullName;
   const subject = exam.class.subject || exam.class.name;
-  const isPractice = exam.mode === ExamMode.Practice;
-  const isAlwaysActivePractice = isPractice && !exam.endsAt;
 
   return {
     duration: `${exam.durationMinutes} минут`,
-    endLabel: isAlwaysActivePractice
-      ? "Үргэлж идэвхтэй"
-      : tone === "live"
-        ? formatRemaining((parseDate(end)?.getTime() ?? nowMs) - nowMs)
-        : formatMonthDay(end),
+    endLabel: tone === "live"
+      ? formatRemaining((parseDate(end)?.getTime() ?? nowMs) - nowMs)
+      : formatMonthDay(end),
     id: exam.id,
     mode: exam.mode,
     points: `${totalPoints} оноо`,
     progress: getProgress({ exam, nowMs, tone }),
     questionCount: `${exam.questions.length} асуулт`,
     searchText: `${exam.title} ${teacher} ${subject}`.toLowerCase(),
-    startedLabel: isAlwaysActivePractice
-      ? "Хэзээд нээлттэй"
-      : tone === "live"
-        ? `${formatClock(start)} цагаас эхэлсэн`
-        : `${formatMonthDay(start)} - ${formatMonthDay(end)}`,
+    startedLabel: tone === "live"
+      ? `${formatClock(start)} цагаас эхэлсэн`
+      : `${formatMonthDay(start)} - ${formatMonthDay(end)}`,
     subject,
     teacher,
     title: exam.title,
@@ -149,7 +143,7 @@ export const buildStudentHomeViewModel = (data: StudentHomeQuery): StudentHomeVi
             : "text-[#E17100]",
         searchText: `${attempt.exam.title} ${attempt.exam.class.subject} ${attempt.exam.class.teacher.fullName}`.toLowerCase(),
         statusLabel:
-          attempt.status === AttemptStatus.Graded ? "Шалгасан" : "Хянагдаж байна",
+          attempt.status === AttemptStatus.Graded ? "Шалгасан" : "Шалгаж байна",
         statusTone:
           attempt.status === AttemptStatus.Graded
             ? "border-[#31AA4033] bg-[#31AA401A] text-[#31AA40]"

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { getApiBaseUrl } from "./graphql-endpoint";
 
 export type LiveQuestionBankEvent = {
@@ -91,6 +92,18 @@ const waitForReconnect = (delayMs: number, signal: AbortSignal) =>
     signal.addEventListener("abort", handleAbort, { once: true });
   });
 
+const isLocalDevelopment = () =>
+  typeof window !== "undefined" &&
+  process.env.NODE_ENV === "development" &&
+  window.location.hostname === "localhost";
+
+const isPreviewDeployment = () =>
+  typeof window !== "undefined" &&
+  /-pr-\d+\./.test(window.location.hostname);
+
+const shouldDisableUnavailableSse = () =>
+  isLocalDevelopment() || isPreviewDeployment();
+
 export const connectToLiveQuestionBankEvents = async ({
   endpoint,
   getToken,
@@ -102,6 +115,15 @@ export const connectToLiveQuestionBankEvents = async ({
   onEvent: (event: LiveQuestionBankEvent) => void;
   signal: AbortSignal;
 }) => {
+  if (shouldDisableUnavailableSse()) {
+    console.warn("Question bank SSE is disabled in this environment.", {
+      endpoint,
+      host:
+        typeof window !== "undefined" ? window.location.hostname : "unknown",
+    });
+    return;
+  }
+
   let attempt = 0;
 
   while (!signal.aborted) {
@@ -129,6 +151,15 @@ export const connectToLiveQuestionBankEvents = async ({
       }
 
       if (!response.ok || !response.body) {
+        if (response.status >= 500 && shouldDisableUnavailableSse()) {
+          console.warn("Question bank SSE is unavailable in this environment.", {
+            endpoint,
+            host:
+              typeof window !== "undefined" ? window.location.hostname : "unknown",
+            status: response.status,
+          });
+          return;
+        }
         throw new Error(`SSE request failed with status ${response.status}`);
       }
 
@@ -136,6 +167,17 @@ export const connectToLiveQuestionBankEvents = async ({
       await consumeSseStream(response.body, signal, onEvent);
     } catch (error) {
       if (signal.aborted) {
+        return;
+      }
+
+      const isNetworkError =
+        error instanceof TypeError && error.message === "Failed to fetch";
+      if (isNetworkError && shouldDisableUnavailableSse()) {
+        console.warn("Question bank SSE is unavailable in this environment.", {
+          endpoint,
+          host:
+            typeof window !== "undefined" ? window.location.hostname : "unknown",
+        });
         return;
       }
 

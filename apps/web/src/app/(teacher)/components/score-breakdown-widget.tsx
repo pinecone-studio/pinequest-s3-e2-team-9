@@ -35,7 +35,7 @@ export function ScoreBreakdownWidget({ hasResults, searchActive }: ScoreBreakdow
 
       {hasResults ? (
         <div className="relative mt-[40px] h-[200px] w-[386px]">
-          <div className="absolute left-0 top-0 w-[69px] text-[10px] font-medium leading-[14px] tracking-[-0.5px] text-[rgba(100,52,248,0.6)] font-[var(--font-inter)]">
+          <div className="absolute left-0 top-[-20px] w-[69px] text-[10px] font-medium leading-[14px] tracking-[-0.5px] text-[rgba(100,52,248,0.6)] font-[var(--font-inter)]">
             Нийт Сурагчид
           </div>
           <div className="mt-[12px] flex h-[174px] w-[386px] items-center justify-between">

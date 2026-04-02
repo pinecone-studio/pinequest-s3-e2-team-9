@@ -50,6 +50,10 @@ query ClassDetail($id: ID!) {
         title
         durationMinutes
         status
+        createdAt
+        scheduledFor
+        startedAt
+        endsAt
       }
     }
   }

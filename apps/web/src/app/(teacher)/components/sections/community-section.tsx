@@ -174,16 +174,23 @@ function CommunityPickerCard({
   const theme = getSubjectTheme(subject);
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       className={[
-        "w-full rounded-3xl border px-3.5 py-3 text-left transition duration-200",
+        "w-full cursor-pointer rounded-3xl border px-3.5 py-3 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111827]/20",
         `bg-gradient-to-br ${theme.surface}`,
         selected
           ? `border-[#0F172A] ring-2 ring-[#111827]/10 ${theme.glow}`
           : `${theme.border} shadow-[0px_10px_24px_-22px_rgba(15,23,42,0.35)] hover:-translate-y-0.5`,
       ].join(" ")}
       onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -204,7 +211,7 @@ function CommunityPickerCard({
         <span>{sharedBankCount} хуваалцсан сан</span>
       </div>
       {action ? <div className="mt-2">{action}</div> : null}
-    </button>
+    </div>
   );
 }
 
