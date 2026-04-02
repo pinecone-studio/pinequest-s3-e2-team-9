@@ -113,13 +113,21 @@ export function QuestionBankAddQuestionDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6" role="dialog" aria-modal="true" onClick={closeAndReset}>
-      <div className="w-full max-w-[672px] rounded-xl border border-[#DFE1E5] bg-[#FAFAFA] p-6 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]" onClick={(event) => event.stopPropagation()}>
-        <div className="mb-4 flex items-center justify-between">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      onClick={closeAndReset}
+    >
+      <div
+        className="flex max-h-[calc(100vh-32px)] w-full max-w-[672px] flex-col overflow-hidden rounded-xl border border-[#DFE1E5] bg-[#FAFAFA] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] sm:max-h-[calc(100vh-48px)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between px-6 pt-6">
           <h2 className="text-[18px] font-semibold text-[#0F1216]">{getQuestionDialogTitle(questionType)}</h2>
           <button type="button" className="rounded-md p-2 text-[#52555B] hover:bg-white" onClick={closeAndReset}><CloseIcon className="h-4 w-4" /></button>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto px-6 pb-6">
           <label className="block space-y-2"><span className="text-[12px] font-medium text-[#52555B]">Асуулт</span><textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Асуултаа оруулна уу..." className="h-16 w-full rounded-md border border-[#DFE1E5] bg-white px-3 py-2 text-[14px] text-[#0F1216] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] placeholder:text-[#52555B]" /></label>
           <QuestionBankDialogMedia
             disabled={loading || updateLoading}

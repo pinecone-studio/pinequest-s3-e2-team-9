@@ -127,9 +127,127 @@ export type Community = {
   owner: User;
   sharedBankCount: Scalars['Int']['output'];
   sharedBanks: Array<CommunitySharedBank>;
+  sharedExamCount: Scalars['Int']['output'];
+  sharedExams: Array<CommunitySharedExam>;
   subject: Scalars['String']['output'];
+  topContributors: Array<CommunityContributor>;
   viewerRole?: Maybe<CommunityMemberRole>;
   visibility: CommunityVisibility;
+};
+
+export type CommunityActivityPoint = {
+  __typename?: 'CommunityActivityPoint';
+  label: Scalars['String']['output'];
+  value: Scalars['Int']['output'];
+};
+
+export type CommunityComment = {
+  __typename?: 'CommunityComment';
+  author: User;
+  body: Scalars['String']['output'];
+  createdAt: Scalars['String']['output'];
+  entityId: Scalars['ID']['output'];
+  entityType: CommunityCommentEntityType;
+  id: Scalars['ID']['output'];
+};
+
+export enum CommunityCommentEntityType {
+  SharedBank = 'SHARED_BANK',
+  SharedExam = 'SHARED_EXAM'
+}
+
+export type CommunityContributor = {
+  __typename?: 'CommunityContributor';
+  commentCount: Scalars['Int']['output'];
+  role: CommunityMemberRole;
+  score: Scalars['Int']['output'];
+  sharedBankCount: Scalars['Int']['output'];
+  sharedExamCount: Scalars['Int']['output'];
+  user: User;
+};
+
+export type CommunityExamPreview = {
+  __typename?: 'CommunityExamPreview';
+  className: Scalars['String']['output'];
+  communityId?: Maybe<Scalars['ID']['output']>;
+  communityName?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['String']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  durationMinutes: Scalars['Int']['output'];
+  examId: Scalars['ID']['output'];
+  grade: Scalars['Int']['output'];
+  insights: Array<CommunityExamPreviewInsight>;
+  overallConclusion: Scalars['String']['output'];
+  passingCriteriaType: PassingCriteriaType;
+  passingThreshold: Scalars['Int']['output'];
+  questionCount: Scalars['Int']['output'];
+  questionPerformance: Array<CommunityExamPreviewBar>;
+  questions: Array<CommunityExamPreviewQuestion>;
+  scoreDistribution: Array<CommunityExamPreviewBar>;
+  sharedAt?: Maybe<Scalars['String']['output']>;
+  sharedBy?: Maybe<User>;
+  status: ExamStatus;
+  subject: Scalars['String']['output'];
+  summary: CommunityExamPreviewSummary;
+  title: Scalars['String']['output'];
+  topicPerformance: Array<CommunityExamPreviewBar>;
+  totalPoints: Scalars['Int']['output'];
+};
+
+export type CommunityExamPreviewBar = {
+  __typename?: 'CommunityExamPreviewBar';
+  label: Scalars['String']['output'];
+  meta: Scalars['String']['output'];
+  note?: Maybe<Scalars['String']['output']>;
+  value: Scalars['Int']['output'];
+};
+
+export type CommunityExamPreviewInsight = {
+  __typename?: 'CommunityExamPreviewInsight';
+  description: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+  tone: Scalars['String']['output'];
+};
+
+export type CommunityExamPreviewQuestion = {
+  __typename?: 'CommunityExamPreviewQuestion';
+  correctAnswer?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  options: Array<Scalars['String']['output']>;
+  order: Scalars['Int']['output'];
+  points: Scalars['Int']['output'];
+  prompt: Scalars['String']['output'];
+  tags: Array<Scalars['String']['output']>;
+  topic: Scalars['String']['output'];
+  type: QuestionType;
+};
+
+export type CommunityExamPreviewSummary = {
+  __typename?: 'CommunityExamPreviewSummary';
+  averagePercent: Scalars['Int']['output'];
+  completionRate: Scalars['Int']['output'];
+  highestPercent: Scalars['Int']['output'];
+  lowestPercent: Scalars['Int']['output'];
+  passRate: Scalars['Int']['output'];
+  studentCount: Scalars['Int']['output'];
+  submittedCount: Scalars['Int']['output'];
+};
+
+export type CommunityHome = {
+  __typename?: 'CommunityHome';
+  mostMissedQuestions: Array<CommunityQuestionInsight>;
+  stats: CommunityHomeStats;
+  topExams: Array<CommunityTrendingExam>;
+  trendingBanks: Array<CommunityTrendingBank>;
+  weeklyActivity: Array<CommunityActivityPoint>;
+};
+
+export type CommunityHomeStats = {
+  __typename?: 'CommunityHomeStats';
+  activeTeachers: Scalars['Int']['output'];
+  totalCommunities: Scalars['Int']['output'];
+  totalCopies: Scalars['Int']['output'];
+  totalSharedBanks: Scalars['Int']['output'];
 };
 
 export type CommunityMember = {
@@ -146,13 +264,32 @@ export enum CommunityMemberRole {
   Owner = 'OWNER'
 }
 
+export type CommunityQuestionInsight = {
+  __typename?: 'CommunityQuestionInsight';
+  attemptCount: Scalars['Int']['output'];
+  bankTitle: Scalars['String']['output'];
+  communityId: Scalars['ID']['output'];
+  communityName: Scalars['String']['output'];
+  grade: Scalars['Int']['output'];
+  missRate: Scalars['Int']['output'];
+  prompt: Scalars['String']['output'];
+  questionId: Scalars['ID']['output'];
+  subject: Scalars['String']['output'];
+  topic: Scalars['String']['output'];
+};
+
 export type CommunitySharedBank = {
   __typename?: 'CommunitySharedBank';
+  averageRating: Scalars['Float']['output'];
   bank: QuestionBank;
+  comments: Array<CommunityComment>;
+  copyCount: Scalars['Int']['output'];
   createdAt: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  ratingCount: Scalars['Int']['output'];
   sharedBy: User;
   status: CommunitySharedBankStatus;
+  viewerRating?: Maybe<Scalars['Int']['output']>;
 };
 
 export enum CommunitySharedBankStatus {
@@ -160,6 +297,50 @@ export enum CommunitySharedBankStatus {
   Archived = 'ARCHIVED',
   Featured = 'FEATURED'
 }
+
+export type CommunitySharedExam = {
+  __typename?: 'CommunitySharedExam';
+  attemptCount: Scalars['Int']['output'];
+  averageRating: Scalars['Float']['output'];
+  averageScorePercent: Scalars['Int']['output'];
+  className: Scalars['String']['output'];
+  comments: Array<CommunityComment>;
+  createdAt: Scalars['String']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  durationMinutes: Scalars['Int']['output'];
+  examId: Scalars['ID']['output'];
+  grade: Scalars['Int']['output'];
+  id: Scalars['ID']['output'];
+  questionCount: Scalars['Int']['output'];
+  ratingCount: Scalars['Int']['output'];
+  sharedBy: User;
+  status: ExamStatus;
+  subject: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+  viewerRating?: Maybe<Scalars['Int']['output']>;
+};
+
+export type CommunityTrendingBank = {
+  __typename?: 'CommunityTrendingBank';
+  bank: QuestionBank;
+  communityId: Scalars['ID']['output'];
+  communityName: Scalars['String']['output'];
+  copyCount: Scalars['Int']['output'];
+  sharedBankId: Scalars['ID']['output'];
+};
+
+export type CommunityTrendingExam = {
+  __typename?: 'CommunityTrendingExam';
+  attemptCount: Scalars['Int']['output'];
+  averageScorePercent: Scalars['Int']['output'];
+  communityId?: Maybe<Scalars['ID']['output']>;
+  communityName?: Maybe<Scalars['String']['output']>;
+  createdBy: User;
+  examId: Scalars['ID']['output'];
+  grade: Scalars['Int']['output'];
+  subject: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+};
 
 export enum CommunityVisibility {
   Private = 'PRIVATE',
@@ -391,6 +572,7 @@ export type IntegritySignalCount = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  addCommunityComment: CommunityComment;
   addQuestionToExam: Exam;
   approveExamImportJob: ExamImportJob;
   assignExamToClass: Exam;
@@ -408,15 +590,25 @@ export type Mutation = {
   groupQuestionsAsVariants: Array<Question>;
   joinCommunity: Community;
   publishExam: Exam;
+  rateCommunityItem: Scalars['Boolean']['output'];
   recordAttemptIntegrityEvent: Scalars['Boolean']['output'];
   reviewAnswer: Answer;
   reviewAttempt: Attempt;
   saveAnswer: Attempt;
+  shareExamToCommunity: CommunitySharedExam;
   shareQuestionBankToCommunity: CommunitySharedBank;
   startAttempt: Attempt;
   submitAttempt: Attempt;
   updateExamDraft: Exam;
   updateQuestion: Question;
+};
+
+
+export type MutationAddCommunityCommentArgs = {
+  body: Scalars['String']['input'];
+  communityId: Scalars['ID']['input'];
+  entityId: Scalars['ID']['input'];
+  entityType: CommunityCommentEntityType;
 };
 
 
@@ -545,6 +737,14 @@ export type MutationPublishExamArgs = {
 };
 
 
+export type MutationRateCommunityItemArgs = {
+  communityId: Scalars['ID']['input'];
+  entityId: Scalars['ID']['input'];
+  entityType: CommunityCommentEntityType;
+  value: Scalars['Int']['input'];
+};
+
+
 export type MutationRecordAttemptIntegrityEventArgs = {
   attemptId: Scalars['ID']['input'];
   details?: InputMaybe<Scalars['String']['input']>;
@@ -569,6 +769,12 @@ export type MutationSaveAnswerArgs = {
   attemptId: Scalars['ID']['input'];
   questionId: Scalars['ID']['input'];
   value: Scalars['String']['input'];
+};
+
+
+export type MutationShareExamToCommunityArgs = {
+  communityId: Scalars['ID']['input'];
+  examId: Scalars['ID']['input'];
 };
 
 
@@ -631,6 +837,8 @@ export type Query = {
   classes: Array<Class>;
   communities: Array<Community>;
   community?: Maybe<Community>;
+  communityExamPreview?: Maybe<CommunityExamPreview>;
+  communityHome: CommunityHome;
   dashboardOverview: DashboardOverview;
   exam?: Maybe<Exam>;
   examImportJob?: Maybe<ExamImportJob>;
@@ -658,6 +866,12 @@ export type QueryClassArgs = {
 
 export type QueryCommunityArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryCommunityExamPreviewArgs = {
+  communityId?: InputMaybe<Scalars['ID']['input']>;
+  examId: Scalars['ID']['input'];
 };
 
 
@@ -749,6 +963,16 @@ export type User = {
   id: Scalars['ID']['output'];
   role: Role;
 };
+
+export type AddCommunityCommentActionMutationVariables = Exact<{
+  communityId: Scalars['ID']['input'];
+  entityType: CommunityCommentEntityType;
+  entityId: Scalars['ID']['input'];
+  body: Scalars['String']['input'];
+}>;
+
+
+export type AddCommunityCommentActionMutation = { __typename?: 'Mutation', addCommunityComment: { __typename?: 'CommunityComment', id: string, entityType: CommunityCommentEntityType, entityId: string, body: string, createdAt: string, author: { __typename?: 'User', id: string, fullName: string } } };
 
 export type AddQuestionToExamMutationVariables = Exact<{
   examId: Scalars['ID']['input'];
@@ -909,6 +1133,16 @@ export type PublishExamMutationVariables = Exact<{
 
 export type PublishExamMutation = { __typename?: 'Mutation', publishExam: { __typename?: 'Exam', id: string, status: ExamStatus, startedAt?: string | null, endsAt?: string | null } };
 
+export type RateCommunityItemActionMutationVariables = Exact<{
+  communityId: Scalars['ID']['input'];
+  entityType: CommunityCommentEntityType;
+  entityId: Scalars['ID']['input'];
+  value: Scalars['Int']['input'];
+}>;
+
+
+export type RateCommunityItemActionMutation = { __typename?: 'Mutation', rateCommunityItem: boolean };
+
 export type RecordAttemptIntegrityEventMutationVariables = Exact<{
   attemptId: Scalars['ID']['input'];
   type: AttemptIntegrityEventType;
@@ -943,6 +1177,14 @@ export type SaveAnswerMutationVariables = Exact<{
 
 
 export type SaveAnswerMutation = { __typename?: 'Mutation', saveAnswer: { __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, startedAt: string, submittedAt?: string | null, answers: Array<{ __typename?: 'Answer', id: string, value: string, question: { __typename?: 'Question', id: string } }> } };
+
+export type ShareExamToCommunityActionMutationVariables = Exact<{
+  communityId: Scalars['ID']['input'];
+  examId: Scalars['ID']['input'];
+}>;
+
+
+export type ShareExamToCommunityActionMutation = { __typename?: 'Mutation', shareExamToCommunity: { __typename?: 'CommunitySharedExam', id: string, examId: string, title: string, description?: string | null, subject: string, grade: number, className: string, status: ExamStatus, durationMinutes: number, questionCount: number, attemptCount: number, averageScorePercent: number, createdAt: string, sharedBy: { __typename?: 'User', id: string, fullName: string } } };
 
 export type ShareQuestionBankToCommunityActionMutationVariables = Exact<{
   communityId: Scalars['ID']['input'];
@@ -1018,12 +1260,20 @@ export type CommunityDetailQueryVariables = Exact<{
 }>;
 
 
-export type CommunityDetailQuery = { __typename?: 'Query', community?: { __typename?: 'Community', id: string, name: string, description?: string | null, subject: string, grade: number, visibility: CommunityVisibility, viewerRole?: CommunityMemberRole | null, memberCount: number, sharedBankCount: number, members: Array<{ __typename?: 'CommunityMember', id: string, role: CommunityMemberRole, joinedAt: string, user: { __typename?: 'User', id: string, fullName: string } }>, sharedBanks: Array<{ __typename?: 'CommunitySharedBank', id: string, status: CommunitySharedBankStatus, createdAt: string, sharedBy: { __typename?: 'User', id: string, fullName: string }, bank: { __typename?: 'QuestionBank', id: string, title: string, description?: string | null, grade: number, subject: string, topic: string, visibility: QuestionBankVisibility, questionCount: number, createdAt: string, owner: { __typename?: 'User', id: string, fullName: string } } }> } | null };
+export type CommunityDetailQuery = { __typename?: 'Query', community?: { __typename?: 'Community', id: string, name: string, description?: string | null, subject: string, grade: number, visibility: CommunityVisibility, viewerRole?: CommunityMemberRole | null, memberCount: number, sharedBankCount: number, sharedExamCount: number, topContributors: Array<{ __typename?: 'CommunityContributor', role: CommunityMemberRole, sharedBankCount: number, sharedExamCount: number, commentCount: number, score: number, user: { __typename?: 'User', id: string, fullName: string } }>, members: Array<{ __typename?: 'CommunityMember', id: string, role: CommunityMemberRole, joinedAt: string, user: { __typename?: 'User', id: string, fullName: string } }>, sharedBanks: Array<{ __typename?: 'CommunitySharedBank', id: string, status: CommunitySharedBankStatus, copyCount: number, ratingCount: number, averageRating: number, viewerRating?: number | null, createdAt: string, sharedBy: { __typename?: 'User', id: string, fullName: string }, comments: Array<{ __typename?: 'CommunityComment', id: string, entityType: CommunityCommentEntityType, entityId: string, body: string, createdAt: string, author: { __typename?: 'User', id: string, fullName: string } }>, bank: { __typename?: 'QuestionBank', id: string, title: string, description?: string | null, grade: number, subject: string, topic: string, visibility: QuestionBankVisibility, questionCount: number, createdAt: string, owner: { __typename?: 'User', id: string, fullName: string } } }>, sharedExams: Array<{ __typename?: 'CommunitySharedExam', id: string, examId: string, title: string, description?: string | null, subject: string, grade: number, className: string, status: ExamStatus, durationMinutes: number, questionCount: number, attemptCount: number, averageScorePercent: number, ratingCount: number, averageRating: number, viewerRating?: number | null, createdAt: string, sharedBy: { __typename?: 'User', id: string, fullName: string }, comments: Array<{ __typename?: 'CommunityComment', id: string, entityType: CommunityCommentEntityType, entityId: string, body: string, createdAt: string, author: { __typename?: 'User', id: string, fullName: string } }> }> } | null };
+
+export type CommunityExamPreviewQueryVariables = Exact<{
+  examId: Scalars['ID']['input'];
+  communityId?: InputMaybe<Scalars['ID']['input']>;
+}>;
+
+
+export type CommunityExamPreviewQuery = { __typename?: 'Query', communityExamPreview?: { __typename?: 'CommunityExamPreview', examId: string, communityId?: string | null, communityName?: string | null, title: string, description?: string | null, subject: string, grade: number, className: string, status: ExamStatus, durationMinutes: number, questionCount: number, totalPoints: number, passingCriteriaType: PassingCriteriaType, passingThreshold: number, createdAt: string, sharedAt?: string | null, overallConclusion: string, sharedBy?: { __typename?: 'User', id: string, fullName: string } | null, summary: { __typename?: 'CommunityExamPreviewSummary', studentCount: number, submittedCount: number, averagePercent: number, passRate: number, highestPercent: number, lowestPercent: number, completionRate: number }, questions: Array<{ __typename?: 'CommunityExamPreviewQuestion', id: string, order: number, prompt: string, type: QuestionType, options: Array<string>, correctAnswer?: string | null, points: number, topic: string, tags: Array<string> }>, scoreDistribution: Array<{ __typename?: 'CommunityExamPreviewBar', label: string, value: number, meta: string, note?: string | null }>, topicPerformance: Array<{ __typename?: 'CommunityExamPreviewBar', label: string, value: number, meta: string, note?: string | null }>, questionPerformance: Array<{ __typename?: 'CommunityExamPreviewBar', label: string, value: number, meta: string, note?: string | null }>, insights: Array<{ __typename?: 'CommunityExamPreviewInsight', title: string, description: string, tone: string }> } | null };
 
 export type CommunityOverviewQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CommunityOverviewQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string } | null, communities: Array<{ __typename?: 'Community', id: string, name: string, description?: string | null, subject: string, grade: number, visibility: CommunityVisibility, viewerRole?: CommunityMemberRole | null, memberCount: number, sharedBankCount: number, createdAt: string }>, questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, description?: string | null, grade: number, subject: string, topic: string, topics: Array<string>, visibility: QuestionBankVisibility, questionCount: number, createdAt: string, owner: { __typename?: 'User', id: string, fullName: string } }> };
+export type CommunityOverviewQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string, classes: Array<{ __typename?: 'Class', id: string, subject: string, grade: number }> } | null, communityHome: { __typename?: 'CommunityHome', stats: { __typename?: 'CommunityHomeStats', totalCommunities: number, totalSharedBanks: number, totalCopies: number, activeTeachers: number }, weeklyActivity: Array<{ __typename?: 'CommunityActivityPoint', label: string, value: number }>, trendingBanks: Array<{ __typename?: 'CommunityTrendingBank', sharedBankId: string, copyCount: number, communityId: string, communityName: string, bank: { __typename?: 'QuestionBank', id: string, title: string, description?: string | null, grade: number, subject: string, topic: string, visibility: QuestionBankVisibility, questionCount: number, createdAt: string, owner: { __typename?: 'User', id: string, fullName: string } } }>, topExams: Array<{ __typename?: 'CommunityTrendingExam', examId: string, title: string, subject: string, grade: number, attemptCount: number, averageScorePercent: number, communityId?: string | null, communityName?: string | null, createdBy: { __typename?: 'User', id: string, fullName: string } }>, mostMissedQuestions: Array<{ __typename?: 'CommunityQuestionInsight', questionId: string, prompt: string, subject: string, grade: number, topic: string, bankTitle: string, communityId: string, communityName: string, attemptCount: number, missRate: number }> }, communities: Array<{ __typename?: 'Community', id: string, name: string, description?: string | null, subject: string, grade: number, visibility: CommunityVisibility, viewerRole?: CommunityMemberRole | null, memberCount: number, sharedBankCount: number, createdAt: string }>, questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, description?: string | null, grade: number, subject: string, topic: string, topics: Array<string>, visibility: QuestionBankVisibility, questionCount: number, createdAt: string, owner: { __typename?: 'User', id: string, fullName: string } }> };
 
 export type CreateExamOptionsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1089,6 +1339,55 @@ export type StudentHomeQueryVariables = Exact<{ [key: string]: never; }>;
 export type StudentHomeQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, fullName: string, classes: Array<{ __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }> } | null, exams: Array<{ __typename?: 'Exam', id: string, title: string, mode: ExamMode, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, points: number }> }>, attempts: Array<{ __typename?: 'Attempt', id: string, status: AttemptStatus, totalScore: number, startedAt: string, submittedAt?: string | null, exam: { __typename?: 'Exam', id: string, title: string, mode: ExamMode, status: ExamStatus, durationMinutes: number, startedAt?: string | null, endsAt?: string | null, scheduledFor?: string | null, createdAt: string, class: { __typename?: 'Class', id: string, name: string, subject: string, grade: number, teacher: { __typename?: 'User', id: string, fullName: string } }, questions: Array<{ __typename?: 'ExamQuestion', id: string, points: number }> } }> };
 
 
+export const AddCommunityCommentActionDocument = gql`
+    mutation AddCommunityCommentAction($communityId: ID!, $entityType: CommunityCommentEntityType!, $entityId: ID!, $body: String!) {
+  addCommunityComment(
+    communityId: $communityId
+    entityType: $entityType
+    entityId: $entityId
+    body: $body
+  ) {
+    id
+    entityType
+    entityId
+    body
+    createdAt
+    author {
+      id
+      fullName
+    }
+  }
+}
+    `;
+export type AddCommunityCommentActionMutationFn = ApolloReactCommon.MutationFunction<AddCommunityCommentActionMutation, AddCommunityCommentActionMutationVariables>;
+
+/**
+ * __useAddCommunityCommentActionMutation__
+ *
+ * To run a mutation, you first call `useAddCommunityCommentActionMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAddCommunityCommentActionMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [addCommunityCommentActionMutation, { data, loading, error }] = useAddCommunityCommentActionMutation({
+ *   variables: {
+ *      communityId: // value for 'communityId'
+ *      entityType: // value for 'entityType'
+ *      entityId: // value for 'entityId'
+ *      body: // value for 'body'
+ *   },
+ * });
+ */
+export function useAddCommunityCommentActionMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<AddCommunityCommentActionMutation, AddCommunityCommentActionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<AddCommunityCommentActionMutation, AddCommunityCommentActionMutationVariables>(AddCommunityCommentActionDocument, options);
+      }
+export type AddCommunityCommentActionMutationHookResult = ReturnType<typeof useAddCommunityCommentActionMutation>;
+export type AddCommunityCommentActionMutationResult = ApolloReactCommon.MutationResult<AddCommunityCommentActionMutation>;
+export type AddCommunityCommentActionMutationOptions = ApolloReactCommon.BaseMutationOptions<AddCommunityCommentActionMutation, AddCommunityCommentActionMutationVariables>;
 export const AddQuestionToExamDocument = gql`
     mutation AddQuestionToExam($examId: ID!, $questionId: ID!, $points: Int!) {
   addQuestionToExam(examId: $examId, questionId: $questionId, points: $points) {
@@ -1881,6 +2180,45 @@ export function usePublishExamMutation(baseOptions?: ApolloReactHooks.MutationHo
 export type PublishExamMutationHookResult = ReturnType<typeof usePublishExamMutation>;
 export type PublishExamMutationResult = ApolloReactCommon.MutationResult<PublishExamMutation>;
 export type PublishExamMutationOptions = ApolloReactCommon.BaseMutationOptions<PublishExamMutation, PublishExamMutationVariables>;
+export const RateCommunityItemActionDocument = gql`
+    mutation RateCommunityItemAction($communityId: ID!, $entityType: CommunityCommentEntityType!, $entityId: ID!, $value: Int!) {
+  rateCommunityItem(
+    communityId: $communityId
+    entityType: $entityType
+    entityId: $entityId
+    value: $value
+  )
+}
+    `;
+export type RateCommunityItemActionMutationFn = ApolloReactCommon.MutationFunction<RateCommunityItemActionMutation, RateCommunityItemActionMutationVariables>;
+
+/**
+ * __useRateCommunityItemActionMutation__
+ *
+ * To run a mutation, you first call `useRateCommunityItemActionMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRateCommunityItemActionMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [rateCommunityItemActionMutation, { data, loading, error }] = useRateCommunityItemActionMutation({
+ *   variables: {
+ *      communityId: // value for 'communityId'
+ *      entityType: // value for 'entityType'
+ *      entityId: // value for 'entityId'
+ *      value: // value for 'value'
+ *   },
+ * });
+ */
+export function useRateCommunityItemActionMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RateCommunityItemActionMutation, RateCommunityItemActionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<RateCommunityItemActionMutation, RateCommunityItemActionMutationVariables>(RateCommunityItemActionDocument, options);
+      }
+export type RateCommunityItemActionMutationHookResult = ReturnType<typeof useRateCommunityItemActionMutation>;
+export type RateCommunityItemActionMutationResult = ApolloReactCommon.MutationResult<RateCommunityItemActionMutation>;
+export type RateCommunityItemActionMutationOptions = ApolloReactCommon.BaseMutationOptions<RateCommunityItemActionMutation, RateCommunityItemActionMutationVariables>;
 export const RecordAttemptIntegrityEventDocument = gql`
     mutation RecordAttemptIntegrityEvent($attemptId: ID!, $type: AttemptIntegrityEventType!, $details: String) {
   recordAttemptIntegrityEvent(
@@ -2050,6 +2388,56 @@ export function useSaveAnswerMutation(baseOptions?: ApolloReactHooks.MutationHoo
 export type SaveAnswerMutationHookResult = ReturnType<typeof useSaveAnswerMutation>;
 export type SaveAnswerMutationResult = ApolloReactCommon.MutationResult<SaveAnswerMutation>;
 export type SaveAnswerMutationOptions = ApolloReactCommon.BaseMutationOptions<SaveAnswerMutation, SaveAnswerMutationVariables>;
+export const ShareExamToCommunityActionDocument = gql`
+    mutation ShareExamToCommunityAction($communityId: ID!, $examId: ID!) {
+  shareExamToCommunity(communityId: $communityId, examId: $examId) {
+    id
+    examId
+    title
+    description
+    subject
+    grade
+    className
+    status
+    durationMinutes
+    questionCount
+    attemptCount
+    averageScorePercent
+    createdAt
+    sharedBy {
+      id
+      fullName
+    }
+  }
+}
+    `;
+export type ShareExamToCommunityActionMutationFn = ApolloReactCommon.MutationFunction<ShareExamToCommunityActionMutation, ShareExamToCommunityActionMutationVariables>;
+
+/**
+ * __useShareExamToCommunityActionMutation__
+ *
+ * To run a mutation, you first call `useShareExamToCommunityActionMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useShareExamToCommunityActionMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [shareExamToCommunityActionMutation, { data, loading, error }] = useShareExamToCommunityActionMutation({
+ *   variables: {
+ *      communityId: // value for 'communityId'
+ *      examId: // value for 'examId'
+ *   },
+ * });
+ */
+export function useShareExamToCommunityActionMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ShareExamToCommunityActionMutation, ShareExamToCommunityActionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ShareExamToCommunityActionMutation, ShareExamToCommunityActionMutationVariables>(ShareExamToCommunityActionDocument, options);
+      }
+export type ShareExamToCommunityActionMutationHookResult = ReturnType<typeof useShareExamToCommunityActionMutation>;
+export type ShareExamToCommunityActionMutationResult = ApolloReactCommon.MutationResult<ShareExamToCommunityActionMutation>;
+export type ShareExamToCommunityActionMutationOptions = ApolloReactCommon.BaseMutationOptions<ShareExamToCommunityActionMutation, ShareExamToCommunityActionMutationVariables>;
 export const ShareQuestionBankToCommunityActionDocument = gql`
     mutation ShareQuestionBankToCommunityAction($communityId: ID!, $bankId: ID!) {
   shareQuestionBankToCommunity(communityId: $communityId, bankId: $bankId) {
@@ -2470,6 +2858,18 @@ export const CommunityDetailDocument = gql`
     viewerRole
     memberCount
     sharedBankCount
+    sharedExamCount
+    topContributors {
+      role
+      sharedBankCount
+      sharedExamCount
+      commentCount
+      score
+      user {
+        id
+        fullName
+      }
+    }
     members {
       id
       role
@@ -2482,10 +2882,25 @@ export const CommunityDetailDocument = gql`
     sharedBanks {
       id
       status
+      copyCount
+      ratingCount
+      averageRating
+      viewerRating
       createdAt
       sharedBy {
         id
         fullName
+      }
+      comments {
+        id
+        entityType
+        entityId
+        body
+        createdAt
+        author {
+          id
+          fullName
+        }
       }
       bank {
         id
@@ -2498,6 +2913,39 @@ export const CommunityDetailDocument = gql`
         questionCount
         createdAt
         owner {
+          id
+          fullName
+        }
+      }
+    }
+    sharedExams {
+      id
+      examId
+      title
+      description
+      subject
+      grade
+      className
+      status
+      durationMinutes
+      questionCount
+      attemptCount
+      averageScorePercent
+      ratingCount
+      averageRating
+      viewerRating
+      createdAt
+      sharedBy {
+        id
+        fullName
+      }
+      comments {
+        id
+        entityType
+        entityId
+        body
+        createdAt
+        author {
           id
           fullName
         }
@@ -2542,10 +2990,182 @@ export type CommunityDetailQueryHookResult = ReturnType<typeof useCommunityDetai
 export type CommunityDetailLazyQueryHookResult = ReturnType<typeof useCommunityDetailLazyQuery>;
 export type CommunityDetailSuspenseQueryHookResult = ReturnType<typeof useCommunityDetailSuspenseQuery>;
 export type CommunityDetailQueryResult = ApolloReactCommon.QueryResult<CommunityDetailQuery, CommunityDetailQueryVariables>;
+export const CommunityExamPreviewDocument = gql`
+    query CommunityExamPreview($examId: ID!, $communityId: ID) {
+  communityExamPreview(examId: $examId, communityId: $communityId) {
+    examId
+    communityId
+    communityName
+    title
+    description
+    subject
+    grade
+    className
+    status
+    durationMinutes
+    questionCount
+    totalPoints
+    passingCriteriaType
+    passingThreshold
+    createdAt
+    sharedAt
+    sharedBy {
+      id
+      fullName
+    }
+    summary {
+      studentCount
+      submittedCount
+      averagePercent
+      passRate
+      highestPercent
+      lowestPercent
+      completionRate
+    }
+    questions {
+      id
+      order
+      prompt
+      type
+      options
+      correctAnswer
+      points
+      topic
+      tags
+    }
+    scoreDistribution {
+      label
+      value
+      meta
+      note
+    }
+    topicPerformance {
+      label
+      value
+      meta
+      note
+    }
+    questionPerformance {
+      label
+      value
+      meta
+      note
+    }
+    insights {
+      title
+      description
+      tone
+    }
+    overallConclusion
+  }
+}
+    `;
+
+/**
+ * __useCommunityExamPreviewQuery__
+ *
+ * To run a query within a React component, call `useCommunityExamPreviewQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCommunityExamPreviewQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCommunityExamPreviewQuery({
+ *   variables: {
+ *      examId: // value for 'examId'
+ *      communityId: // value for 'communityId'
+ *   },
+ * });
+ */
+export function useCommunityExamPreviewQuery(baseOptions: ApolloReactHooks.QueryHookOptions<CommunityExamPreviewQuery, CommunityExamPreviewQueryVariables> & ({ variables: CommunityExamPreviewQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<CommunityExamPreviewQuery, CommunityExamPreviewQueryVariables>(CommunityExamPreviewDocument, options);
+      }
+export function useCommunityExamPreviewLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CommunityExamPreviewQuery, CommunityExamPreviewQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<CommunityExamPreviewQuery, CommunityExamPreviewQueryVariables>(CommunityExamPreviewDocument, options);
+        }
+// @ts-ignore
+export function useCommunityExamPreviewSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<CommunityExamPreviewQuery, CommunityExamPreviewQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CommunityExamPreviewQuery, CommunityExamPreviewQueryVariables>;
+export function useCommunityExamPreviewSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CommunityExamPreviewQuery, CommunityExamPreviewQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CommunityExamPreviewQuery | undefined, CommunityExamPreviewQueryVariables>;
+export function useCommunityExamPreviewSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CommunityExamPreviewQuery, CommunityExamPreviewQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<CommunityExamPreviewQuery, CommunityExamPreviewQueryVariables>(CommunityExamPreviewDocument, options);
+        }
+export type CommunityExamPreviewQueryHookResult = ReturnType<typeof useCommunityExamPreviewQuery>;
+export type CommunityExamPreviewLazyQueryHookResult = ReturnType<typeof useCommunityExamPreviewLazyQuery>;
+export type CommunityExamPreviewSuspenseQueryHookResult = ReturnType<typeof useCommunityExamPreviewSuspenseQuery>;
+export type CommunityExamPreviewQueryResult = ApolloReactCommon.QueryResult<CommunityExamPreviewQuery, CommunityExamPreviewQueryVariables>;
 export const CommunityOverviewDocument = gql`
     query CommunityOverview {
   me {
     id
+    fullName
+    classes {
+      id
+      subject
+      grade
+    }
+  }
+  communityHome {
+    stats {
+      totalCommunities
+      totalSharedBanks
+      totalCopies
+      activeTeachers
+    }
+    weeklyActivity {
+      label
+      value
+    }
+    trendingBanks {
+      sharedBankId
+      copyCount
+      communityId
+      communityName
+      bank {
+        id
+        title
+        description
+        grade
+        subject
+        topic
+        visibility
+        questionCount
+        createdAt
+        owner {
+          id
+          fullName
+        }
+      }
+    }
+    topExams {
+      examId
+      title
+      subject
+      grade
+      attemptCount
+      averageScorePercent
+      communityId
+      communityName
+      createdBy {
+        id
+        fullName
+      }
+    }
+    mostMissedQuestions {
+      questionId
+      prompt
+      subject
+      grade
+      topic
+      bankTitle
+      communityId
+      communityName
+      attemptCount
+      missRate
+    }
   }
   communities {
     id

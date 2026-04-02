@@ -1,0 +1,21 @@
+mutation ShareExamToCommunityAction($communityId: ID!, $examId: ID!) {
+  shareExamToCommunity(communityId: $communityId, examId: $examId) {
+    id
+    examId
+    title
+    description
+    subject
+    grade
+    className
+    status
+    durationMinutes
+    questionCount
+    attemptCount
+    averageScorePercent
+    createdAt
+    sharedBy {
+      id
+      fullName
+    }
+  }
+}

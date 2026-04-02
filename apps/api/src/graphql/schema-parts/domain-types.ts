@@ -101,9 +101,168 @@ export const schemaDomainTypes = /* GraphQL */ `
   type CommunitySharedBank {
     id: ID!
     status: CommunitySharedBankStatus!
+    copyCount: Int!
+    ratingCount: Int!
+    averageRating: Float!
+    viewerRating: Int
     createdAt: String!
     sharedBy: User!
     bank: QuestionBank!
+    comments: [CommunityComment!]!
+  }
+
+  type CommunityComment {
+    id: ID!
+    entityType: CommunityCommentEntityType!
+    entityId: ID!
+    body: String!
+    createdAt: String!
+    author: User!
+  }
+
+  type CommunityContributor {
+    user: User!
+    role: CommunityMemberRole!
+    sharedBankCount: Int!
+    sharedExamCount: Int!
+    commentCount: Int!
+    score: Int!
+  }
+
+  type CommunitySharedExam {
+    id: ID!
+    examId: ID!
+    title: String!
+    description: String
+    subject: String!
+    grade: Int!
+    className: String!
+    status: ExamStatus!
+    durationMinutes: Int!
+    questionCount: Int!
+    attemptCount: Int!
+    averageScorePercent: Int!
+    ratingCount: Int!
+    averageRating: Float!
+    viewerRating: Int
+    createdAt: String!
+    sharedBy: User!
+    comments: [CommunityComment!]!
+  }
+
+  type CommunityExamPreviewQuestion {
+    id: ID!
+    order: Int!
+    prompt: String!
+    type: QuestionType!
+    options: [String!]!
+    correctAnswer: String
+    points: Int!
+    topic: String!
+    tags: [String!]!
+  }
+
+  type CommunityExamPreviewSummary {
+    studentCount: Int!
+    submittedCount: Int!
+    averagePercent: Int!
+    passRate: Int!
+    highestPercent: Int!
+    lowestPercent: Int!
+    completionRate: Int!
+  }
+
+  type CommunityExamPreviewBar {
+    label: String!
+    value: Int!
+    meta: String!
+    note: String
+  }
+
+  type CommunityExamPreviewInsight {
+    title: String!
+    description: String!
+    tone: String!
+  }
+
+  type CommunityExamPreview {
+    examId: ID!
+    communityId: ID
+    communityName: String
+    title: String!
+    description: String
+    subject: String!
+    grade: Int!
+    className: String!
+    status: ExamStatus!
+    durationMinutes: Int!
+    questionCount: Int!
+    totalPoints: Int!
+    passingCriteriaType: PassingCriteriaType!
+    passingThreshold: Int!
+    createdAt: String!
+    sharedAt: String
+    sharedBy: User
+    questions: [CommunityExamPreviewQuestion!]!
+    summary: CommunityExamPreviewSummary!
+    scoreDistribution: [CommunityExamPreviewBar!]!
+    topicPerformance: [CommunityExamPreviewBar!]!
+    questionPerformance: [CommunityExamPreviewBar!]!
+    insights: [CommunityExamPreviewInsight!]!
+    overallConclusion: String!
+  }
+
+  type CommunityHomeStats {
+    totalCommunities: Int!
+    totalSharedBanks: Int!
+    totalCopies: Int!
+    activeTeachers: Int!
+  }
+
+  type CommunityActivityPoint {
+    label: String!
+    value: Int!
+  }
+
+  type CommunityTrendingBank {
+    sharedBankId: ID!
+    copyCount: Int!
+    communityId: ID!
+    communityName: String!
+    bank: QuestionBank!
+  }
+
+  type CommunityTrendingExam {
+    examId: ID!
+    title: String!
+    subject: String!
+    grade: Int!
+    attemptCount: Int!
+    averageScorePercent: Int!
+    createdBy: User!
+    communityId: ID
+    communityName: String
+  }
+
+  type CommunityQuestionInsight {
+    questionId: ID!
+    prompt: String!
+    subject: String!
+    grade: Int!
+    topic: String!
+    bankTitle: String!
+    communityId: ID!
+    communityName: String!
+    attemptCount: Int!
+    missRate: Int!
+  }
+
+  type CommunityHome {
+    stats: CommunityHomeStats!
+    weeklyActivity: [CommunityActivityPoint!]!
+    trendingBanks: [CommunityTrendingBank!]!
+    topExams: [CommunityTrendingExam!]!
+    mostMissedQuestions: [CommunityQuestionInsight!]!
   }
 
   type Community {
@@ -116,9 +275,12 @@ export const schemaDomainTypes = /* GraphQL */ `
     viewerRole: CommunityMemberRole
     memberCount: Int!
     sharedBankCount: Int!
+    sharedExamCount: Int!
     owner: User!
     members: [CommunityMember!]!
     sharedBanks: [CommunitySharedBank!]!
+    sharedExams: [CommunitySharedExam!]!
+    topContributors: [CommunityContributor!]!
     createdAt: String!
   }
 

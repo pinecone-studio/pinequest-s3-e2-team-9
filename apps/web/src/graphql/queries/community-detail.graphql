@@ -9,6 +9,18 @@ query CommunityDetail($id: ID!) {
     viewerRole
     memberCount
     sharedBankCount
+    sharedExamCount
+    topContributors {
+      role
+      sharedBankCount
+      sharedExamCount
+      commentCount
+      score
+      user {
+        id
+        fullName
+      }
+    }
     members {
       id
       role
@@ -21,10 +33,25 @@ query CommunityDetail($id: ID!) {
     sharedBanks {
       id
       status
+      copyCount
+      ratingCount
+      averageRating
+      viewerRating
       createdAt
       sharedBy {
         id
         fullName
+      }
+      comments {
+        id
+        entityType
+        entityId
+        body
+        createdAt
+        author {
+          id
+          fullName
+        }
       }
       bank {
         id
@@ -37,6 +64,39 @@ query CommunityDetail($id: ID!) {
         questionCount
         createdAt
         owner {
+          id
+          fullName
+        }
+      }
+    }
+    sharedExams {
+      id
+      examId
+      title
+      description
+      subject
+      grade
+      className
+      status
+      durationMinutes
+      questionCount
+      attemptCount
+      averageScorePercent
+      ratingCount
+      averageRating
+      viewerRating
+      createdAt
+      sharedBy {
+        id
+        fullName
+      }
+      comments {
+        id
+        entityType
+        entityId
+        body
+        createdAt
+        author {
           id
           fullName
         }

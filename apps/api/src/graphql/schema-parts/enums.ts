@@ -41,6 +41,11 @@ export const schemaEnums = /* GraphQL */ `
     FEATURED
   }
 
+  enum CommunityCommentEntityType {
+    SHARED_BANK
+    SHARED_EXAM
+  }
+
   enum ExamMode {
     SCHEDULED
     OPEN_WINDOW
