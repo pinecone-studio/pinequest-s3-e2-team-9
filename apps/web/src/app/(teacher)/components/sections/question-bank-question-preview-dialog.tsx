@@ -119,7 +119,7 @@ function QuestionBankQuestionPreviewContent({
                   {row.shareScope === "PUBLIC"
                     ? "Нээлттэй"
                     : row.shareScope === "COMMUNITY"
-                      ? "Community"
+                      ? "Community хүрээ"
                       : "Хувийн"}
                 </span>
                 {row.requiresAccessRequest ? (
@@ -219,7 +219,9 @@ function QuestionBankQuestionPreviewContent({
               ) : canFork ? (
                 <div className="space-y-3">
                   <p className="text-[13px] text-[#52555B]">
-                    Энэ асуултыг өөрийн санд хувилбарлаж аваад засварлан ашиглаж болно.
+                    {requestStatus === "APPROVED"
+                      ? "Энэ асуултыг шууд шалгалтад ашиглаж болно. Хэрэв өөрчилж засварлах бол өөрийн санд хувилбар гаргаж авна."
+                      : "Энэ асуултыг өөрийн санд хувилбарлаж аваад засварлан ашиглаж болно."}
                   </p>
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <select

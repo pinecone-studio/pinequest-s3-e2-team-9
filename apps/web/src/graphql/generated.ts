@@ -1360,7 +1360,7 @@ export type CommunityOverviewQuery = { __typename?: 'Query', me?: { __typename?:
 export type CreateExamOptionsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CreateExamOptionsQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string } | null, classes: Array<{ __typename?: 'Class', id: string, name: string, subject: string, grade: number }>, questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, subject: string, grade: number, topic: string }>, questions: Array<{ __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, difficulty: Difficulty, shareScope: QuestionShareScope, requiresAccessRequest: boolean, createdAt: string, options: Array<string>, correctAnswer?: string | null, tags: Array<string>, createdBy: { __typename?: 'User', id: string, fullName: string }, bank: { __typename?: 'QuestionBank', id: string, title: string, subject: string, grade: number, topic: string, owner: { __typename?: 'User', id: string } } }> };
+export type CreateExamOptionsQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string } | null, questionAccessRequests: Array<{ __typename?: 'QuestionAccessRequest', id: string, status: QuestionAccessRequestStatus, requester: { __typename?: 'User', id: string }, question: { __typename?: 'Question', id: string } }>, classes: Array<{ __typename?: 'Class', id: string, name: string, subject: string, grade: number }>, questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, subject: string, grade: number, topic: string }>, questions: Array<{ __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, difficulty: Difficulty, shareScope: QuestionShareScope, requiresAccessRequest: boolean, createdAt: string, options: Array<string>, correctAnswer?: string | null, tags: Array<string>, createdBy: { __typename?: 'User', id: string, fullName: string }, bank: { __typename?: 'QuestionBank', id: string, title: string, subject: string, grade: number, topic: string, owner: { __typename?: 'User', id: string } } }> };
 
 export type DashboardOverviewQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -3460,6 +3460,16 @@ export const CreateExamOptionsDocument = gql`
     query CreateExamOptions {
   me {
     id
+  }
+  questionAccessRequests {
+    id
+    status
+    requester {
+      id
+    }
+    question {
+      id
+    }
   }
   classes {
     id

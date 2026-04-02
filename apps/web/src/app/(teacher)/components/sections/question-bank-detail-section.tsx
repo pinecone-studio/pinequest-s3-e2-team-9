@@ -63,6 +63,13 @@ export function QuestionBankDetailSection({
   const bank = data?.questionBank ?? null;
   const viewerId = data?.me?.id ?? null;
   const isOwnedBank = Boolean(bank && viewerId && bank.owner.id === viewerId);
+  const bankAccessKind = bank
+    ? isOwnedBank
+      ? "MINE"
+      : bank.visibility === "PUBLIC"
+        ? "PUBLIC"
+        : "SHARED"
+    : null;
 
   useLiveQuestionBankEvents({
     teacherId: isOwnedBank ? viewerId : null,
@@ -286,12 +293,18 @@ export function QuestionBankDetailSection({
             {`${bank.grade}-р анги`}
           </span>
           <span className="rounded-md bg-[#F2F4F7] px-2.5 py-1 font-medium text-[#344054]">
-            {bank.visibility === "PUBLIC" ? "Нэгдсэн сан" : "Миний сан"}
+            {bankAccessKind === "MINE"
+              ? "Миний сан"
+              : bankAccessKind === "PUBLIC"
+                ? "Нээлттэй сан"
+                : "Community сан"}
           </span>
           <span>
             {isEditable
               ? "Энэ сан дээр асуулт нэмэх, засах боломжтой."
-              : `${bank.owner.fullName}-ийн хуваалцсан сан. Асуултыг зөвхөн харах боломжтой.`}
+              : bankAccessKind === "PUBLIC"
+                ? `${bank.owner.fullName}-ийн нээлттэй сан. Асуултуудыг шууд шалгалтад ашиглаж болно.`
+                : `${bank.owner.fullName}-ийн community-ээр хуваалцсан сан. Зөвшөөрөлтэй асуултыг шууд ашиглаж, хэрэгтэй бол хувилбар гаргаж авна.`}
           </span>
         </div>
       ) : null}

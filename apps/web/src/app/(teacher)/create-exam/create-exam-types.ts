@@ -58,6 +58,7 @@ export type CreateExamQuestionOption = {
   difficulty: string;
   shareScope: "PRIVATE" | "COMMUNITY" | "PUBLIC";
   requiresAccessRequest: boolean;
+  accessRequestStatus?: "PENDING" | "APPROVED" | "REJECTED";
   createdAt: string;
   options: string[];
   correctAnswer?: string | null;

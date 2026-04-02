@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { getQuestionPromptImageValue } from "@/lib/question-prompt-image";
 
 export type QuestionBankItem = {
@@ -12,6 +13,7 @@ export type QuestionBankItem = {
   topics: string[];
   subtopics?: string[];
   visibility: "PRIVATE" | "PUBLIC";
+  accessKind: "MINE" | "PUBLIC" | "SHARED";
   ownerId: string;
   ownerName: string;
   questions: string;
@@ -132,6 +134,13 @@ export const formatGradeLabel = (grade: number) =>
 
 export const formatVisibilityLabel = (visibility: QuestionBankItem["visibility"]) =>
   visibility === "PUBLIC" ? "Нэгдсэн сан" : "Миний сан";
+
+export const formatAccessKindLabel = (accessKind: QuestionBankItem["accessKind"]) =>
+  accessKind === "MINE"
+    ? "Миний сан"
+    : accessKind === "PUBLIC"
+      ? "Нээлттэй сан"
+      : "Community сан";
 
 export const buildQuestionBankRows = (
   questions: RawQuestion[],

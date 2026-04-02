@@ -862,11 +862,21 @@ export function CreateExamQuestionLibrary({
       <div className="mt-4 flex-1 space-y-3 overflow-y-auto">
         {filteredQuestions.map((question) => {
           const checked = checkedQuestionIds.includes(question.id);
-          const requiresApproval =
-            question.requiresAccessRequest &&
-            question.createdById !== viewerId &&
-            question.bankOwnerId !== viewerId;
-          const canSelect = !requiresApproval;
+          const ownsQuestion =
+            question.createdById === viewerId || question.bankOwnerId === viewerId;
+          const requestStatus = question.accessRequestStatus;
+          const requiresApproval = question.requiresAccessRequest && !ownsQuestion;
+          const canSelect = !requiresApproval || requestStatus === "APPROVED";
+          const accessBadgeLabel =
+            requiresApproval && requestStatus === "APPROVED"
+              ? "Зөвшөөрөгдсөн"
+              : requiresApproval && requestStatus === "PENDING"
+                ? "Хүсэлт хүлээгдэж байна"
+                : requiresApproval && requestStatus === "REJECTED"
+                  ? "Хүсэлт татгалзсан"
+                  : requiresApproval
+                    ? "Зөвшөөрөл шаардлагатай"
+                    : null;
           return (
             <button
               key={question.id}
@@ -881,9 +891,9 @@ export function CreateExamQuestionLibrary({
                 "w-full rounded-xl border px-4 py-4 text-left transition",
                 checked
                   ? "border-[#B8CFFF] bg-[#EEF4FF]"
-                  : requiresApproval
+                  : requiresApproval && requestStatus !== "APPROVED"
                     ? "border-[#FECACA] bg-[#FEF2F2]"
-                    : "border-[#DFE1E5] bg-white",
+                  : "border-[#DFE1E5] bg-white",
               ].join(" ")}
             >
               <div className="flex items-start gap-4">
@@ -892,7 +902,7 @@ export function CreateExamQuestionLibrary({
                     "mt-1 h-7 w-7 rounded-md border",
                     checked
                       ? "border-[#5B7CFF] bg-[#5B7CFF]"
-                      : requiresApproval
+                      : requiresApproval && requestStatus !== "APPROVED"
                         ? "border-[#FCA5A5] bg-white"
                         : "border-[#D0D5DD] bg-white",
                   ].join(" ")}
@@ -914,16 +924,28 @@ export function CreateExamQuestionLibrary({
                     <span className="rounded-full border border-[#B7E0BA] bg-[#ECFDF3] px-2 py-0.5 text-[#16A34A]">
                       {getDifficultyLabel(question.difficulty)}
                     </span>
-                    {requiresApproval ? (
-                      <span className="rounded-full border border-[#FECACA] bg-[#FEF2F2] px-2 py-0.5 text-[#B42318]">
-                        Зөвшөөрөл шаардлагатай
+                    {accessBadgeLabel ? (
+                      <span
+                        className={[
+                          "rounded-full border px-2 py-0.5",
+                          requestStatus === "APPROVED"
+                            ? "border-[#B7E0BA] bg-[#ECFDF3] text-[#16A34A]"
+                            : requestStatus === "PENDING"
+                              ? "border-[#D6BBFB] bg-[#F4EBFF] text-[#7A2EAB]"
+                              : "border-[#FECACA] bg-[#FEF2F2] text-[#B42318]",
+                        ].join(" ")}
+                      >
+                        {accessBadgeLabel}
                       </span>
                     ) : null}
                   </div>
-                  {requiresApproval ? (
+                  {requiresApproval && requestStatus !== "APPROVED" ? (
                     <div className="mt-2 text-[12px] text-[#B42318]">
-                      Энэ асуултыг шалгалтад ашиглахын өмнө эзэмшигчийн зөвшөөрөл авна. Асуултын
-                      сангийн дэлгэрэнгүй рүү орж хүсэлт илгээнэ үү.
+                      {requestStatus === "PENDING"
+                        ? "Энэ асуултын хүсэлт хүлээгдэж байна. Зөвшөөрөгдмөгц шууд ашиглаж болно."
+                        : requestStatus === "REJECTED"
+                          ? "Энэ асуултын өмнөх хүсэлт татгалзсан байна. Дахин ашиглах бол асуултын сангийн дэлгэрэнгүйгээс хүсэлтээ шинэчилнэ үү."
+                          : "Энэ асуултыг шалгалтад ашиглахын өмнө эзэмшигчийн зөвшөөрөл авна. Асуултын сангийн дэлгэрэнгүй рүү орж хүсэлт илгээнэ үү."}
                     </div>
                   ) : null}
                 </div>

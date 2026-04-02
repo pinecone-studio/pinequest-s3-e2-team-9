@@ -2,6 +2,16 @@ query CreateExamOptions {
   me {
     id
   }
+  questionAccessRequests {
+    id
+    status
+    requester {
+      id
+    }
+    question {
+      id
+    }
+  }
   classes {
     id
     name

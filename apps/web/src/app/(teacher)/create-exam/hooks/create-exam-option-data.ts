@@ -27,6 +27,12 @@ export const getQuestionOptions = (
   data: CreateExamOptionsQuery | undefined,
   initialBankId: string,
 ) => {
+  const requestStatusByQuestionId = new Map(
+    (data?.questionAccessRequests ?? [])
+      .filter((request) => request.requester.id === data?.me?.id)
+      .map((request) => [request.question.id, request.status] as const),
+  );
+
   const options = (data?.questions ?? []).map((question) => ({
     id: question.id,
     title: question.title,
@@ -35,6 +41,7 @@ export const getQuestionOptions = (
     difficulty: question.difficulty,
     shareScope: question.shareScope,
     requiresAccessRequest: question.requiresAccessRequest,
+    accessRequestStatus: requestStatusByQuestionId.get(question.id),
     createdAt: question.createdAt,
     options: question.options,
     correctAnswer: question.correctAnswer,
@@ -77,6 +84,7 @@ export const getRuleSourceOptions = (
     bankId: string;
     type: string;
     requiresAccessRequest: boolean;
+    accessRequestStatus?: "PENDING" | "APPROVED" | "REJECTED";
     createdById: string;
     bankOwnerId: string;
   }>,
@@ -114,6 +122,7 @@ export const getRuleSourceOptions = (
       (question) =>
         option.bankIds.includes(question.bankId) &&
         (!question.requiresAccessRequest ||
+          question.accessRequestStatus === "APPROVED" ||
           question.createdById === viewerId ||
           question.bankOwnerId === viewerId) &&
         (mode !== ExamMode.Practice ||

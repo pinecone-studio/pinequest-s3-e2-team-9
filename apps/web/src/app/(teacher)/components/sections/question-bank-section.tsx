@@ -44,6 +44,7 @@ const mapQuestionBankItems = (
       fullName: string;
     };
   }[],
+  viewerId: string | null,
 ): QuestionBankItem[] =>
   banks.map((bank) => ({
     id: bank.id,
@@ -58,13 +59,19 @@ const mapQuestionBankItems = (
     topics: bank.topics,
     subtopics: bank.topic !== "Ерөнхий" ? [bank.topic] : bank.topics,
     visibility: bank.visibility,
+    accessKind:
+      viewerId && bank.owner.id === viewerId
+        ? "MINE"
+        : bank.visibility === "PUBLIC"
+          ? "PUBLIC"
+          : "SHARED",
     ownerId: bank.owner.id,
     ownerName: bank.owner.fullName,
     questions: `${bank.questionCount} асуулт`,
     date: formatQuestionBankDate(bank.createdAt),
   }));
 
-type LibraryTab = "public" | "mine";
+type LibraryTab = "public" | "shared" | "mine";
 
 export function QuestionBankSection() {
   const [activeTab, setActiveTab] = useState<LibraryTab>("public");
@@ -89,7 +96,7 @@ export function QuestionBankSection() {
   const itemsState = useMemo(() => {
     try {
       return {
-        items: mapQuestionBankItems(data?.questionBanks ?? []),
+        items: mapQuestionBankItems(data?.questionBanks ?? [], viewerId),
         errorMessage: error
           ? "Асуултын сангийн мэдээллийг ачаалахад алдаа гарлаа. Дахин оролдоно уу."
           : null,
@@ -101,17 +108,19 @@ export function QuestionBankSection() {
         errorMessage: "Асуултын сангийн өгөгдлийг боловсруулахад алдаа гарлаа.",
       };
     }
-  }, [data?.questionBanks, error]);
+  }, [data?.questionBanks, error, viewerId]);
 
   const scopedItems = useMemo(() => {
     if (!viewerId) {
-      return itemsState.items.filter((item) => item.visibility === "PUBLIC");
+      return itemsState.items.filter((item) => item.accessKind === "PUBLIC");
     }
 
     return itemsState.items.filter((item) =>
       activeTab === "public"
-        ? item.visibility === "PUBLIC"
-        : item.ownerId === viewerId,
+        ? item.accessKind === "PUBLIC"
+        : activeTab === "shared"
+          ? item.accessKind === "SHARED"
+          : item.ownerId === viewerId,
     );
   }, [activeTab, itemsState.items, viewerId]);
 
@@ -324,8 +333,13 @@ export function QuestionBankSection() {
         <div className="flex flex-wrap gap-3">
           <QuestionBankTabButton
             active={activeTab === "public"}
-            label="Нэгдсэн сан"
+            label="Нээлттэй сан"
             onClick={() => setActiveTab("public")}
+          />
+          <QuestionBankTabButton
+            active={activeTab === "shared"}
+            label="Community сан"
+            onClick={() => setActiveTab("shared")}
           />
           <QuestionBankTabButton
             active={activeTab === "mine"}
