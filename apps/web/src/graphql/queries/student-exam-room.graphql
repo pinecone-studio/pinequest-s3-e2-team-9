@@ -40,6 +40,7 @@ query StudentExamRoom($id: ID!) {
         type
         difficulty
         options
+        correctAnswer
         bank {
           id
           topic
