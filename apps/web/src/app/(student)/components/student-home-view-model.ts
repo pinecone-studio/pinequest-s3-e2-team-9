@@ -130,14 +130,14 @@ export const buildStudentHomeViewModel = (data: StudentHomeQuery): StudentHomeVi
         scoreLabel:
           attempt.status === AttemptStatus.Graded
             ? `${formatScore(attempt.totalScore)} / ${formatScore(totalPoints)} оноо`
-            : "Pending",
+            : "Хүлээгдэж байна",
         scoreTone:
           attempt.status === AttemptStatus.Graded
             ? "text-[#31AA40]"
             : "text-[#E17100]",
         searchText: `${attempt.exam.title} ${attempt.exam.class.subject} ${attempt.exam.class.teacher.fullName}`.toLowerCase(),
         statusLabel:
-          attempt.status === AttemptStatus.Graded ? "Reviewed" : "Pending Review",
+          attempt.status === AttemptStatus.Graded ? "Шалгасан" : "Шалгаж байна",
         statusTone:
           attempt.status === AttemptStatus.Graded
             ? "border-[#31AA4033] bg-[#31AA401A] text-[#31AA40]"

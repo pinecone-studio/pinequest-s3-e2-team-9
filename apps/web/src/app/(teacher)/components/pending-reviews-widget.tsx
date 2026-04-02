@@ -23,7 +23,7 @@ export function PendingReviewsWidget({ className = "", pendingReviewCount, revie
       </div>
 
       <div className="relative flex h-[225px] flex-col gap-[8px] px-[8px]">
-        <div className="h-[225px] space-y-[8px] overflow-y-scroll">
+        <div className="scrollbar-hidden h-[225px] space-y-[8px] overflow-y-auto">
           {reviewItems.length ? (
             reviewItems.map((item, index) => (
               <Link

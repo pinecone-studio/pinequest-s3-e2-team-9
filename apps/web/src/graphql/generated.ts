@@ -1251,7 +1251,7 @@ export type ClassDetailQueryVariables = Exact<{
 }>;
 
 
-export type ClassDetailQuery = { __typename?: 'Query', class?: { __typename?: 'Class', id: string, name: string, description?: string | null, subject: string, grade: number, studentCount: number, assignedExamCount: number, upcomingExamCount: number, completedExamCount: number, averageScore?: number | null, teacher: { __typename?: 'User', id: string, fullName: string }, studentInsights: Array<{ __typename?: 'ClassStudentInsight', status: ClassStudentStatus, lastActiveAt?: string | null, averageScore?: number | null, suspiciousEventCount: number, integrityRisk: IntegrityRiskLevel, lastIntegrityEventAt?: string | null, integritySignals: Array<{ __typename?: 'IntegritySignalCount', type: AttemptIntegrityEventType, severity: IntegritySeverity, count: number }>, integrityEvents: Array<{ __typename?: 'IntegrityEvent', id: string, type: AttemptIntegrityEventType, severity: IntegritySeverity, details: string, createdAt: string }>, student: { __typename?: 'User', id: string, fullName: string, email: string } }>, examInsights: Array<{ __typename?: 'ClassExamInsight', submittedCount: number, totalStudents: number, progressPercent: number, averageScore?: number | null, questionCount: number, exam: { __typename?: 'Exam', id: string, title: string, durationMinutes: number, status: ExamStatus } }> } | null };
+export type ClassDetailQuery = { __typename?: 'Query', class?: { __typename?: 'Class', id: string, name: string, description?: string | null, subject: string, grade: number, studentCount: number, assignedExamCount: number, upcomingExamCount: number, completedExamCount: number, averageScore?: number | null, teacher: { __typename?: 'User', id: string, fullName: string }, studentInsights: Array<{ __typename?: 'ClassStudentInsight', status: ClassStudentStatus, lastActiveAt?: string | null, averageScore?: number | null, suspiciousEventCount: number, integrityRisk: IntegrityRiskLevel, lastIntegrityEventAt?: string | null, integritySignals: Array<{ __typename?: 'IntegritySignalCount', type: AttemptIntegrityEventType, severity: IntegritySeverity, count: number }>, integrityEvents: Array<{ __typename?: 'IntegrityEvent', id: string, type: AttemptIntegrityEventType, severity: IntegritySeverity, details: string, createdAt: string }>, student: { __typename?: 'User', id: string, fullName: string, email: string } }>, examInsights: Array<{ __typename?: 'ClassExamInsight', submittedCount: number, totalStudents: number, progressPercent: number, averageScore?: number | null, questionCount: number, exam: { __typename?: 'Exam', id: string, title: string, durationMinutes: number, status: ExamStatus, createdAt: string, scheduledFor?: string | null, startedAt?: string | null, endsAt?: string | null } }> } | null };
 
 export type ClassesListQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -2762,6 +2762,10 @@ export const ClassDetailDocument = gql`
         title
         durationMinutes
         status
+        createdAt
+        scheduledFor
+        startedAt
+        endsAt
       }
     }
   }
