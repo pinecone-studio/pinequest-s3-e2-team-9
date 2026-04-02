@@ -36,8 +36,8 @@ export function MyExamsToolbar({
 
   return (
     <>
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
+      <div className="flex h-10 w-[1120px] flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex h-10 w-[290px] flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
         <label className="relative inline-flex h-10 w-full items-center rounded-full bg-white px-3 shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)] sm:w-[134px]">
           <select
             value={subjectFilter}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navItems } from "./dashboard-data";
 import { SidebarAccountPanel } from "./sidebar-account-panel";
+import { ExamFlowIcon } from "./icons-addition";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -13,10 +14,7 @@ export function Sidebar() {
       <div className="flex h-full min-h-0 flex-col pb-0 pt-[20px]">
         <div className="flex h-[64px] items-center justify-center px-5">
           <div className="flex h-[56px] w-[89px] flex-col items-center justify-center">
-            <div className="relative flex h-7 w-11 items-center justify-center">
-              <div className="absolute h-7 w-7 rotate-45 rounded-[8px] bg-[linear-gradient(135deg,#8A63FF_0%,#6434F8_100%)]" />
-              <span className="relative text-[11px] font-bold text-white">EF</span>
-            </div>
+            <ExamFlowIcon className="h-7 w-11" />
             <span className="mt-1 text-[18px] font-semibold leading-[28px] text-[#0F1216] font-[var(--font-geist)]">
               ExamFlow
             </span>

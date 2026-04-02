@@ -8,7 +8,7 @@ export default function Home() {
       <AppShell
         fixedHeight
         contentOuterClassName="w-full"
-        contentInnerClassName="w-[1184px]"
+        contentInnerClassName="mx-auto w-[1184px]"
         contentClassName="px-0 py-0"
       >
         <DashboardContent />

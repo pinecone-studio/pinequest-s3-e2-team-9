@@ -1,12 +1,12 @@
 import { RoleGuard } from "@/components/role-guard";
 import { AppShell } from "../components/app-shell";
-import { MyExamsSection } from "../components/sections/my-exams-section";
+import { EvaluationSection } from "../components/sections/evaluation-section";
 
 export default function EvaluationPage() {
   return (
     <RoleGuard allowedRoles={["TEACHER"]}>
       <AppShell>
-        <MyExamsSection mode="evaluation" />
+        <EvaluationSection />
       </AppShell>
     </RoleGuard>
   );
