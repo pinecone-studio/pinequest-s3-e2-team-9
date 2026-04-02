@@ -22,8 +22,8 @@ export function EvaluationExamList({
         </div>
       ) : null}
       {exams.map((exam) => {
-        const totalStudents = exam.footer.students;
-        const submitted = exam.footer.submitted;
+        const totalStudents = exam.footer?.students ?? 0;
+        const submitted = exam.footer?.submitted ?? 0;
         const percent = totalStudents
           ? Math.round((submitted / totalStudents) * 100)
           : 0;
