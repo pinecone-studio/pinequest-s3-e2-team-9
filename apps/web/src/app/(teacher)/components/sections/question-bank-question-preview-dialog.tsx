@@ -1,6 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
+/* eslint-disable max-lines */
 "use client";
 
+import { useState } from "react";
 import { useProtectedImageSource } from "@/lib/image-answer";
 import { CloseIcon } from "../icons";
 import {
@@ -11,27 +13,71 @@ import {
 
 export function QuestionBankQuestionPreviewDialog({
   row,
+  editable = true,
+  ownedBankOptions = [],
+  requestStatus,
+  isRequesting = false,
+  isForking = false,
+  onRequestAccess,
+  onForkQuestion,
   onClose,
 }: {
   row: QuestionBankQuestionRow | null;
+  editable?: boolean;
+  ownedBankOptions?: Array<{ id: string; label: string }>;
+  requestStatus?: "PENDING" | "APPROVED" | "REJECTED";
+  isRequesting?: boolean;
+  isForking?: boolean;
+  onRequestAccess?: (questionId: string) => Promise<void> | void;
+  onForkQuestion?: (questionId: string, targetBankId: string) => Promise<void> | void;
   onClose: () => void;
 }) {
   if (!row) {
     return null;
   }
 
-  return <QuestionBankQuestionPreviewContent row={row} onClose={onClose} />;
+  return (
+    <QuestionBankQuestionPreviewContent
+      key={row.id}
+      row={row}
+      editable={editable}
+      ownedBankOptions={ownedBankOptions}
+      requestStatus={requestStatus}
+      isRequesting={isRequesting}
+      isForking={isForking}
+      onRequestAccess={onRequestAccess}
+      onForkQuestion={onForkQuestion}
+      onClose={onClose}
+    />
+  );
 }
 
 function QuestionBankQuestionPreviewContent({
   row,
+  editable,
+  ownedBankOptions,
+  requestStatus,
+  isRequesting,
+  isForking,
+  onRequestAccess,
+  onForkQuestion,
   onClose,
 }: {
   row: QuestionBankQuestionRow;
+  editable: boolean;
+  ownedBankOptions: Array<{ id: string; label: string }>;
+  requestStatus?: "PENDING" | "APPROVED" | "REJECTED";
+  isRequesting: boolean;
+  isForking: boolean;
+  onRequestAccess?: (questionId: string) => Promise<void> | void;
+  onForkQuestion?: (questionId: string, targetBankId: string) => Promise<void> | void;
   onClose: () => void;
 }) {
+  const [targetBankId, setTargetBankId] = useState(ownedBankOptions[0]?.id ?? "");
   const tolerance = formatTolerance(row.tags);
   const answer = formatQuestionAnswer(row);
+  const needsAccessRequest = !editable && row.requiresAccessRequest && requestStatus !== "APPROVED";
+  const canFork = !editable && !needsAccessRequest && ownedBankOptions.length > 0;
   const {
     error: promptImageError,
     isLoading: isPromptImageLoading,
@@ -55,6 +101,43 @@ function QuestionBankQuestionPreviewContent({
             <p className="mt-1 text-[14px] text-[#52555B]">
               {row.type} · {row.difficulty}
             </p>
+            {!editable ? (
+              <div className="mt-3 flex flex-wrap gap-2 text-[12px]">
+                <span className="rounded-full border border-[#DFE1E5] bg-white px-2 py-1 text-[#344054]">
+                  {row.createdByName}-ийн асуулт
+                </span>
+                <span
+                  className={[
+                    "rounded-full border px-2 py-1",
+                    row.shareScope === "PUBLIC"
+                      ? "border-[#B2DDFF] bg-[#EFF8FF] text-[#175CD3]"
+                      : row.shareScope === "COMMUNITY"
+                        ? "border-[#D6BBFB] bg-[#F4EBFF] text-[#7A2EAB]"
+                        : "border-[#FECACA] bg-[#FEF2F2] text-[#B42318]",
+                  ].join(" ")}
+                >
+                  {row.shareScope === "PUBLIC"
+                    ? "Нээлттэй"
+                    : row.shareScope === "COMMUNITY"
+                      ? "Community"
+                      : "Хувийн"}
+                </span>
+                {row.requiresAccessRequest ? (
+                  <span className="rounded-full border border-[#FECACA] bg-[#FEF2F2] px-2 py-1 text-[#B42318]">
+                    Зөвшөөрөл шаардлагатай
+                  </span>
+                ) : null}
+                {requestStatus ? (
+                  <span className="rounded-full border border-[#D0D5DD] bg-[#F8FAFC] px-2 py-1 text-[#344054]">
+                    {requestStatus === "PENDING"
+                      ? "Хүсэлт хүлээгдэж байна"
+                      : requestStatus === "APPROVED"
+                        ? "Хүсэлт зөвшөөрөгдсөн"
+                        : "Хүсэлт татгалзсан"}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           <button
             type="button"
@@ -112,6 +195,62 @@ function QuestionBankQuestionPreviewContent({
               <p className="mt-2 text-[12px] text-[#52555B]">Хүлцэл: {tolerance}</p>
             ) : null}
           </section>
+          {!editable ? (
+            <section className="rounded-lg border border-[#DFE1E5] bg-white p-4">
+              <p className="mb-2 text-[12px] font-medium text-[#52555B]">Ашиглах эрх</p>
+              {needsAccessRequest ? (
+                <div className="space-y-3">
+                  <p className="text-[13px] text-[#52555B]">
+                    Энэ асуултыг шалгалтад ашиглахын өмнө эзэмшигч багшаас зөвшөөрөл авна.
+                  </p>
+                  <button
+                    type="button"
+                    className="inline-flex h-9 items-center justify-center rounded-md bg-[#00267F] px-4 text-[14px] font-medium text-white disabled:cursor-not-allowed disabled:bg-[#98A2B3]"
+                    disabled={isRequesting || requestStatus === "PENDING"}
+                    onClick={() => void onRequestAccess?.(row.id)}
+                  >
+                    {requestStatus === "PENDING"
+                      ? "Хүсэлт илгээсэн"
+                      : isRequesting
+                        ? "Илгээж байна..."
+                        : "Хүсэлт илгээх"}
+                  </button>
+                </div>
+              ) : canFork ? (
+                <div className="space-y-3">
+                  <p className="text-[13px] text-[#52555B]">
+                    Энэ асуултыг өөрийн санд хувилбарлаж аваад засварлан ашиглаж болно.
+                  </p>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <select
+                      value={targetBankId}
+                      onChange={(event) => setTargetBankId(event.target.value)}
+                      className="min-w-0 flex-1 rounded-md border border-[#D0D5DD] px-3 py-2 text-[14px] text-[#0F1216]"
+                    >
+                      {ownedBankOptions.map((bank) => (
+                        <option key={bank.id} value={bank.id}>
+                          {bank.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="inline-flex h-10 items-center justify-center rounded-md border border-[#00267F] px-4 text-[14px] font-medium text-[#00267F] disabled:cursor-not-allowed disabled:border-[#D0D5DD] disabled:text-[#98A2B3]"
+                      disabled={!targetBankId || isForking}
+                      onClick={() => void onForkQuestion?.(row.id, targetBankId)}
+                    >
+                      {isForking ? "Хувилбарлаж байна..." : "Миний санд хувилбар гаргах"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[13px] text-[#52555B]">
+                  Энэ асуултыг харах боломжтой. Хэрэв хувилбарлаж хадгалах бол эхлээд өөрийн
+                  асуултын сан үүсгэнэ үү.
+                </p>
+              )}
+            </section>
+          ) : null}
           <div className="flex justify-end border-t border-[#DFE1E5] pt-4">
             <button
               type="button"

@@ -18,6 +18,7 @@ export type QuestionType =
   | "IMAGE_UPLOAD";
 export type Difficulty = "EASY" | "MEDIUM" | "HARD";
 export type QuestionShareScope = "PRIVATE" | "COMMUNITY" | "PUBLIC";
+export type QuestionAccessRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type ExamMode = "SCHEDULED" | "OPEN_WINDOW" | "PRACTICE";
 export type ExamStatus = "DRAFT" | "PUBLISHED" | "CLOSED";
 export type ExamGenerationMode = "MANUAL" | "RULE_BASED";
@@ -163,6 +164,16 @@ export type QuestionRow = {
   tags_json: string;
   created_by_id: string;
   created_at: string;
+};
+
+export type QuestionAccessRequestRow = {
+  id: string;
+  question_id: string;
+  requester_user_id: string;
+  owner_user_id: string;
+  status: QuestionAccessRequestStatus;
+  created_at: string;
+  reviewed_at: string | null;
 };
 
 export type ExamRow = {

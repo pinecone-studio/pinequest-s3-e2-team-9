@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "@apollo/client/react";
 import {
   CreateQuestionMutationDocument,
+  QuestionShareScope,
   QuestionType,
   type CreateQuestionMutationMutation,
   type Difficulty,
@@ -39,6 +40,8 @@ export function CreateExamQuestionComposer(props: CreateExamQuestionComposerProp
     prompt, setPrompt,
     questionType, setQuestionType,
     difficulty, setDifficulty,
+    shareScope, setShareScope,
+    requiresAccessRequest, setRequiresAccessRequest,
     options, correctIndex, setCorrectIndex,
     truthValue, setTruthValue,
     numericAnswer, setNumericAnswer,
@@ -118,7 +121,13 @@ export function CreateExamQuestionComposer(props: CreateExamQuestionComposerProp
         return;
       }
       const result = await createQuestion({
-        variables: { bankId, type: questionType, ...payload },
+        variables: {
+          bankId,
+          type: questionType,
+          shareScope,
+          requiresAccessRequest,
+          ...payload,
+        },
       });
       const createdQuestion = result.data?.createQuestion;
       if (!createdQuestion) {
@@ -194,6 +203,34 @@ export function CreateExamQuestionComposer(props: CreateExamQuestionComposerProp
           onToleranceChange={setTolerance}
           onReferenceAnswerChange={setReferenceAnswer}
         />
+
+        <div className="grid gap-3 rounded-[10px] border border-[#EAECF0] bg-[#FCFCFD] p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+          <label className="grid gap-2">
+            <span className="text-[12px] font-medium uppercase tracking-[0.3px] text-[#52555B]">
+              Хуваалцах хүрээ
+            </span>
+            <select
+              value={shareScope}
+              onChange={(event) => setShareScope(event.target.value as QuestionShareScope)}
+              disabled={props.disabled || loading}
+              className="h-10 rounded-[6px] border border-[#DFE1E5] bg-white px-3 text-[14px] text-[#101828] shadow-[0px_1px_2px_rgba(0,0,0,0.05)]"
+            >
+              <option value={QuestionShareScope.Private}>Миний сан дотор</option>
+              <option value={QuestionShareScope.Community}>Community дотор ашиглаж болно</option>
+              <option value={QuestionShareScope.Public}>Нэгдсэн санд нээлттэй</option>
+            </select>
+          </label>
+          <label className="flex items-center gap-3 rounded-[8px] border border-[#E4E7EC] bg-white px-3 py-2.5 text-[13px] text-[#344054]">
+            <input
+              type="checkbox"
+              checked={requiresAccessRequest}
+              onChange={(event) => setRequiresAccessRequest(event.target.checked)}
+              disabled={props.disabled || loading}
+              className="h-4 w-4 rounded border-[#D0D5DD] text-[#00267F] focus:ring-[#00267F]"
+            />
+            <span>Ашиглахын өмнө зөвшөөрөл авна</span>
+          </label>
+        </div>
 
         <CreateExamQuestionComposerFooter
           saveToBank={saveToBank}

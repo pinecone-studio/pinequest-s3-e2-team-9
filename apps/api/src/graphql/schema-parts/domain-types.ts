@@ -95,6 +95,16 @@ export const schemaDomainTypes = /* GraphQL */ `
     createdAt: String!
   }
 
+  type QuestionAccessRequest {
+    id: ID!
+    question: Question!
+    requester: User!
+    owner: User!
+    status: QuestionAccessRequestStatus!
+    createdAt: String!
+    reviewedAt: String
+  }
+
   type CommunityMember {
     id: ID!
     role: CommunityMemberRole!

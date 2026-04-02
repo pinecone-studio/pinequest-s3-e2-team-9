@@ -19,6 +19,7 @@ import { CreateExamSelectedQuestions } from "./create-exam-selected-questions";
 
 type CreateExamQuestionCardProps = {
   values: CreateExamFormValues;
+  viewerId: string;
   questionBankOptions: CreateExamQuestionBankOption[];
   ruleSourceOptions: CreateExamRuleSourceOption[];
   questionOptions: CreateExamQuestionOption[];
@@ -51,6 +52,7 @@ function PlusIcon({ solid = false }: { solid?: boolean }) {
 
 export function CreateExamQuestionCard({
   values,
+  viewerId,
   questionBankOptions,
   ruleSourceOptions,
   questionOptions,
@@ -162,6 +164,7 @@ export function CreateExamQuestionCard({
             onClose={() => setIsLibraryOpen(false)}
           >
             <CreateExamQuestionLibrary
+              viewerId={viewerId}
               questionBankOptions={questionBankOptions}
               questionOptions={questionOptions}
               mode={values.mode}

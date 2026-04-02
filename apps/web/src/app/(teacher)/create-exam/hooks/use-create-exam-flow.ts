@@ -117,6 +117,7 @@ export const useCreateExamFlow = (
         getQuestionOptions(optionsQuery.data, ""),
         resolvedBankId,
         formValues.mode,
+        optionsQuery.data?.me?.id ?? "",
       ),
     [formValues.mode, optionsQuery.data, resolvedBankId],
   );
@@ -557,6 +558,7 @@ export const useCreateExamFlow = (
   };
 
   return {
+    viewerId: optionsQuery.data?.me?.id ?? "",
     classOptions,
     questionBankOptions,
     ruleSourceOptions,

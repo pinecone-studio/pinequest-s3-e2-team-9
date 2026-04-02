@@ -1,0 +1,11 @@
+mutation ForkQuestionToMyBank($questionId: ID!, $targetBankId: ID!) {
+  forkQuestionToMyBank(questionId: $questionId, targetBankId: $targetBankId) {
+    id
+    title
+    prompt
+    bank {
+      id
+      title
+    }
+  }
+}

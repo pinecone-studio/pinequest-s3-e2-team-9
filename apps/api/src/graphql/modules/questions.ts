@@ -2,6 +2,7 @@ import { all, first, invariant, run, type D1DatabaseLike } from "../../lib/d1";
 import type { RequestContext } from "../../auth";
 import type { QuestionBankMutationEvent } from "../../live-exam-events";
 import {
+  type ForkQuestionToMyBankArgs,
   type CreateExamDraftVariantsArgs,
   type CreateQuestionVariantsArgs,
   type DeleteQuestionArgs,
@@ -13,9 +14,12 @@ import {
   type ByIdArgs,
   type CreateQuestionArgs,
   type CreateQuestionBankArgs,
+  type QuestionAccessRequestRow,
   type QuestionBankRow,
   type QuestionRow,
   type QuestionsArgs,
+  type RequestQuestionAccessArgs,
+  type ReviewQuestionAccessRequestArgs,
   type Role,
   type UpdateQuestionArgs,
   type UserRow,
@@ -272,12 +276,105 @@ const normalizeVariantSelection = (
 const questionBankSelectFields =
   "id, title, description, grade, subject, topic, visibility, owner_id, created_at";
 
+const questionAccessRequestSelectFields = `id,
+  question_id,
+  requester_user_id,
+  owner_user_id,
+  status,
+  created_at,
+  reviewed_at`;
+
+const findQuestionAccessRequestById = async (
+  db: D1DatabaseLike,
+  id: string,
+): Promise<QuestionAccessRequestRow> => {
+  const request = await first<QuestionAccessRequestRow>(
+    db,
+    `SELECT ${questionAccessRequestSelectFields}
+     FROM question_access_requests
+     WHERE id = ?`,
+    [id],
+  );
+  invariant(request, `Question access request ${id} not found`);
+  return request;
+};
+
+const actorHasApprovedQuestionAccess = async (
+  db: D1DatabaseLike,
+  questionId: string,
+  actorId: string,
+) => {
+  const row = await first<{ id: string }>(
+    db,
+    `SELECT id
+     FROM question_access_requests
+     WHERE question_id = ?
+       AND requester_user_id = ?
+       AND status = 'APPROVED'
+     ORDER BY reviewed_at DESC, created_at DESC
+     LIMIT 1`,
+    [questionId, actorId],
+  );
+  return Boolean(row);
+};
+
+const actorCanUseQuestion = async ({
+  actor,
+  bank,
+  db,
+  question,
+}: {
+  actor: UserRow;
+  bank: QuestionBankRow;
+  db: D1DatabaseLike;
+  question: QuestionRow;
+}) => {
+  if (actor.role === "ADMIN") {
+    return true;
+  }
+
+  if (bank.owner_id === actor.id || question.created_by_id === actor.id) {
+    return true;
+  }
+
+  if (question.requires_access_request === 1) {
+    return actorHasApprovedQuestionAccess(db, question.id, actor.id);
+  }
+
+  if (question.share_scope === "PUBLIC" || bank.visibility === "PUBLIC") {
+    return true;
+  }
+
+  if (question.share_scope === "COMMUNITY") {
+    const membership = await first<{ id: string }>(
+      db,
+      `SELECT cm.id
+       FROM community_shared_banks csb
+       JOIN community_members cm ON cm.community_id = csb.community_id
+       WHERE csb.bank_id = ?
+         AND cm.user_id = ?
+       LIMIT 1`,
+      [bank.id, actor.id],
+    );
+
+    if (membership) {
+      return true;
+    }
+  }
+
+  return actorHasApprovedQuestionAccess(db, question.id, actor.id);
+};
+
+export const canActorUseQuestion = actorCanUseQuestion;
+
 type QuestionModuleDependencies = {
   db: D1DatabaseLike;
   requireActor: (context: RequestContext, roles: Role[]) => Promise<UserRow>;
   publishQuestionBankEvent?: (event: QuestionBankMutationEvent) => Promise<void>;
   toQuestionBank: (db: D1DatabaseLike, bank: QuestionBankRow) => unknown;
   toQuestion: (db: D1DatabaseLike, question: QuestionRow) => unknown;
+  findUser: (db: D1DatabaseLike, id: string) => Promise<UserRow>;
+  toUser: (user: UserRow) => unknown;
 };
 
 export const createQuestionQueriesAndMutations = ({
@@ -286,6 +383,8 @@ export const createQuestionQueriesAndMutations = ({
   publishQuestionBankEvent,
   toQuestionBank,
   toQuestion,
+  findUser,
+  toUser,
 }: QuestionModuleDependencies) => ({
   questionBanks: async (_args: unknown, context: RequestContext) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
@@ -384,6 +483,37 @@ export const createQuestionQueriesAndMutations = ({
               [actor.id],
             );
     return rows.map((row) => toQuestion(db, row));
+  },
+  questionAccessRequests: async (_args: unknown, context: RequestContext) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const rows =
+      actor.role === "ADMIN"
+        ? await all<QuestionAccessRequestRow>(
+            db,
+            `SELECT ${questionAccessRequestSelectFields}
+             FROM question_access_requests
+             ORDER BY created_at DESC`,
+          )
+        : await all<QuestionAccessRequestRow>(
+            db,
+            `SELECT ${questionAccessRequestSelectFields}
+             FROM question_access_requests
+             WHERE requester_user_id = ? OR owner_user_id = ?
+             ORDER BY created_at DESC`,
+            [actor.id, actor.id],
+          );
+
+    return Promise.all(
+      rows.map(async (row) => ({
+        id: row.id,
+        question: async () => toQuestion(db, await findQuestionById(db, row.question_id)),
+        requester: async () => toUser(await findUser(db, row.requester_user_id)),
+        owner: async () => toUser(await findUser(db, row.owner_user_id)),
+        status: row.status,
+        createdAt: row.created_at,
+        reviewedAt: row.reviewed_at,
+      })),
+    );
   },
   createQuestionBank: async (
     { title, description, grade, subject, topic, visibility }: CreateQuestionBankArgs,
@@ -614,8 +744,8 @@ export const createQuestionQueriesAndMutations = ({
     const bank = await findQuestionBankById(db, question.bank_id);
     if (actor.role === "TEACHER") {
       invariant(
-        bank.visibility === "PUBLIC" || bank.owner_id === actor.id,
-        "Зөвхөн өөрийн эсвэл нээлттэй сангаас draft variant үүсгэнэ.",
+        await actorCanUseQuestion({ actor, bank, db, question }),
+        "Энэ асуултаас draft variant үүсгэх эрх алга.",
       );
     }
 
@@ -698,10 +828,13 @@ export const createQuestionQueriesAndMutations = ({
     const bank = await findQuestionBankById(db, normalizedQuestions[0].question.bank_id);
 
     if (actor.role === "TEACHER") {
-      invariant(
-        bank.owner_id === actor.id,
-        "You can only group questions from your own question banks.",
-      );
+      for (const { question } of normalizedQuestions) {
+        const questionBank = await findQuestionBankById(db, question.bank_id);
+        invariant(
+          await actorCanUseQuestion({ actor, bank: questionBank, db, question }),
+          "Эдгээр асуултыг хувилбарын бүлэг болгох эрх алга.",
+        );
+      }
     }
 
     const groupId = makeId("variant_group");
@@ -801,5 +934,171 @@ export const createQuestionQueriesAndMutations = ({
       visibility: bank.visibility,
     });
     return true;
+  },
+  requestQuestionAccess: async (
+    { questionId }: RequestQuestionAccessArgs,
+    context: RequestContext,
+  ) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const question = await findQuestionById(db, questionId);
+    const bank = await findQuestionBankById(db, question.bank_id);
+
+    invariant(actor.role !== "ADMIN", "Админд хүсэлт илгээх шаардлагагүй.");
+    invariant(bank.owner_id !== actor.id, "Өөрийн асуулт дээр хүсэлт илгээхгүй.");
+    invariant(
+      question.requires_access_request === 1 ||
+        (question.share_scope !== "PUBLIC" && bank.visibility !== "PUBLIC"),
+      "Нээлттэй асуултыг хүсэлтгүй ашиглаж болно.",
+    );
+
+    const existingPending = await first<QuestionAccessRequestRow>(
+      db,
+      `SELECT ${questionAccessRequestSelectFields}
+       FROM question_access_requests
+       WHERE question_id = ?
+         AND requester_user_id = ?
+         AND status = 'PENDING'
+       LIMIT 1`,
+      [questionId, actor.id],
+    );
+
+    if (existingPending) {
+      return {
+        id: existingPending.id,
+        question: async () => toQuestion(db, question),
+        requester: async () => toUser(actor),
+        owner: async () => toUser(await findUser(db, bank.owner_id)),
+        status: existingPending.status,
+        createdAt: existingPending.created_at,
+        reviewedAt: existingPending.reviewed_at,
+      };
+    }
+
+    const createdAt = now();
+    const id = makeId("question_access_request");
+    await run(
+      db,
+      `INSERT INTO question_access_requests (
+        id,
+        question_id,
+        requester_user_id,
+        owner_user_id,
+        status,
+        created_at,
+        reviewed_at
+      )
+      VALUES (?, ?, ?, ?, 'PENDING', ?, NULL)`,
+      [id, questionId, actor.id, bank.owner_id, createdAt],
+    );
+
+    return {
+      id,
+      question: async () => toQuestion(db, question),
+      requester: async () => toUser(actor),
+      owner: async () => toUser(await findUser(db, bank.owner_id)),
+      status: "PENDING",
+      createdAt,
+      reviewedAt: null,
+    };
+  },
+  reviewQuestionAccessRequest: async (
+    { requestId, approve }: ReviewQuestionAccessRequestArgs,
+    context: RequestContext,
+  ) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const request = await findQuestionAccessRequestById(db, requestId);
+    invariant(
+      actor.role === "ADMIN" || request.owner_user_id === actor.id,
+      "Зөвхөн асуултын эзэмшигч хүсэлтийг шийднэ.",
+    );
+    invariant(request.status === "PENDING", "Зөвхөн pending хүсэлтийг шийднэ.");
+
+    const reviewedAt = now();
+    const nextStatus = approve ? "APPROVED" : "REJECTED";
+    await run(
+      db,
+      `UPDATE question_access_requests
+       SET status = ?, reviewed_at = ?
+       WHERE id = ?`,
+      [nextStatus, reviewedAt, requestId],
+    );
+
+    const nextRequest = await findQuestionAccessRequestById(db, requestId);
+    return {
+      id: nextRequest.id,
+      question: async () =>
+        toQuestion(db, await findQuestionById(db, nextRequest.question_id)),
+      requester: async () => toUser(await findUser(db, nextRequest.requester_user_id)),
+      owner: async () => toUser(await findUser(db, nextRequest.owner_user_id)),
+      status: nextRequest.status,
+      createdAt: nextRequest.created_at,
+      reviewedAt: nextRequest.reviewed_at,
+    };
+  },
+  forkQuestionToMyBank: async (
+    { questionId, targetBankId }: ForkQuestionToMyBankArgs,
+    context: RequestContext,
+  ) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const question = await findQuestionById(db, questionId);
+    const sourceBank = await findQuestionBankById(db, question.bank_id);
+    const targetBank = await findQuestionBankById(db, targetBankId);
+
+    if (actor.role === "TEACHER") {
+      invariant(targetBank.owner_id === actor.id, "Зөвхөн өөрийн сан руу хувилбарлана.");
+      invariant(
+        await actorCanUseQuestion({ actor, bank: sourceBank, db, question }),
+        "Энэ асуултыг хувилбарлаж ашиглах эрх алга.",
+      );
+    }
+
+    const id = makeId("question");
+    const createdAt = now();
+    const nextTags = [
+      ...parseJsonArray(question.tags_json),
+      `forked_from_question:${question.id}`,
+      `forked_from_bank:${sourceBank.id}`,
+    ];
+
+    await run(
+      db,
+      `INSERT INTO questions (
+        id,
+        bank_id,
+        canonical_question_id,
+        forked_from_question_id,
+        type,
+        title,
+        prompt,
+        options_json,
+        correct_answer,
+        difficulty,
+        share_scope,
+        requires_access_request,
+        tags_json,
+        created_by_id,
+        created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        targetBankId,
+        question.canonical_question_id ?? question.id,
+        question.id,
+        question.type,
+        question.title,
+        question.prompt,
+        question.options_json,
+        question.correct_answer,
+        question.difficulty,
+        "PRIVATE",
+        0,
+        toJsonArray([...new Set(nextTags)]),
+        actor.id,
+        createdAt,
+      ],
+    );
+
+    return toQuestion(db, await findQuestionById(db, id));
   },
 });

@@ -1,0 +1,19 @@
+mutation RequestQuestionAccess($questionId: ID!) {
+  requestQuestionAccess(questionId: $questionId) {
+    id
+    status
+    createdAt
+    reviewedAt
+    question {
+      id
+    }
+    requester {
+      id
+      fullName
+    }
+    owner {
+      id
+      fullName
+    }
+  }
+}

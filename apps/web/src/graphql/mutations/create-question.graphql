@@ -6,6 +6,8 @@ mutation CreateQuestionMutation(
   $options: [String!]
   $correctAnswer: String
   $difficulty: Difficulty!
+  $shareScope: QuestionShareScope
+  $requiresAccessRequest: Boolean
   $tags: [String!]
 ) {
   createQuestion(
@@ -16,6 +18,8 @@ mutation CreateQuestionMutation(
     options: $options
     correctAnswer: $correctAnswer
     difficulty: $difficulty
+    shareScope: $shareScope
+    requiresAccessRequest: $requiresAccessRequest
     tags: $tags
   ) {
     id

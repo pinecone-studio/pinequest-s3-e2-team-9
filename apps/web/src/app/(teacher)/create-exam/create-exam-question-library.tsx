@@ -35,6 +35,7 @@ const DIFFICULTY_LABELS: Record<string, string> = {
 };
 
 type CreateExamQuestionLibraryProps = {
+  viewerId: string;
   questionBankOptions: CreateExamQuestionBankOption[];
   questionOptions: CreateExamQuestionOption[];
   mode: ExamMode;
@@ -455,6 +456,7 @@ const matchesFilter = (
 };
 
 export function CreateExamQuestionLibrary({
+  viewerId,
   questionBankOptions,
   questionOptions,
   mode,
@@ -860,20 +862,41 @@ export function CreateExamQuestionLibrary({
       <div className="mt-4 flex-1 space-y-3 overflow-y-auto">
         {filteredQuestions.map((question) => {
           const checked = checkedQuestionIds.includes(question.id);
+          const requiresApproval =
+            question.requiresAccessRequest &&
+            question.createdById !== viewerId &&
+            question.bankOwnerId !== viewerId;
+          const canSelect = !requiresApproval;
           return (
             <button
               key={question.id}
               type="button"
-              onClick={() => onToggleChecked(question.id)}
+              onClick={() => {
+                if (!canSelect) {
+                  return;
+                }
+                onToggleChecked(question.id);
+              }}
               className={[
                 "w-full rounded-xl border px-4 py-4 text-left transition",
                 checked
                   ? "border-[#B8CFFF] bg-[#EEF4FF]"
-                  : "border-[#DFE1E5] bg-white",
+                  : requiresApproval
+                    ? "border-[#FECACA] bg-[#FEF2F2]"
+                    : "border-[#DFE1E5] bg-white",
               ].join(" ")}
             >
               <div className="flex items-start gap-4">
-                <div className={["mt-1 h-7 w-7 rounded-md border", checked ? "border-[#5B7CFF] bg-[#5B7CFF]" : "border-[#D0D5DD] bg-white"].join(" ")} />
+                <div
+                  className={[
+                    "mt-1 h-7 w-7 rounded-md border",
+                    checked
+                      ? "border-[#5B7CFF] bg-[#5B7CFF]"
+                      : requiresApproval
+                        ? "border-[#FCA5A5] bg-white"
+                        : "border-[#D0D5DD] bg-white",
+                  ].join(" ")}
+                />
                 <div>
                   <p className="text-[14px] font-medium text-[#0F1216]">{formatQuestionText(question)}</p>
                   <div className="mt-2 flex flex-wrap gap-2 text-[12px]">
@@ -891,7 +914,18 @@ export function CreateExamQuestionLibrary({
                     <span className="rounded-full border border-[#B7E0BA] bg-[#ECFDF3] px-2 py-0.5 text-[#16A34A]">
                       {getDifficultyLabel(question.difficulty)}
                     </span>
+                    {requiresApproval ? (
+                      <span className="rounded-full border border-[#FECACA] bg-[#FEF2F2] px-2 py-0.5 text-[#B42318]">
+                        Зөвшөөрөл шаардлагатай
+                      </span>
+                    ) : null}
                   </div>
+                  {requiresApproval ? (
+                    <div className="mt-2 text-[12px] text-[#B42318]">
+                      Энэ асуултыг шалгалтад ашиглахын өмнө эзэмшигчийн зөвшөөрөл авна. Асуултын
+                      сангийн дэлгэрэнгүй рүү орж хүсэлт илгээнэ үү.
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </button>

@@ -1,6 +1,7 @@
 /*eslint-disable max-lines*/
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   CommunityCommentEntityType,
@@ -707,11 +708,11 @@ export function CommunitySection() {
       setErrorMessage(null);
       setFeedbackMessage(null);
       await copySharedBank({ variables: { sharedBankId } });
-      setFeedbackMessage("Хуваалцсан санг таны асуултын сан руу хууллаа.");
+      setFeedbackMessage("Хуваалцсан сангаас таны санд хувилбар гаргалаа.");
       await refreshAll();
     } catch (error) {
       console.error("Failed to copy shared bank", error);
-      setErrorMessage("Хуваалцсан сан хуулах үед алдаа гарлаа.");
+      setErrorMessage("Сангаас хувилбар гаргах үед алдаа гарлаа.");
     }
   };
 
@@ -1400,7 +1401,7 @@ export function CommunitySection() {
 
               <CommunitySectionCard
                 title="Нээлттэй сангууд"
-                description="Тухайн community дотор хуваалцсан, ашиглаж болох асуултын сангууд."
+                description="Тухайн community доторх санг шууд ашиглах эсвэл өөрийн санд хувилбар гаргаж болно."
               >
                 {selectedCommunity.sharedBanks.length ? (
                   <div className="space-y-3">
@@ -1438,16 +1439,24 @@ export function CommunitySection() {
                               {sharedBank.bank.owner.fullName}
                             </p>
                           </div>
-                          <button
-                            type="button"
-                            className="rounded-xl border border-[#D0D5DD] px-4 py-2 text-[13px] font-medium text-[#0F172A] disabled:opacity-60"
-                            onClick={() => void handleCopySharedBank(sharedBank.id)}
-                            disabled={copySharedBankState.loading}
-                          >
-                            {copySharedBankState.loading
-                              ? "Хуулж байна..."
-                              : "Миний сан руу хуулах"}
-                          </button>
+                          <div className="flex min-w-[220px] flex-col gap-2">
+                            <Link
+                              href={`/create-exam?bankId=${sharedBank.bank.id}`}
+                              className="rounded-xl bg-[#0F172A] px-4 py-2 text-center text-[13px] font-medium text-white"
+                            >
+                              Шууд ашиглах
+                            </Link>
+                            <button
+                              type="button"
+                              className="rounded-xl border border-[#D0D5DD] px-4 py-2 text-[13px] font-medium text-[#0F172A] disabled:opacity-60"
+                              onClick={() => void handleCopySharedBank(sharedBank.id)}
+                              disabled={copySharedBankState.loading}
+                            >
+                              {copySharedBankState.loading
+                                ? "Хувилбар гаргаж байна..."
+                                : "Миний санд хувилбар гаргах"}
+                            </button>
+                          </div>
                         </div>
                         <CommunityRatingRow
                           averageRating={sharedBank.averageRating}

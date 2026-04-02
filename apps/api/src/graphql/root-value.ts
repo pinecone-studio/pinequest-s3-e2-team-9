@@ -243,6 +243,8 @@ export const createRootValue = ({ db, env }: CreateRootValueArgs) => {
       publishQuestionBankEvent: async (event) => publishQuestionBankEvent(env, event),
       toQuestionBank: (_, bank) => toQuestionBank(bank),
       toQuestion: (_, question) => toQuestion(question),
+      findUser,
+      toUser,
     }),
     ...createImportQueriesAndMutations({
       db,

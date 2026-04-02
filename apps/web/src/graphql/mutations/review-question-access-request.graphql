@@ -1,0 +1,10 @@
+mutation ReviewQuestionAccessRequest($requestId: ID!, $approve: Boolean!) {
+  reviewQuestionAccessRequest(requestId: $requestId, approve: $approve) {
+    id
+    status
+    reviewedAt
+    question {
+      id
+    }
+  }
+}

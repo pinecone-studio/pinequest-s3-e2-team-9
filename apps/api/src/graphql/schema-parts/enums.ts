@@ -25,6 +25,12 @@ export const schemaEnums = /* GraphQL */ `
     PUBLIC
   }
 
+  enum QuestionAccessRequestStatus {
+    PENDING
+    APPROVED
+    REJECTED
+  }
+
   enum QuestionBankVisibility {
     PRIVATE
     PUBLIC

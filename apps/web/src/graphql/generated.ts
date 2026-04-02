@@ -588,13 +588,16 @@ export type Mutation = {
   createQuestionBank: QuestionBank;
   createQuestionVariants: Array<Question>;
   deleteQuestion: Scalars['Boolean']['output'];
+  forkQuestionToMyBank: Question;
   groupQuestionsAsVariants: Array<Question>;
   joinCommunity: Community;
   publishExam: Exam;
   rateCommunityItem: Scalars['Boolean']['output'];
   recordAttemptIntegrityEvent: Scalars['Boolean']['output'];
+  requestQuestionAccess: QuestionAccessRequest;
   reviewAnswer: Answer;
   reviewAttempt: Attempt;
+  reviewQuestionAccessRequest: QuestionAccessRequest;
   saveAnswer: Attempt;
   shareExamToCommunity: CommunitySharedExam;
   shareQuestionBankToCommunity: CommunitySharedBank;
@@ -697,6 +700,8 @@ export type MutationCreateQuestionArgs = {
   difficulty?: InputMaybe<Difficulty>;
   options?: InputMaybe<Array<Scalars['String']['input']>>;
   prompt: Scalars['String']['input'];
+  requiresAccessRequest?: InputMaybe<Scalars['Boolean']['input']>;
+  shareScope?: InputMaybe<QuestionShareScope>;
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
   title: Scalars['String']['input'];
   type: QuestionType;
@@ -721,6 +726,12 @@ export type MutationCreateQuestionVariantsArgs = {
 
 export type MutationDeleteQuestionArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationForkQuestionToMyBankArgs = {
+  questionId: Scalars['ID']['input'];
+  targetBankId: Scalars['ID']['input'];
 };
 
 
@@ -754,6 +765,11 @@ export type MutationRecordAttemptIntegrityEventArgs = {
 };
 
 
+export type MutationRequestQuestionAccessArgs = {
+  questionId: Scalars['ID']['input'];
+};
+
+
 export type MutationReviewAnswerArgs = {
   answerId: Scalars['ID']['input'];
   feedback?: InputMaybe<Scalars['String']['input']>;
@@ -764,6 +780,12 @@ export type MutationReviewAnswerArgs = {
 export type MutationReviewAttemptArgs = {
   answers: Array<AttemptReviewAnswerInput>;
   attemptId: Scalars['ID']['input'];
+};
+
+
+export type MutationReviewQuestionAccessRequestArgs = {
+  approve: Scalars['Boolean']['input'];
+  requestId: Scalars['ID']['input'];
 };
 
 
@@ -821,6 +843,8 @@ export type MutationUpdateQuestionArgs = {
   id: Scalars['ID']['input'];
   options?: InputMaybe<Array<Scalars['String']['input']>>;
   prompt: Scalars['String']['input'];
+  requiresAccessRequest?: InputMaybe<Scalars['Boolean']['input']>;
+  shareScope?: InputMaybe<QuestionShareScope>;
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
   title: Scalars['String']['input'];
   type: QuestionType;
@@ -849,6 +873,7 @@ export type Query = {
   health: Health;
   hello: Hello;
   me?: Maybe<User>;
+  questionAccessRequests: Array<QuestionAccessRequest>;
   questionBank?: Maybe<QuestionBank>;
   questionBanks: Array<QuestionBank>;
   questions: Array<Question>;
@@ -904,17 +929,38 @@ export type QueryQuestionsArgs = {
 export type Question = {
   __typename?: 'Question';
   bank: QuestionBank;
+  canonicalQuestionId?: Maybe<Scalars['ID']['output']>;
   correctAnswer?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['String']['output'];
   createdBy: User;
   difficulty: Difficulty;
+  forkedFromQuestionId?: Maybe<Scalars['ID']['output']>;
   id: Scalars['ID']['output'];
   options: Array<Scalars['String']['output']>;
   prompt: Scalars['String']['output'];
+  requiresAccessRequest: Scalars['Boolean']['output'];
+  shareScope: QuestionShareScope;
   tags: Array<Scalars['String']['output']>;
   title: Scalars['String']['output'];
   type: QuestionType;
 };
+
+export type QuestionAccessRequest = {
+  __typename?: 'QuestionAccessRequest';
+  createdAt: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  owner: User;
+  question: Question;
+  requester: User;
+  reviewedAt?: Maybe<Scalars['String']['output']>;
+  status: QuestionAccessRequestStatus;
+};
+
+export enum QuestionAccessRequestStatus {
+  Approved = 'APPROVED',
+  Pending = 'PENDING',
+  Rejected = 'REJECTED'
+}
 
 export type QuestionBank = {
   __typename?: 'QuestionBank';
@@ -933,6 +979,12 @@ export type QuestionBank = {
 };
 
 export enum QuestionBankVisibility {
+  Private = 'PRIVATE',
+  Public = 'PUBLIC'
+}
+
+export enum QuestionShareScope {
+  Community = 'COMMUNITY',
   Private = 'PRIVATE',
   Public = 'PUBLIC'
 }
@@ -1102,6 +1154,8 @@ export type CreateQuestionMutationMutationVariables = Exact<{
   options?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
   correctAnswer?: InputMaybe<Scalars['String']['input']>;
   difficulty: Difficulty;
+  shareScope?: InputMaybe<QuestionShareScope>;
+  requiresAccessRequest?: InputMaybe<Scalars['Boolean']['input']>;
   tags?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
 }>;
 
@@ -1114,6 +1168,14 @@ export type DeleteQuestionMutationMutationVariables = Exact<{
 
 
 export type DeleteQuestionMutationMutation = { __typename?: 'Mutation', deleteQuestion: boolean };
+
+export type ForkQuestionToMyBankMutationVariables = Exact<{
+  questionId: Scalars['ID']['input'];
+  targetBankId: Scalars['ID']['input'];
+}>;
+
+
+export type ForkQuestionToMyBankMutation = { __typename?: 'Mutation', forkQuestionToMyBank: { __typename?: 'Question', id: string, title: string, prompt: string, bank: { __typename?: 'QuestionBank', id: string, title: string } } };
 
 export type GroupQuestionsAsVariantsMutationMutationVariables = Exact<{
   questionIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
@@ -1155,6 +1217,13 @@ export type RecordAttemptIntegrityEventMutationVariables = Exact<{
 
 export type RecordAttemptIntegrityEventMutation = { __typename?: 'Mutation', recordAttemptIntegrityEvent: boolean };
 
+export type RequestQuestionAccessMutationVariables = Exact<{
+  questionId: Scalars['ID']['input'];
+}>;
+
+
+export type RequestQuestionAccessMutation = { __typename?: 'Mutation', requestQuestionAccess: { __typename?: 'QuestionAccessRequest', id: string, status: QuestionAccessRequestStatus, createdAt: string, reviewedAt?: string | null, question: { __typename?: 'Question', id: string }, requester: { __typename?: 'User', id: string, fullName: string }, owner: { __typename?: 'User', id: string, fullName: string } } };
+
 export type ReviewAnswerMutationVariables = Exact<{
   answerId: Scalars['ID']['input'];
   manualScore: Scalars['Float']['input'];
@@ -1171,6 +1240,14 @@ export type ReviewAttemptMutationVariables = Exact<{
 
 
 export type ReviewAttemptMutation = { __typename?: 'Mutation', reviewAttempt: { __typename?: 'Attempt', id: string, status: AttemptStatus, autoScore: number, manualScore: number, totalScore: number, submittedAt?: string | null, answers: Array<{ __typename?: 'Answer', id: string, autoScore?: number | null, manualScore?: number | null, feedback?: string | null }> } };
+
+export type ReviewQuestionAccessRequestMutationVariables = Exact<{
+  requestId: Scalars['ID']['input'];
+  approve: Scalars['Boolean']['input'];
+}>;
+
+
+export type ReviewQuestionAccessRequestMutation = { __typename?: 'Mutation', reviewQuestionAccessRequest: { __typename?: 'QuestionAccessRequest', id: string, status: QuestionAccessRequestStatus, reviewedAt?: string | null, question: { __typename?: 'Question', id: string } } };
 
 export type SaveAnswerMutationVariables = Exact<{
   attemptId: Scalars['ID']['input'];
@@ -1240,6 +1317,8 @@ export type UpdateQuestionMutationMutationVariables = Exact<{
   options?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
   correctAnswer?: InputMaybe<Scalars['String']['input']>;
   difficulty: Difficulty;
+  shareScope?: InputMaybe<QuestionShareScope>;
+  requiresAccessRequest?: InputMaybe<Scalars['Boolean']['input']>;
   tags?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
 }>;
 
@@ -1281,7 +1360,7 @@ export type CommunityOverviewQuery = { __typename?: 'Query', me?: { __typename?:
 export type CreateExamOptionsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CreateExamOptionsQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string } | null, classes: Array<{ __typename?: 'Class', id: string, name: string, subject: string, grade: number }>, questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, subject: string, grade: number, topic: string }>, questions: Array<{ __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, difficulty: Difficulty, createdAt: string, options: Array<string>, correctAnswer?: string | null, tags: Array<string>, bank: { __typename?: 'QuestionBank', id: string, title: string, subject: string, grade: number, topic: string } }> };
+export type CreateExamOptionsQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string } | null, classes: Array<{ __typename?: 'Class', id: string, name: string, subject: string, grade: number }>, questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, subject: string, grade: number, topic: string }>, questions: Array<{ __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, difficulty: Difficulty, shareScope: QuestionShareScope, requiresAccessRequest: boolean, createdAt: string, options: Array<string>, correctAnswer?: string | null, tags: Array<string>, createdBy: { __typename?: 'User', id: string, fullName: string }, bank: { __typename?: 'QuestionBank', id: string, title: string, subject: string, grade: number, topic: string, owner: { __typename?: 'User', id: string } } }> };
 
 export type DashboardOverviewQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1322,7 +1401,7 @@ export type QuestionBankDetailQueryQueryVariables = Exact<{
 }>;
 
 
-export type QuestionBankDetailQueryQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string } | null, questionBank?: { __typename?: 'QuestionBank', id: string, title: string, description?: string | null, grade: number, subject: string, topic: string, topics: Array<string>, visibility: QuestionBankVisibility, questionCount: number, owner: { __typename?: 'User', id: string, fullName: string }, questions: Array<{ __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, difficulty: Difficulty, options: Array<string>, correctAnswer?: string | null, tags: Array<string> }> } | null };
+export type QuestionBankDetailQueryQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string } | null, questionAccessRequests: Array<{ __typename?: 'QuestionAccessRequest', id: string, status: QuestionAccessRequestStatus, createdAt: string, reviewedAt?: string | null, requester: { __typename?: 'User', id: string, fullName: string }, owner: { __typename?: 'User', id: string, fullName: string }, question: { __typename?: 'Question', id: string, title: string, prompt: string, bank: { __typename?: 'QuestionBank', id: string, title: string } } }>, questionBanks: Array<{ __typename?: 'QuestionBank', id: string, title: string, grade: number, subject: string, topic: string, owner: { __typename?: 'User', id: string } }>, questionBank?: { __typename?: 'QuestionBank', id: string, title: string, description?: string | null, grade: number, subject: string, topic: string, topics: Array<string>, visibility: QuestionBankVisibility, questionCount: number, owner: { __typename?: 'User', id: string, fullName: string }, questions: Array<{ __typename?: 'Question', id: string, title: string, prompt: string, type: QuestionType, difficulty: Difficulty, shareScope: QuestionShareScope, requiresAccessRequest: boolean, options: Array<string>, correctAnswer?: string | null, tags: Array<string>, createdBy: { __typename?: 'User', id: string, fullName: string } }> } | null };
 
 export type QuestionBanksQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -2001,7 +2080,7 @@ export type CreateQuestionVariantsMutationMutationHookResult = ReturnType<typeof
 export type CreateQuestionVariantsMutationMutationResult = ApolloReactCommon.MutationResult<CreateQuestionVariantsMutationMutation>;
 export type CreateQuestionVariantsMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateQuestionVariantsMutationMutation, CreateQuestionVariantsMutationMutationVariables>;
 export const CreateQuestionMutationDocument = gql`
-    mutation CreateQuestionMutation($bankId: ID!, $type: QuestionType!, $title: String!, $prompt: String!, $options: [String!], $correctAnswer: String, $difficulty: Difficulty!, $tags: [String!]) {
+    mutation CreateQuestionMutation($bankId: ID!, $type: QuestionType!, $title: String!, $prompt: String!, $options: [String!], $correctAnswer: String, $difficulty: Difficulty!, $shareScope: QuestionShareScope, $requiresAccessRequest: Boolean, $tags: [String!]) {
   createQuestion(
     bankId: $bankId
     type: $type
@@ -2010,6 +2089,8 @@ export const CreateQuestionMutationDocument = gql`
     options: $options
     correctAnswer: $correctAnswer
     difficulty: $difficulty
+    shareScope: $shareScope
+    requiresAccessRequest: $requiresAccessRequest
     tags: $tags
   ) {
     id
@@ -2038,6 +2119,8 @@ export type CreateQuestionMutationMutationFn = ApolloReactCommon.MutationFunctio
  *      options: // value for 'options'
  *      correctAnswer: // value for 'correctAnswer'
  *      difficulty: // value for 'difficulty'
+ *      shareScope: // value for 'shareScope'
+ *      requiresAccessRequest: // value for 'requiresAccessRequest'
  *      tags: // value for 'tags'
  *   },
  * });
@@ -2080,6 +2163,46 @@ export function useDeleteQuestionMutationMutation(baseOptions?: ApolloReactHooks
 export type DeleteQuestionMutationMutationHookResult = ReturnType<typeof useDeleteQuestionMutationMutation>;
 export type DeleteQuestionMutationMutationResult = ApolloReactCommon.MutationResult<DeleteQuestionMutationMutation>;
 export type DeleteQuestionMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<DeleteQuestionMutationMutation, DeleteQuestionMutationMutationVariables>;
+export const ForkQuestionToMyBankDocument = gql`
+    mutation ForkQuestionToMyBank($questionId: ID!, $targetBankId: ID!) {
+  forkQuestionToMyBank(questionId: $questionId, targetBankId: $targetBankId) {
+    id
+    title
+    prompt
+    bank {
+      id
+      title
+    }
+  }
+}
+    `;
+export type ForkQuestionToMyBankMutationFn = ApolloReactCommon.MutationFunction<ForkQuestionToMyBankMutation, ForkQuestionToMyBankMutationVariables>;
+
+/**
+ * __useForkQuestionToMyBankMutation__
+ *
+ * To run a mutation, you first call `useForkQuestionToMyBankMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useForkQuestionToMyBankMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [forkQuestionToMyBankMutation, { data, loading, error }] = useForkQuestionToMyBankMutation({
+ *   variables: {
+ *      questionId: // value for 'questionId'
+ *      targetBankId: // value for 'targetBankId'
+ *   },
+ * });
+ */
+export function useForkQuestionToMyBankMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ForkQuestionToMyBankMutation, ForkQuestionToMyBankMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ForkQuestionToMyBankMutation, ForkQuestionToMyBankMutationVariables>(ForkQuestionToMyBankDocument, options);
+      }
+export type ForkQuestionToMyBankMutationHookResult = ReturnType<typeof useForkQuestionToMyBankMutation>;
+export type ForkQuestionToMyBankMutationResult = ApolloReactCommon.MutationResult<ForkQuestionToMyBankMutation>;
+export type ForkQuestionToMyBankMutationOptions = ApolloReactCommon.BaseMutationOptions<ForkQuestionToMyBankMutation, ForkQuestionToMyBankMutationVariables>;
 export const GroupQuestionsAsVariantsMutationDocument = gql`
     mutation GroupQuestionsAsVariantsMutation($questionIds: [ID!]!) {
   groupQuestionsAsVariants(questionIds: $questionIds) {
@@ -2261,6 +2384,53 @@ export function useRecordAttemptIntegrityEventMutation(baseOptions?: ApolloReact
 export type RecordAttemptIntegrityEventMutationHookResult = ReturnType<typeof useRecordAttemptIntegrityEventMutation>;
 export type RecordAttemptIntegrityEventMutationResult = ApolloReactCommon.MutationResult<RecordAttemptIntegrityEventMutation>;
 export type RecordAttemptIntegrityEventMutationOptions = ApolloReactCommon.BaseMutationOptions<RecordAttemptIntegrityEventMutation, RecordAttemptIntegrityEventMutationVariables>;
+export const RequestQuestionAccessDocument = gql`
+    mutation RequestQuestionAccess($questionId: ID!) {
+  requestQuestionAccess(questionId: $questionId) {
+    id
+    status
+    createdAt
+    reviewedAt
+    question {
+      id
+    }
+    requester {
+      id
+      fullName
+    }
+    owner {
+      id
+      fullName
+    }
+  }
+}
+    `;
+export type RequestQuestionAccessMutationFn = ApolloReactCommon.MutationFunction<RequestQuestionAccessMutation, RequestQuestionAccessMutationVariables>;
+
+/**
+ * __useRequestQuestionAccessMutation__
+ *
+ * To run a mutation, you first call `useRequestQuestionAccessMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRequestQuestionAccessMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [requestQuestionAccessMutation, { data, loading, error }] = useRequestQuestionAccessMutation({
+ *   variables: {
+ *      questionId: // value for 'questionId'
+ *   },
+ * });
+ */
+export function useRequestQuestionAccessMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RequestQuestionAccessMutation, RequestQuestionAccessMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<RequestQuestionAccessMutation, RequestQuestionAccessMutationVariables>(RequestQuestionAccessDocument, options);
+      }
+export type RequestQuestionAccessMutationHookResult = ReturnType<typeof useRequestQuestionAccessMutation>;
+export type RequestQuestionAccessMutationResult = ApolloReactCommon.MutationResult<RequestQuestionAccessMutation>;
+export type RequestQuestionAccessMutationOptions = ApolloReactCommon.BaseMutationOptions<RequestQuestionAccessMutation, RequestQuestionAccessMutationVariables>;
 export const ReviewAnswerDocument = gql`
     mutation ReviewAnswer($answerId: ID!, $manualScore: Float!, $feedback: String) {
   reviewAnswer(
@@ -2347,6 +2517,45 @@ export function useReviewAttemptMutation(baseOptions?: ApolloReactHooks.Mutation
 export type ReviewAttemptMutationHookResult = ReturnType<typeof useReviewAttemptMutation>;
 export type ReviewAttemptMutationResult = ApolloReactCommon.MutationResult<ReviewAttemptMutation>;
 export type ReviewAttemptMutationOptions = ApolloReactCommon.BaseMutationOptions<ReviewAttemptMutation, ReviewAttemptMutationVariables>;
+export const ReviewQuestionAccessRequestDocument = gql`
+    mutation ReviewQuestionAccessRequest($requestId: ID!, $approve: Boolean!) {
+  reviewQuestionAccessRequest(requestId: $requestId, approve: $approve) {
+    id
+    status
+    reviewedAt
+    question {
+      id
+    }
+  }
+}
+    `;
+export type ReviewQuestionAccessRequestMutationFn = ApolloReactCommon.MutationFunction<ReviewQuestionAccessRequestMutation, ReviewQuestionAccessRequestMutationVariables>;
+
+/**
+ * __useReviewQuestionAccessRequestMutation__
+ *
+ * To run a mutation, you first call `useReviewQuestionAccessRequestMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useReviewQuestionAccessRequestMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [reviewQuestionAccessRequestMutation, { data, loading, error }] = useReviewQuestionAccessRequestMutation({
+ *   variables: {
+ *      requestId: // value for 'requestId'
+ *      approve: // value for 'approve'
+ *   },
+ * });
+ */
+export function useReviewQuestionAccessRequestMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ReviewQuestionAccessRequestMutation, ReviewQuestionAccessRequestMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ReviewQuestionAccessRequestMutation, ReviewQuestionAccessRequestMutationVariables>(ReviewQuestionAccessRequestDocument, options);
+      }
+export type ReviewQuestionAccessRequestMutationHookResult = ReturnType<typeof useReviewQuestionAccessRequestMutation>;
+export type ReviewQuestionAccessRequestMutationResult = ApolloReactCommon.MutationResult<ReviewQuestionAccessRequestMutation>;
+export type ReviewQuestionAccessRequestMutationOptions = ApolloReactCommon.BaseMutationOptions<ReviewQuestionAccessRequestMutation, ReviewQuestionAccessRequestMutationVariables>;
 export const SaveAnswerDocument = gql`
     mutation SaveAnswer($attemptId: ID!, $questionId: ID!, $value: String!) {
   saveAnswer(attemptId: $attemptId, questionId: $questionId, value: $value) {
@@ -2661,7 +2870,7 @@ export type UpdateExamDraftMutationHookResult = ReturnType<typeof useUpdateExamD
 export type UpdateExamDraftMutationResult = ApolloReactCommon.MutationResult<UpdateExamDraftMutation>;
 export type UpdateExamDraftMutationOptions = ApolloReactCommon.BaseMutationOptions<UpdateExamDraftMutation, UpdateExamDraftMutationVariables>;
 export const UpdateQuestionMutationDocument = gql`
-    mutation UpdateQuestionMutation($id: ID!, $type: QuestionType!, $title: String!, $prompt: String!, $options: [String!], $correctAnswer: String, $difficulty: Difficulty!, $tags: [String!]) {
+    mutation UpdateQuestionMutation($id: ID!, $type: QuestionType!, $title: String!, $prompt: String!, $options: [String!], $correctAnswer: String, $difficulty: Difficulty!, $shareScope: QuestionShareScope, $requiresAccessRequest: Boolean, $tags: [String!]) {
   updateQuestion(
     id: $id
     type: $type
@@ -2670,6 +2879,8 @@ export const UpdateQuestionMutationDocument = gql`
     options: $options
     correctAnswer: $correctAnswer
     difficulty: $difficulty
+    shareScope: $shareScope
+    requiresAccessRequest: $requiresAccessRequest
     tags: $tags
   ) {
     id
@@ -2698,6 +2909,8 @@ export type UpdateQuestionMutationMutationFn = ApolloReactCommon.MutationFunctio
  *      options: // value for 'options'
  *      correctAnswer: // value for 'correctAnswer'
  *      difficulty: // value for 'difficulty'
+ *      shareScope: // value for 'shareScope'
+ *      requiresAccessRequest: // value for 'requiresAccessRequest'
  *      tags: // value for 'tags'
  *   },
  * });
@@ -3267,16 +3480,25 @@ export const CreateExamOptionsDocument = gql`
     prompt
     type
     difficulty
+    shareScope
+    requiresAccessRequest
     createdAt
     options
     correctAnswer
     tags
+    createdBy {
+      id
+      fullName
+    }
     bank {
       id
       title
       subject
       grade
       topic
+      owner {
+        id
+      }
     }
   }
 }
@@ -3812,6 +4034,39 @@ export const QuestionBankDetailQueryDocument = gql`
   me {
     id
   }
+  questionAccessRequests {
+    id
+    status
+    createdAt
+    reviewedAt
+    requester {
+      id
+      fullName
+    }
+    owner {
+      id
+      fullName
+    }
+    question {
+      id
+      title
+      prompt
+      bank {
+        id
+        title
+      }
+    }
+  }
+  questionBanks {
+    id
+    title
+    grade
+    subject
+    topic
+    owner {
+      id
+    }
+  }
   questionBank(id: $id) {
     id
     title
@@ -3832,9 +4087,15 @@ export const QuestionBankDetailQueryDocument = gql`
       prompt
       type
       difficulty
+      shareScope
+      requiresAccessRequest
       options
       correctAnswer
       tags
+      createdBy {
+        id
+        fullName
+      }
     }
   }
 }

@@ -33,15 +33,20 @@ export const getQuestionOptions = (
     prompt: question.prompt,
     type: question.type,
     difficulty: question.difficulty,
+    shareScope: question.shareScope,
+    requiresAccessRequest: question.requiresAccessRequest,
     createdAt: question.createdAt,
     options: question.options,
     correctAnswer: question.correctAnswer,
     tags: question.tags,
+    createdById: question.createdBy.id,
+    createdByName: question.createdBy.fullName,
     bankId: question.bank.id,
     bankTitle: question.bank.title,
     bankSubject: question.bank.subject,
     bankGrade: question.bank.grade,
     bankTopic: question.bank.topic,
+    bankOwnerId: question.bank.owner.id,
   }));
 
   if (!initialBankId.trim()) {
@@ -71,9 +76,13 @@ export const getRuleSourceOptions = (
     difficulty: string;
     bankId: string;
     type: string;
+    requiresAccessRequest: boolean;
+    createdById: string;
+    bankOwnerId: string;
   }>,
   initialBankId: string,
   mode: ExamMode,
+  viewerId: string,
 ): CreateExamRuleSourceOption[] => {
   const grouped = new Map<string, CreateExamRuleSourceOption>();
 
@@ -104,6 +113,9 @@ export const getRuleSourceOptions = (
     const matchedQuestions = questions.filter(
       (question) =>
         option.bankIds.includes(question.bankId) &&
+        (!question.requiresAccessRequest ||
+          question.createdById === viewerId ||
+          question.bankOwnerId === viewerId) &&
         (mode !== ExamMode.Practice ||
           (question.type !== "ESSAY" && question.type !== "IMAGE_UPLOAD")),
     );

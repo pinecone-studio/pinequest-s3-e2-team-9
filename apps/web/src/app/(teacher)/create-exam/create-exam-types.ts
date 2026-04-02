@@ -56,15 +56,20 @@ export type CreateExamQuestionOption = {
   prompt: string;
   type: string;
   difficulty: string;
+  shareScope: "PRIVATE" | "COMMUNITY" | "PUBLIC";
+  requiresAccessRequest: boolean;
   createdAt: string;
   options: string[];
   correctAnswer?: string | null;
   tags: string[];
+  createdById: string;
+  createdByName: string;
   bankId: string;
   bankTitle: string;
   bankSubject: string;
   bankGrade: number;
   bankTopic: string;
+  bankOwnerId: string;
 };
 
 export type CreateExamQuestionBankOption = {

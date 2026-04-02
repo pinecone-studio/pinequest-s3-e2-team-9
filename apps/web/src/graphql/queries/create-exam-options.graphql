@@ -21,16 +21,25 @@ query CreateExamOptions {
     prompt
     type
     difficulty
+    shareScope
+    requiresAccessRequest
     createdAt
     options
     correctAnswer
     tags
+    createdBy {
+      id
+      fullName
+    }
     bank {
       id
       title
       subject
       grade
       topic
+      owner {
+        id
+      }
     }
   }
 }

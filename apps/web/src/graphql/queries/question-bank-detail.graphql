@@ -2,6 +2,39 @@ query QuestionBankDetailQuery($id: ID!) {
   me {
     id
   }
+  questionAccessRequests {
+    id
+    status
+    createdAt
+    reviewedAt
+    requester {
+      id
+      fullName
+    }
+    owner {
+      id
+      fullName
+    }
+    question {
+      id
+      title
+      prompt
+      bank {
+        id
+        title
+      }
+    }
+  }
+  questionBanks {
+    id
+    title
+    grade
+    subject
+    topic
+    owner {
+      id
+    }
+  }
   questionBank(id: $id) {
     id
     title
@@ -22,9 +55,15 @@ query QuestionBankDetailQuery($id: ID!) {
       prompt
       type
       difficulty
+      shareScope
+      requiresAccessRequest
       options
       correctAnswer
       tags
+      createdBy {
+        id
+        fullName
+      }
     }
   }
 }

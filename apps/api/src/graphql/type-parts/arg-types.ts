@@ -93,6 +93,20 @@ export type CopyCommunitySharedBankToMyBankArgs = {
   sharedBankId: string;
 };
 
+export type RequestQuestionAccessArgs = {
+  questionId: string;
+};
+
+export type ReviewQuestionAccessRequestArgs = {
+  requestId: string;
+  approve: boolean;
+};
+
+export type ForkQuestionToMyBankArgs = {
+  questionId: string;
+  targetBankId: string;
+};
+
 export type CreateQuestionVariantsArgs = {
   sourceQuestionId: string;
   totalVariants: number;

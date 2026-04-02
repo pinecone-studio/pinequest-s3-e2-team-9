@@ -24,9 +24,15 @@ type RawQuestion = {
   prompt: string;
   type: "MCQ" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY" | "IMAGE_UPLOAD";
   difficulty: "EASY" | "MEDIUM" | "HARD";
+  shareScope: "PRIVATE" | "COMMUNITY" | "PUBLIC";
+  requiresAccessRequest: boolean;
   options: string[];
   correctAnswer?: string | null;
   tags: string[];
+  createdBy: {
+    id: string;
+    fullName: string;
+  };
 };
 
 export type QuestionBankQuestionRow = {
@@ -48,6 +54,10 @@ export type QuestionBankQuestionRow = {
   variantGroupId: string | null;
   variantLabel: string | null;
   variantCount: number | null;
+  shareScope: RawQuestion["shareScope"];
+  requiresAccessRequest: boolean;
+  createdById: string;
+  createdByName: string;
 };
 
 export type QuestionUsageStats = Record<
@@ -161,5 +171,9 @@ export const buildQuestionBankRows = (
       variantGroupId,
       variantLabel,
       variantCount: Number.isFinite(variantCount) ? variantCount : null,
+      shareScope: question.shareScope,
+      requiresAccessRequest: question.requiresAccessRequest,
+      createdById: question.createdBy.id,
+      createdByName: question.createdBy.fullName,
     };
   });

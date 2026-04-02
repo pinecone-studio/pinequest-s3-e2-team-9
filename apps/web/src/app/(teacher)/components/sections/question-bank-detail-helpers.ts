@@ -12,9 +12,15 @@ type BankQuestion = {
   prompt: string;
   type: "MCQ" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY" | "IMAGE_UPLOAD";
   difficulty: "EASY" | "MEDIUM" | "HARD";
+  shareScope: "PRIVATE" | "COMMUNITY" | "PUBLIC";
+  requiresAccessRequest: boolean;
   options: string[];
   correctAnswer?: string | null;
   tags: string[];
+  createdBy: {
+    id: string;
+    fullName: string;
+  };
 };
 
 type ExamsData = MyExamsQueryQuery["exams"] | undefined;

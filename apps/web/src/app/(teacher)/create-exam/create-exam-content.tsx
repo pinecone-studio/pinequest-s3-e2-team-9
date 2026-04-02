@@ -228,6 +228,7 @@ export function CreateExamContent({
         />
         <CreateExamQuestionCard
           values={flow.formValues}
+          viewerId={flow.viewerId}
           questionBankOptions={flow.questionBankOptions}
           ruleSourceOptions={flow.ruleSourceOptions}
           questionOptions={flow.questionOptions}

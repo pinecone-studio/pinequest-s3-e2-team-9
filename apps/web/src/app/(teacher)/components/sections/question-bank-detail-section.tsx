@@ -4,12 +4,16 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
+  useForkQuestionToMyBankMutation,
   useMyExamsQueryQuery,
   useQuestionBankDetailQueryQuery,
+  useRequestQuestionAccessMutation,
+  useReviewQuestionAccessRequestMutation,
 } from "@/graphql/generated";
 import { useLiveQuestionBankEvents } from "@/lib/use-live-question-bank-events";
 import { PlusIcon } from "../icons";
 import { TeacherBackButton } from "../teacher-back-button";
+import { QuestionAccessRequestsPanel } from "./question-access-requests-panel";
 import { QuestionBankDetailTable } from "./question-bank-detail-table";
 import { QuestionBankDetailFilters } from "./question-bank-detail-filters";
 import {
@@ -43,6 +47,9 @@ export function QuestionBankDetailSection({
   const [difficulty, setDifficulty] = useState("Бүх түвшин");
   const [type, setType] = useState("Бүх төрөл");
   const [activeTab, setActiveTab] = useState<DetailTab>("questions");
+  const [requestingQuestionId, setRequestingQuestionId] = useState<string | null>(null);
+  const [forkingQuestionId, setForkingQuestionId] = useState<string | null>(null);
+  const [reviewingRequestId, setReviewingRequestId] = useState<string | null>(null);
   const { data, loading, error, refetch: refetchDetail } = useQuestionBankDetailQueryQuery({
     variables: { id: bankId },
     fetchPolicy: "cache-and-network",
@@ -50,6 +57,9 @@ export function QuestionBankDetailSection({
   const examsQuery = useMyExamsQueryQuery({
     fetchPolicy: "cache-and-network",
   });
+  const [requestQuestionAccess] = useRequestQuestionAccessMutation();
+  const [reviewQuestionAccessRequest] = useReviewQuestionAccessRequestMutation();
+  const [forkQuestionToMyBank] = useForkQuestionToMyBankMutation();
   const bank = data?.questionBank ?? null;
   const viewerId = data?.me?.id ?? null;
   const isOwnedBank = Boolean(bank && viewerId && bank.owner.id === viewerId);
@@ -118,6 +128,113 @@ export function QuestionBankDetailSection({
   const title = bank?.title ?? "Асуултын сан";
   const subject = bank?.subject ?? "Хичээл";
   const count = bank?.questionCount ?? 0;
+  const viewerRequestStatusByQuestionId = useMemo(() => {
+    const next: Record<string, "PENDING" | "APPROVED" | "REJECTED" | undefined> = {};
+    for (const request of data?.questionAccessRequests ?? []) {
+      if (request.requester.id !== viewerId || request.question.bank.id !== bankId) {
+        continue;
+      }
+
+      if (!next[request.question.id]) {
+        next[request.question.id] = request.status;
+      }
+    }
+    return next;
+  }, [bankId, data?.questionAccessRequests, viewerId]);
+  const ownedBankOptions = useMemo(
+    () =>
+      (data?.questionBanks ?? [])
+        .filter((item) => item.owner.id === viewerId)
+        .map((item) => ({
+          id: item.id,
+          label: `${item.grade}-р анги · ${item.subject} · ${item.topic || item.title}`,
+        })),
+    [data?.questionBanks, viewerId],
+  );
+  const accessRequestRows = useMemo(() => {
+    const relevantRequests = (data?.questionAccessRequests ?? []).filter(
+      (request) => request.question.bank.id === bankId,
+    );
+
+    return {
+      incoming: relevantRequests
+        .filter((request) => request.owner.id === viewerId)
+        .map((request) => ({
+          id: request.id,
+          questionId: request.question.id,
+          questionTitle: request.question.prompt.trim() || request.question.title.trim(),
+          requesterName: request.requester.fullName,
+          ownerName: request.owner.fullName,
+          status: request.status,
+          createdAt: request.createdAt,
+          reviewedAt: request.reviewedAt,
+        })),
+      outgoing: relevantRequests
+        .filter((request) => request.requester.id === viewerId)
+        .map((request) => ({
+          id: request.id,
+          questionId: request.question.id,
+          questionTitle: request.question.prompt.trim() || request.question.title.trim(),
+          requesterName: request.requester.fullName,
+          ownerName: request.owner.fullName,
+          status: request.status,
+          createdAt: request.createdAt,
+          reviewedAt: request.reviewedAt,
+        })),
+    };
+  }, [bankId, data?.questionAccessRequests, viewerId]);
+
+  const handleRequestAccess = async (questionId: string) => {
+    try {
+      setRequestingQuestionId(questionId);
+      await requestQuestionAccess({
+        variables: { questionId },
+      });
+      await refetchDetail();
+      window.alert("Асуултыг ашиглах хүсэлт амжилттай илгээгдлээ.");
+    } catch (requestError) {
+      console.error("Failed to request question access", requestError);
+      window.alert("Хүсэлт илгээх үед алдаа гарлаа.");
+    } finally {
+      setRequestingQuestionId(null);
+    }
+  };
+
+  const handleReviewRequest = async (requestId: string, approve: boolean) => {
+    try {
+      setReviewingRequestId(requestId);
+      await reviewQuestionAccessRequest({
+        variables: { requestId, approve },
+      });
+      await refetchDetail();
+    } catch (reviewError) {
+      console.error("Failed to review question access request", reviewError);
+      window.alert("Хүсэлтийг шийдэх үед алдаа гарлаа.");
+    } finally {
+      setReviewingRequestId(null);
+    }
+  };
+
+  const handleForkQuestion = async (questionId: string, targetBankId: string) => {
+    try {
+      setForkingQuestionId(questionId);
+      const result = await forkQuestionToMyBank({
+        variables: { questionId, targetBankId },
+      });
+      const createdTitle = result.data?.forkQuestionToMyBank.bank.title;
+      window.alert(
+        createdTitle
+          ? `Асуултыг "${createdTitle}" санд хувилбарлаж нэмлээ.`
+          : "Асуултыг таны санд хувилбарлаж нэмлээ.",
+      );
+      await refetchDetail();
+    } catch (forkError) {
+      console.error("Failed to fork question to my bank", forkError);
+      window.alert("Асуултыг хувилбарлах үед алдаа гарлаа.");
+    } finally {
+      setForkingQuestionId(null);
+    }
+  };
   return (
     <section className="mx-auto w-full max-w-[1120px] space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -179,6 +296,14 @@ export function QuestionBankDetailSection({
         </div>
       ) : null}
 
+      <QuestionAccessRequestsPanel
+        incoming={accessRequestRows.incoming}
+        outgoing={accessRequestRows.outgoing}
+        reviewingRequestId={reviewingRequestId}
+        onApprove={(requestId) => handleReviewRequest(requestId, true)}
+        onReject={(requestId) => handleReviewRequest(requestId, false)}
+      />
+
       <div className="flex flex-wrap gap-3">
         <button
           type="button"
@@ -228,6 +353,12 @@ export function QuestionBankDetailSection({
             loading={loading}
             errorMessage={errorMessage}
             rows={filteredRows}
+            ownedBankOptions={ownedBankOptions}
+            requestStatusByQuestionId={viewerRequestStatusByQuestionId}
+            requestingQuestionId={requestingQuestionId}
+            forkingQuestionId={forkingQuestionId}
+            onRequestAccess={handleRequestAccess}
+            onForkQuestion={handleForkQuestion}
           />
         </>
       ) : (

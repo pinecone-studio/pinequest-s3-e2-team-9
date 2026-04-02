@@ -44,6 +44,7 @@ export const schemaRootTypes = /* GraphQL */ `
     questionBanks: [QuestionBank!]!
     questionBank(id: ID!): QuestionBank
     questions(bankId: ID): [Question!]!
+    questionAccessRequests: [QuestionAccessRequest!]!
     exams: [Exam!]!
     exam(id: ID!): Exam
     examImportJobs: [ExamImportJob!]!
@@ -78,6 +79,9 @@ export const schemaRootTypes = /* GraphQL */ `
       value: Int!
     ): Boolean!
     copyCommunitySharedBankToMyBank(sharedBankId: ID!): QuestionBank!
+    requestQuestionAccess(questionId: ID!): QuestionAccessRequest!
+    reviewQuestionAccessRequest(requestId: ID!, approve: Boolean!): QuestionAccessRequest!
+    forkQuestionToMyBank(questionId: ID!, targetBankId: ID!): Question!
     createQuestionBank(
       title: String!
       description: String

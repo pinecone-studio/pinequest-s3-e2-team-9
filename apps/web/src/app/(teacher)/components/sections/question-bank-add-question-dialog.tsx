@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 "use client";
 
 import { useMutation } from "@apollo/client/react";
@@ -7,12 +8,13 @@ import {
   QuestionType,
   UpdateQuestionMutationDocument,
 } from "@/graphql/generated";
-import type { Difficulty } from "@/graphql/generated";
 import { CloseIcon } from "../icons";
 import { QuestionBankAnswerSection } from "./question-bank-answer-section";
-import { difficultyOptions, questionTypeOptions } from "./question-bank-dialog-config";
 import { QuestionBankDialogFooter, QuestionBankDialogSaveSection } from "./question-bank-dialog-actions";
-import { QuestionBankDialogMedia, QuestionBankDialogSelect } from "./question-bank-dialog-fields";
+import {
+  QuestionBankDialogMedia,
+} from "./question-bank-dialog-fields";
+import { QuestionBankDialogMetaSection } from "./question-bank-dialog-meta-section";
 import {
   buildCreateQuestionPayload,
   getQuestionDialogSubmitLabel,
@@ -38,6 +40,8 @@ export function QuestionBankAddQuestionDialog({
     prompt, setPrompt,
     questionType, setQuestionType,
     difficulty, setDifficulty,
+    shareScope, setShareScope,
+    requiresAccessRequest, setRequiresAccessRequest,
     options, correctIndex, setCorrectIndex,
     truthValue, setTruthValue,
     numericAnswer, setNumericAnswer,
@@ -89,6 +93,8 @@ export function QuestionBankAddQuestionDialog({
           variables: {
             id: initialQuestion.id,
             type: questionType,
+            shareScope,
+            requiresAccessRequest,
             ...payload,
           },
           refetchQueries: [{ query: QuestionBankDetailQueryDocument, variables: { id: bankId } }],
@@ -99,6 +105,8 @@ export function QuestionBankAddQuestionDialog({
           variables: {
             bankId,
             type: questionType,
+            shareScope,
+            requiresAccessRequest,
             ...payload,
           },
           refetchQueries: [{ query: QuestionBankDetailQueryDocument, variables: { id: bankId } }],
@@ -134,15 +142,18 @@ export function QuestionBankAddQuestionDialog({
             value={promptImageValue}
             onChange={setPromptImageValue}
           />
-          <div className="grid gap-3 sm:grid-cols-3">
-            <QuestionBankDialogSelect value={questionType} onChange={(value) => setQuestionType(value as QuestionType)}>
-              {questionTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </QuestionBankDialogSelect>
-            <QuestionBankDialogSelect disabled><option>{subject}</option></QuestionBankDialogSelect>
-            <QuestionBankDialogSelect value={difficulty} onChange={(value) => setDifficulty(value as Difficulty)}>
-              {difficultyOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </QuestionBankDialogSelect>
-          </div>
+          <QuestionBankDialogMetaSection
+            subject={subject}
+            questionType={questionType}
+            difficulty={difficulty}
+            shareScope={shareScope}
+            requiresAccessRequest={requiresAccessRequest}
+            disabled={loading || updateLoading}
+            onQuestionTypeChange={setQuestionType}
+            onDifficultyChange={setDifficulty}
+            onShareScopeChange={setShareScope}
+            onRequiresAccessRequestChange={setRequiresAccessRequest}
+          />
           <QuestionBankAnswerSection
             questionType={questionType}
             options={options}

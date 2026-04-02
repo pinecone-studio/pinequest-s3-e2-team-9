@@ -14,6 +14,8 @@ import { DotsIcon } from "../icons";
 import { QuestionBankAddQuestionDialog } from "./question-bank-add-question-dialog";
 import { QuestionBankQuestionPreviewDialog } from "./question-bank-question-preview-dialog";
 
+type QuestionAccessStatus = "PENDING" | "APPROVED" | "REJECTED";
+
 type QuestionBankDetailTableProps = {
   bankId: string;
   subject: string;
@@ -21,6 +23,12 @@ type QuestionBankDetailTableProps = {
   loading: boolean;
   errorMessage: string | null;
   rows: QuestionBankQuestionRow[];
+  ownedBankOptions?: Array<{ id: string; label: string }>;
+  requestStatusByQuestionId?: Record<string, QuestionAccessStatus | undefined>;
+  requestingQuestionId?: string | null;
+  forkingQuestionId?: string | null;
+  onRequestAccess?: (questionId: string) => Promise<void> | void;
+  onForkQuestion?: (questionId: string, targetBankId: string) => Promise<void> | void;
 };
 
 export function QuestionBankDetailTable({
@@ -30,6 +38,12 @@ export function QuestionBankDetailTable({
   loading,
   errorMessage,
   rows,
+  ownedBankOptions = [],
+  requestStatusByQuestionId = {},
+  requestingQuestionId = null,
+  forkingQuestionId = null,
+  onRequestAccess,
+  onForkQuestion,
 }: QuestionBankDetailTableProps) {
   const [menuRowId, setMenuRowId] = useState<string | null>(null);
   const [selectedRow, setSelectedRow] = useState<QuestionBankQuestionRow | null>(
@@ -265,6 +279,22 @@ export function QuestionBankDetailTable({
                             ) : null}
                           </div>
                         ) : null}
+                        {!editable && row.requiresAccessRequest ? (
+                          <div className="flex flex-wrap items-center gap-2 text-[12px]">
+                            <span className="inline-flex rounded-md border border-[#FECACA] bg-[#FEF2F2] px-2 py-1 font-medium text-[#B42318]">
+                              Зөвшөөрөл шаардлагатай
+                            </span>
+                            {requestStatusByQuestionId[row.id] ? (
+                              <span className="text-[#667085]">
+                                {requestStatusByQuestionId[row.id] === "PENDING"
+                                  ? "Хүсэлт илгээсэн"
+                                  : requestStatusByQuestionId[row.id] === "APPROVED"
+                                    ? "Зөвшөөрөгдсөн"
+                                    : "Татгалзсан"}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : null}
                       </div>
                     </td>
                     <td className="px-4 py-4">
@@ -318,6 +348,13 @@ export function QuestionBankDetailTable({
       </div>
       <QuestionBankQuestionPreviewDialog
         row={selectedRow}
+        editable={editable}
+        ownedBankOptions={ownedBankOptions}
+        requestStatus={selectedRow ? requestStatusByQuestionId[selectedRow.id] : undefined}
+        isRequesting={selectedRow ? requestingQuestionId === selectedRow.id : false}
+        isForking={selectedRow ? forkingQuestionId === selectedRow.id : false}
+        onRequestAccess={onRequestAccess}
+        onForkQuestion={onForkQuestion}
         onClose={() => setSelectedRow(null)}
       />
       {editingRow ? (
