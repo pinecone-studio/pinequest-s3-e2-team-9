@@ -13,6 +13,56 @@ import type {
   QuestionRow,
   UserRow,
 } from "./types";
+
+const fullQuestionSelectFields = `id,
+          bank_id,
+          canonical_question_id,
+          forked_from_question_id,
+          type,
+          title,
+          prompt,
+          options_json,
+          correct_answer,
+          difficulty,
+          share_scope,
+          requires_access_request,
+          tags_json,
+          created_by_id,
+          created_at`;
+
+const legacyQuestionSelectFields = `id,
+          bank_id,
+          type,
+          title,
+          prompt,
+          options_json,
+          correct_answer,
+          difficulty,
+          tags_json,
+          created_by_id,
+          created_at`;
+
+const isMissingQuestionSharingColumnError = (error: unknown) =>
+  error instanceof Error &&
+  /no such column: (canonical_question_id|forked_from_question_id|share_scope|requires_access_request)/i.test(
+    error.message,
+  );
+
+const toCompatQuestionRow = (
+  row: Omit<QuestionRow, "canonical_question_id" | "forked_from_question_id" | "share_scope" | "requires_access_request"> &
+    Partial<
+      Pick<
+        QuestionRow,
+        "canonical_question_id" | "forked_from_question_id" | "share_scope" | "requires_access_request"
+      >
+    >,
+): QuestionRow => ({
+  ...row,
+  canonical_question_id: row.canonical_question_id ?? row.id,
+  forked_from_question_id: row.forked_from_question_id ?? null,
+  share_scope: row.share_scope ?? "PRIVATE",
+  requires_access_request: row.requires_access_request ?? 0,
+});
 import { parseJsonArray } from "./types";
 
 type MapperDependencies = {
@@ -267,28 +317,36 @@ export const createEntityMappers = ({
         return new Map();
       }
 
-      const rows = await all<QuestionRow>(
-        db,
-        `SELECT
-          id,
-          bank_id,
-          canonical_question_id,
-          forked_from_question_id,
-          type,
-          title,
-          prompt,
-          options_json,
-          correct_answer,
-          difficulty,
-          share_scope,
-          requires_access_request,
-          tags_json,
-          created_by_id,
-          created_at
-         FROM questions
-         WHERE id IN (${createPlaceholders(ids.length)})`,
-        ids,
-      );
+      let rows: QuestionRow[];
+      try {
+        rows = await all<QuestionRow>(
+          db,
+          `SELECT
+${fullQuestionSelectFields}
+           FROM questions
+           WHERE id IN (${createPlaceholders(ids.length)})`,
+          ids,
+        );
+      } catch (error) {
+        if (!isMissingQuestionSharingColumnError(error)) {
+          throw error;
+        }
+
+        const legacyRows = await all<
+          Omit<
+            QuestionRow,
+            "canonical_question_id" | "forked_from_question_id" | "share_scope" | "requires_access_request"
+          >
+        >(
+          db,
+          `SELECT
+${legacyQuestionSelectFields}
+           FROM questions
+           WHERE id IN (${createPlaceholders(ids.length)})`,
+          ids,
+        );
+        rows = legacyRows.map((row) => toCompatQuestionRow(row));
+      }
       return new Map(rows.map((row) => [row.id, row]));
     },
     (id) => new Error(`Question ${id} not found`),
@@ -300,29 +358,38 @@ export const createEntityMappers = ({
         return new Map();
       }
 
-      const rows = await all<QuestionRow>(
-        db,
-        `SELECT
-          id,
-          bank_id,
-          canonical_question_id,
-          forked_from_question_id,
-          type,
-          title,
-          prompt,
-          options_json,
-          correct_answer,
-          difficulty,
-          share_scope,
-          requires_access_request,
-          tags_json,
-          created_by_id,
-          created_at
-         FROM questions
-         WHERE bank_id IN (${createPlaceholders(bankIds.length)})
-         ORDER BY created_at DESC`,
-        bankIds,
-      );
+      let rows: QuestionRow[];
+      try {
+        rows = await all<QuestionRow>(
+          db,
+          `SELECT
+${fullQuestionSelectFields}
+           FROM questions
+           WHERE bank_id IN (${createPlaceholders(bankIds.length)})
+           ORDER BY created_at DESC`,
+          bankIds,
+        );
+      } catch (error) {
+        if (!isMissingQuestionSharingColumnError(error)) {
+          throw error;
+        }
+
+        const legacyRows = await all<
+          Omit<
+            QuestionRow,
+            "canonical_question_id" | "forked_from_question_id" | "share_scope" | "requires_access_request"
+          >
+        >(
+          db,
+          `SELECT
+${legacyQuestionSelectFields}
+           FROM questions
+           WHERE bank_id IN (${createPlaceholders(bankIds.length)})
+           ORDER BY created_at DESC`,
+          bankIds,
+        );
+        rows = legacyRows.map((row) => toCompatQuestionRow(row));
+      }
 
       const rowsByBankId = new Map<string, QuestionRow[]>();
       for (const row of rows) {

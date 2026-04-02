@@ -21,6 +21,104 @@ import {
   type UserRow,
 } from "../types";
 
+const fullQuestionSelectFields = `id,
+  bank_id,
+  canonical_question_id,
+  forked_from_question_id,
+  type,
+  title,
+  prompt,
+  options_json,
+  correct_answer,
+  difficulty,
+  share_scope,
+  requires_access_request,
+  tags_json,
+  created_by_id,
+  created_at`;
+
+const legacyQuestionSelectFields = `id,
+  bank_id,
+  type,
+  title,
+  prompt,
+  options_json,
+  correct_answer,
+  difficulty,
+  tags_json,
+  created_by_id,
+  created_at`;
+
+const isMissingQuestionSharingColumnError = (error: unknown) =>
+  error instanceof Error &&
+  /no such column: (canonical_question_id|forked_from_question_id|share_scope|requires_access_request)/i.test(
+    error.message,
+  );
+
+const toCompatQuestionRow = (
+  row: Omit<QuestionRow, "canonical_question_id" | "forked_from_question_id" | "share_scope" | "requires_access_request"> &
+    Partial<
+      Pick<
+        QuestionRow,
+        "canonical_question_id" | "forked_from_question_id" | "share_scope" | "requires_access_request"
+      >
+    >,
+): QuestionRow => ({
+  ...row,
+  canonical_question_id: row.canonical_question_id ?? row.id,
+  forked_from_question_id: row.forked_from_question_id ?? null,
+  share_scope: row.share_scope ?? "PRIVATE",
+  requires_access_request: row.requires_access_request ?? 0,
+});
+
+const allQuestionsCompat = async (
+  db: D1DatabaseLike,
+  fullSql: string,
+  legacySql: string,
+  params: unknown[],
+) => {
+  try {
+    return await all<QuestionRow>(db, fullSql, params);
+  } catch (error) {
+    if (!isMissingQuestionSharingColumnError(error)) {
+      throw error;
+    }
+
+    const legacyRows = await all<
+      Omit<
+        QuestionRow,
+        "canonical_question_id" | "forked_from_question_id" | "share_scope" | "requires_access_request"
+      >
+    >(db, legacySql, params);
+
+    return legacyRows.map((row) => toCompatQuestionRow(row));
+  }
+};
+
+const firstQuestionCompat = async (
+  db: D1DatabaseLike,
+  fullSql: string,
+  legacySql: string,
+  params: unknown[],
+) => {
+  try {
+    return await first<QuestionRow>(db, fullSql, params);
+  } catch (error) {
+    if (!isMissingQuestionSharingColumnError(error)) {
+      throw error;
+    }
+
+    const legacyRow = await first<
+      Omit<
+        QuestionRow,
+        "canonical_question_id" | "forked_from_question_id" | "share_scope" | "requires_access_request"
+      >
+    >(db, legacySql, params);
+
+    return legacyRow ? toCompatQuestionRow(legacyRow) : null;
+  }
+};
+
 export const findQuestionBankById = async (
   db: D1DatabaseLike,
   id: string,
@@ -38,26 +136,14 @@ export const findQuestionById = async (
   db: D1DatabaseLike,
   id: string,
 ): Promise<QuestionRow> => {
-  const question = await first<QuestionRow>(
+  const question = await firstQuestionCompat(
     db,
-    `SELECT
-      id,
-      bank_id,
-      canonical_question_id,
-      forked_from_question_id,
-      type,
-      title,
-      prompt,
-      options_json,
-      correct_answer,
-      difficulty,
-      share_scope,
-      requires_access_request,
-      tags_json,
-      created_by_id,
-      created_at
-    FROM questions
-    WHERE id = ?`,
+    `SELECT ${fullQuestionSelectFields}
+     FROM questions
+     WHERE id = ?`,
+    `SELECT ${legacyQuestionSelectFields}
+     FROM questions
+     WHERE id = ?`,
     [id],
   );
   invariant(question, `Question ${id} not found`);
@@ -246,97 +332,55 @@ export const createQuestionQueriesAndMutations = ({
     const rows =
       actor.role === "ADMIN"
         ? bankId
-          ? await all<QuestionRow>(
+          ? await allQuestionsCompat(
               db,
-              `SELECT
-                id,
-                bank_id,
-                canonical_question_id,
-                forked_from_question_id,
-                type,
-                title,
-                prompt,
-                options_json,
-                correct_answer,
-                difficulty,
-                share_scope,
-                requires_access_request,
-                tags_json,
-                created_by_id,
-                created_at
-              FROM questions
-              WHERE bank_id = ?
-              ORDER BY created_at DESC`,
+              `SELECT ${fullQuestionSelectFields}
+               FROM questions
+               WHERE bank_id = ?
+               ORDER BY created_at DESC`,
+              `SELECT ${legacyQuestionSelectFields}
+               FROM questions
+               WHERE bank_id = ?
+               ORDER BY created_at DESC`,
               [bankId],
             )
-          : await all<QuestionRow>(
+          : await allQuestionsCompat(
               db,
-              `SELECT
-                id,
-                bank_id,
-                canonical_question_id,
-                forked_from_question_id,
-                type,
-                title,
-                prompt,
-                options_json,
-                correct_answer,
-                difficulty,
-                share_scope,
-                requires_access_request,
-                tags_json,
-                created_by_id,
-                created_at
-              FROM questions
-              ORDER BY created_at DESC`,
+              `SELECT ${fullQuestionSelectFields}
+               FROM questions
+               ORDER BY created_at DESC`,
+              `SELECT ${legacyQuestionSelectFields}
+               FROM questions
+               ORDER BY created_at DESC`,
+              [],
             )
         : bankId
-          ? await all<QuestionRow>(
+          ? await allQuestionsCompat(
               db,
-              `SELECT
-                q.id,
-                q.bank_id,
-                q.canonical_question_id,
-                q.forked_from_question_id,
-                q.type,
-                q.title,
-                q.prompt,
-                q.options_json,
-                q.correct_answer,
-                q.difficulty,
-                q.share_scope,
-                q.requires_access_request,
-                q.tags_json,
-                q.created_by_id,
-                q.created_at
-              FROM questions q
-              JOIN question_banks qb ON qb.id = q.bank_id
-              WHERE q.bank_id = ? AND (qb.visibility = 'PUBLIC' OR qb.owner_id = ?)
-              ORDER BY q.created_at DESC`,
+              `SELECT q.${fullQuestionSelectFields.replaceAll(",\n  ", ",\n                q.")}
+               FROM questions q
+               JOIN question_banks qb ON qb.id = q.bank_id
+               WHERE q.bank_id = ? AND (qb.visibility = 'PUBLIC' OR qb.owner_id = ?)
+               ORDER BY q.created_at DESC`,
+              `SELECT q.${legacyQuestionSelectFields.replaceAll(",\n  ", ",\n                q.")}
+               FROM questions q
+               JOIN question_banks qb ON qb.id = q.bank_id
+               WHERE q.bank_id = ? AND (qb.visibility = 'PUBLIC' OR qb.owner_id = ?)
+               ORDER BY q.created_at DESC`,
               [bankId, actor.id],
             )
-          : await all<QuestionRow>(
+          : await allQuestionsCompat(
               db,
-              `SELECT
-                q.id,
-                q.bank_id,
-                q.canonical_question_id,
-                q.forked_from_question_id,
-                q.type,
-                q.title,
-                q.prompt,
-                q.options_json,
-                q.correct_answer,
-                q.difficulty,
-                q.share_scope,
-                q.requires_access_request,
-                q.tags_json,
-                q.created_by_id,
-                q.created_at
-              FROM questions q
-              JOIN question_banks qb ON qb.id = q.bank_id
-              WHERE qb.visibility = 'PUBLIC' OR qb.owner_id = ?
-              ORDER BY q.created_at DESC`,
+              `SELECT q.${fullQuestionSelectFields.replaceAll(",\n  ", ",\n                q.")}
+               FROM questions q
+               JOIN question_banks qb ON qb.id = q.bank_id
+               WHERE qb.visibility = 'PUBLIC' OR qb.owner_id = ?
+               ORDER BY q.created_at DESC`,
+              `SELECT q.${legacyQuestionSelectFields.replaceAll(",\n  ", ",\n                q.")}
+               FROM questions q
+               JOIN question_banks qb ON qb.id = q.bank_id
+               WHERE qb.visibility = 'PUBLIC' OR qb.owner_id = ?
+               ORDER BY q.created_at DESC`,
               [actor.id],
             );
     return rows.map((row) => toQuestion(db, row));
