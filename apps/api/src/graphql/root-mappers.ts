@@ -77,7 +77,7 @@ type MapperDependencies = {
 const createPlaceholders = (count: number) =>
   Array.from({ length: count }, () => "?").join(", ");
 
-const D1_SAFE_IN_CHUNK = 50;
+const D1_SAFE_IN_CHUNK = 20;
 
 const chunkArray = <T,>(items: T[], chunkSize: number) => {
   const chunks: T[][] = [];
@@ -239,13 +239,18 @@ export const createEntityMappers = ({
         return new Map();
       }
 
-      const rows = await all<UserRow>(
-        db,
-        `SELECT id, full_name, email, role, created_at
-         FROM users
-         WHERE id IN (${createPlaceholders(ids.length)})`,
-        ids,
-      );
+      const rows: UserRow[] = [];
+      for (const idChunk of chunkArray(ids, D1_SAFE_IN_CHUNK)) {
+        rows.push(
+          ...(await all<UserRow>(
+            db,
+            `SELECT id, full_name, email, role, created_at
+             FROM users
+             WHERE id IN (${createPlaceholders(idChunk.length)})`,
+            idChunk,
+          )),
+        );
+      }
       return new Map(rows.map((row) => [row.id, row]));
     },
     (id) => new Error(`User ${id} not found`),
@@ -258,13 +263,18 @@ export const createEntityMappers = ({
       }
 
       const classSelectFields = await getClassSelectFields(db);
-      const rows = await all<ClassRow>(
-        db,
-        `SELECT ${classSelectFields}
-         FROM classes
-         WHERE id IN (${createPlaceholders(ids.length)})`,
-        ids,
-      );
+      const rows: ClassRow[] = [];
+      for (const idChunk of chunkArray(ids, D1_SAFE_IN_CHUNK)) {
+        rows.push(
+          ...(await all<ClassRow>(
+            db,
+            `SELECT ${classSelectFields}
+             FROM classes
+             WHERE id IN (${createPlaceholders(idChunk.length)})`,
+            idChunk,
+          )),
+        );
+      }
       return new Map(rows.map((row) => [row.id, row]));
     },
     (id) => new Error(`Class ${id} not found`),
@@ -276,13 +286,18 @@ export const createEntityMappers = ({
         return new Map();
       }
 
-      const rows = await all<ExamRow>(
-        db,
-        `SELECT id, class_id, is_template, source_exam_id, title, description, mode, status, duration_minutes, started_at, ends_at, created_by_id, scheduled_for, shuffle_questions, shuffle_answers, generation_mode, rules_json, passing_criteria_type, passing_threshold, created_at
-         FROM exams
-         WHERE id IN (${createPlaceholders(ids.length)})`,
-        ids,
-      );
+      const rows: ExamRow[] = [];
+      for (const idChunk of chunkArray(ids, D1_SAFE_IN_CHUNK)) {
+        rows.push(
+          ...(await all<ExamRow>(
+            db,
+            `SELECT id, class_id, is_template, source_exam_id, title, description, mode, status, duration_minutes, started_at, ends_at, created_by_id, scheduled_for, shuffle_questions, shuffle_answers, generation_mode, rules_json, passing_criteria_type, passing_threshold, created_at
+             FROM exams
+             WHERE id IN (${createPlaceholders(idChunk.length)})`,
+            idChunk,
+          )),
+        );
+      }
       return new Map(rows.map((row) => [row.id, row]));
     },
     (id) => new Error(`Exam ${id} not found`),
@@ -317,35 +332,39 @@ export const createEntityMappers = ({
         return new Map();
       }
 
-      let rows: QuestionRow[];
-      try {
-        rows = await all<QuestionRow>(
-          db,
-          `SELECT
+      const rows: QuestionRow[] = [];
+      for (const idChunk of chunkArray(ids, D1_SAFE_IN_CHUNK)) {
+        try {
+          rows.push(
+            ...(await all<QuestionRow>(
+              db,
+              `SELECT
 ${fullQuestionSelectFields}
-           FROM questions
-           WHERE id IN (${createPlaceholders(ids.length)})`,
-          ids,
-        );
-      } catch (error) {
-        if (!isMissingQuestionSharingColumnError(error)) {
-          throw error;
-        }
+               FROM questions
+               WHERE id IN (${createPlaceholders(idChunk.length)})`,
+              idChunk,
+            )),
+          );
+        } catch (error) {
+          if (!isMissingQuestionSharingColumnError(error)) {
+            throw error;
+          }
 
-        const legacyRows = await all<
-          Omit<
-            QuestionRow,
-            "canonical_question_id" | "forked_from_question_id" | "share_scope" | "requires_access_request"
-          >
-        >(
-          db,
-          `SELECT
+          const legacyRows = await all<
+            Omit<
+              QuestionRow,
+              "canonical_question_id" | "forked_from_question_id" | "share_scope" | "requires_access_request"
+            >
+          >(
+            db,
+            `SELECT
 ${legacyQuestionSelectFields}
-           FROM questions
-           WHERE id IN (${createPlaceholders(ids.length)})`,
-          ids,
-        );
-        rows = legacyRows.map((row) => toCompatQuestionRow(row));
+             FROM questions
+             WHERE id IN (${createPlaceholders(idChunk.length)})`,
+            idChunk,
+          );
+          rows.push(...legacyRows.map((row) => toCompatQuestionRow(row)));
+        }
       }
       return new Map(rows.map((row) => [row.id, row]));
     },
@@ -358,37 +377,41 @@ ${legacyQuestionSelectFields}
         return new Map();
       }
 
-      let rows: QuestionRow[];
-      try {
-        rows = await all<QuestionRow>(
-          db,
-          `SELECT
+      const rows: QuestionRow[] = [];
+      for (const bankIdChunk of chunkArray(bankIds, D1_SAFE_IN_CHUNK)) {
+        try {
+          rows.push(
+            ...(await all<QuestionRow>(
+              db,
+              `SELECT
 ${fullQuestionSelectFields}
-           FROM questions
-           WHERE bank_id IN (${createPlaceholders(bankIds.length)})
-           ORDER BY created_at DESC`,
-          bankIds,
-        );
-      } catch (error) {
-        if (!isMissingQuestionSharingColumnError(error)) {
-          throw error;
-        }
+               FROM questions
+               WHERE bank_id IN (${createPlaceholders(bankIdChunk.length)})
+               ORDER BY created_at DESC`,
+              bankIdChunk,
+            )),
+          );
+        } catch (error) {
+          if (!isMissingQuestionSharingColumnError(error)) {
+            throw error;
+          }
 
-        const legacyRows = await all<
-          Omit<
-            QuestionRow,
-            "canonical_question_id" | "forked_from_question_id" | "share_scope" | "requires_access_request"
-          >
-        >(
-          db,
-          `SELECT
+          const legacyRows = await all<
+            Omit<
+              QuestionRow,
+              "canonical_question_id" | "forked_from_question_id" | "share_scope" | "requires_access_request"
+            >
+          >(
+            db,
+            `SELECT
 ${legacyQuestionSelectFields}
-           FROM questions
-           WHERE bank_id IN (${createPlaceholders(bankIds.length)})
-           ORDER BY created_at DESC`,
-          bankIds,
-        );
-        rows = legacyRows.map((row) => toCompatQuestionRow(row));
+             FROM questions
+             WHERE bank_id IN (${createPlaceholders(bankIdChunk.length)})
+             ORDER BY created_at DESC`,
+            bankIdChunk,
+          );
+          rows.push(...legacyRows.map((row) => toCompatQuestionRow(row)));
+        }
       }
 
       const rowsByBankId = new Map<string, QuestionRow[]>();
@@ -411,14 +434,19 @@ ${legacyQuestionSelectFields}
         return new Map();
       }
 
-      const rows = await all<{ bank_id: string; count: number | null }>(
-        db,
-        `SELECT bank_id, COUNT(*) AS count
-         FROM questions
-         WHERE bank_id IN (${createPlaceholders(bankIds.length)})
-         GROUP BY bank_id`,
-        bankIds,
-      );
+      const rows: Array<{ bank_id: string; count: number | null }> = [];
+      for (const bankIdChunk of chunkArray(bankIds, D1_SAFE_IN_CHUNK)) {
+        rows.push(
+          ...(await all<{ bank_id: string; count: number | null }>(
+            db,
+            `SELECT bank_id, COUNT(*) AS count
+             FROM questions
+             WHERE bank_id IN (${createPlaceholders(bankIdChunk.length)})
+             GROUP BY bank_id`,
+            bankIdChunk,
+          )),
+        );
+      }
 
       const rowsByBankId = new Map<string, Array<{ count: number }>>();
       for (const row of rows) {
@@ -435,14 +463,19 @@ ${legacyQuestionSelectFields}
         return new Map();
       }
 
-      const rows = await all<ExamQuestionRow>(
-        db,
-        `SELECT id, exam_id, question_id, points, display_order
-         FROM exam_questions
-         WHERE exam_id IN (${createPlaceholders(examIds.length)})
-         ORDER BY exam_id ASC, display_order ASC`,
-        examIds,
-      );
+      const rows: ExamQuestionRow[] = [];
+      for (const examIdChunk of chunkArray(examIds, D1_SAFE_IN_CHUNK)) {
+        rows.push(
+          ...(await all<ExamQuestionRow>(
+            db,
+            `SELECT id, exam_id, question_id, points, display_order
+             FROM exam_questions
+             WHERE exam_id IN (${createPlaceholders(examIdChunk.length)})
+             ORDER BY exam_id ASC, display_order ASC`,
+            examIdChunk,
+          )),
+        );
+      }
 
       const rowsByExamId = new Map<string, ExamQuestionRow[]>();
       for (const row of rows) {
@@ -464,14 +497,19 @@ ${legacyQuestionSelectFields}
         return new Map();
       }
 
-      const rows = await all<AttemptRow>(
-        db,
-        `SELECT id, exam_id, student_id, status, auto_score, manual_score, total_score, generation_seed, started_at, submitted_at
-         FROM attempts
-         WHERE exam_id IN (${createPlaceholders(examIds.length)})
-         ORDER BY exam_id ASC, started_at DESC`,
-        examIds,
-      );
+      const rows: AttemptRow[] = [];
+      for (const examIdChunk of chunkArray(examIds, D1_SAFE_IN_CHUNK)) {
+        rows.push(
+          ...(await all<AttemptRow>(
+            db,
+            `SELECT id, exam_id, student_id, status, auto_score, manual_score, total_score, generation_seed, started_at, submitted_at
+             FROM attempts
+             WHERE exam_id IN (${createPlaceholders(examIdChunk.length)})
+             ORDER BY exam_id ASC, started_at DESC`,
+            examIdChunk,
+          )),
+        );
+      }
 
       const rowsByExamId = new Map<string, AttemptRow[]>();
       for (const row of rows) {
@@ -493,14 +531,19 @@ ${legacyQuestionSelectFields}
         return new Map();
       }
 
-      const rows = await all<AnswerRow>(
-        db,
-        `SELECT id, attempt_id, question_id, value, auto_score, manual_score, feedback, created_at
-         FROM answers
-         WHERE attempt_id IN (${createPlaceholders(attemptIds.length)})
-         ORDER BY attempt_id ASC, created_at ASC`,
-        attemptIds,
-      );
+      const rows: AnswerRow[] = [];
+      for (const attemptIdChunk of chunkArray(attemptIds, D1_SAFE_IN_CHUNK)) {
+        rows.push(
+          ...(await all<AnswerRow>(
+            db,
+            `SELECT id, attempt_id, question_id, value, auto_score, manual_score, feedback, created_at
+             FROM answers
+             WHERE attempt_id IN (${createPlaceholders(attemptIdChunk.length)})
+             ORDER BY attempt_id ASC, created_at ASC`,
+            attemptIdChunk,
+          )),
+        );
+      }
 
       const rowsByAttemptId = new Map<string, AnswerRow[]>();
       for (const row of rows) {
