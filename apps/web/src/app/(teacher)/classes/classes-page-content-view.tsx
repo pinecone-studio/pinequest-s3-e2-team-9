@@ -73,10 +73,10 @@ export function ClassesPageContent() {
   }
 
   return (
-    <section className="scrollbar-hidden relative flex h-[900px] w-[1184px] flex-none flex-col items-start overflow-hidden bg-[#FAFAFA]">
+    <section className="relative flex h-[900px] w-[1184px] flex-none flex-col items-start overflow-y-auto bg-[#FAFAFA]">
       <CreateClassDialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} />
       <DashboardTopBar value={search} onChange={setSearch} />
-      <div className="scrollbar-hidden flex h-[816px] w-[1184px] flex-none flex-col items-start gap-9 overflow-hidden px-8 pt-[26px]">
+      <div className="flex h-[816px] w-[1184px] flex-none flex-col items-start gap-9 px-8 pt-[26px]">
         <div className="flex h-10 w-[1120px] flex-none flex-row items-center justify-between gap-5 self-stretch">
           <div className="flex h-10 w-[372px] flex-none flex-row items-center gap-5 self-stretch">
             <label className="relative block w-[135px]">

@@ -57,10 +57,12 @@ export function DashboardPageContainer() {
   }
 
   return (
-    <section className="h-[900px] w-[1184px]">
-      <DashboardTopBar onChange={setSearchValue} value={searchValue} />
+    <section className="relative flex h-[900px] w-[1184px] flex-col overflow-y-auto bg-[#FAFAFA]">
+      <div className="px-6 sm:px-7 lg:px-8">
+        <DashboardTopBar onChange={setSearchValue} value={searchValue} />
+      </div>
 
-      <div className="h-[816px] space-y-9 px-8 pt-[26px]">
+      <div className="min-h-[816px] space-y-9 px-8 pt-[26px]">
         {error ? (
           <div className="rounded-[20px] border border-[#F2E6B5] bg-[#FFF8E8] px-4 py-3 text-[14px] text-[#8A6C17]">
             Зарим өгөгдөл шинэчлэгдэх үед алдаа гарсан ч dashboard сүүлийн амжилттай мэдээллээр үргэлжилж байна.

@@ -168,109 +168,111 @@ export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
   );
 
   return (
-    <section className="mx-auto flex w-full max-w-[1184px] flex-col gap-[26px] px-6 pb-8 pt-6 sm:px-7 lg:px-8">
+    <section className="relative mx-auto flex h-[900px] w-[1184px] flex-col overflow-y-auto bg-[#FAFAFA]">
       <h1 className="sr-only">{title}</h1>
       <DashboardTopBar value={search} onChange={setSearch} />
-      <MyExamsToolbar
-        isLibraryMode={isLibraryMode}
-        levelFilter={levelFilter}
-        levelOptions={levelOptions}
-        subjectFilter={subjectFilter}
-        subjectOptions={subjectOptions}
-        onLevelChange={setLevelFilter}
-        onSubjectChange={setSubjectFilter}
-      />
-      {errorMessage ? (
-        <p className="text-[14px] text-[#B42318]">{errorMessage}</p>
-      ) : null}
-      {loading ? (
-        <div className="flex flex-wrap items-start gap-4">
-          <MyExamsLoadingList />
-        </div>
-      ) : null}
-      {!loading && mode === "evaluation" ? (
-        <div className="space-y-8">
-          {groupedEvaluationExams.map((group) => (
-            <section key={group.key} className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-[18px] font-semibold text-[#0F1216]">
-                  {group.title}
-                </h2>
-                <span className="rounded-full bg-[#F2F4F7] px-3 py-1 text-[12px] font-medium text-[#344054]">
-                  {group.exams.length}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-start gap-4">
-                {group.exams.map((exam) => (
-                  <MyExamCard
-                    key={exam.id}
-                    exam={exam}
-                    mode={mode}
-                    onView={() => {
-                      setSelectedExam(exam);
-                      setIsResultsOpen(false);
-                      setIsPreviewOpen(true);
-                    }}
-                    onResults={() => {
-                      setSelectedExam(exam);
-                      setIsPreviewOpen(false);
-                      setIsResultsOpen(true);
-                    }}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
-          {!errorMessage && !groupedEvaluationExams.length ? (
-            <p className="w-full rounded-[24px] border border-[#E9E4F6] bg-white px-6 py-8 text-[14px] text-[#52555B] shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)]">
-              {emptyMessage}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-      {!loading && mode !== "evaluation" ? (
-        <div className="space-y-8">
-          {groupedLibraryExams.map((group) => (
-            <section key={group.key} className="space-y-4">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
+      <div className="flex flex-col gap-[26px] px-[32px] pb-0 pt-[26px]">
+        <MyExamsToolbar
+          isLibraryMode={isLibraryMode}
+          levelFilter={levelFilter}
+          levelOptions={levelOptions}
+          subjectFilter={subjectFilter}
+          subjectOptions={subjectOptions}
+          onLevelChange={setLevelFilter}
+          onSubjectChange={setSubjectFilter}
+        />
+        {errorMessage ? (
+          <p className="text-[14px] text-[#B42318]">{errorMessage}</p>
+        ) : null}
+        {loading ? (
+          <div className="flex flex-wrap items-start gap-4">
+            <MyExamsLoadingList />
+          </div>
+        ) : null}
+        {!loading && mode === "evaluation" ? (
+          <div className="space-y-8">
+            {groupedEvaluationExams.map((group) => (
+              <section key={group.key} className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
                   <h2 className="text-[18px] font-semibold text-[#0F1216]">
                     {group.title}
                   </h2>
-                  <p className="text-[13px] text-[#667085]">{group.description}</p>
+                  <span className="rounded-full bg-[#F2F4F7] px-3 py-1 text-[12px] font-medium text-[#344054]">
+                    {group.exams.length}
+                  </span>
                 </div>
-                <span className="w-fit rounded-full bg-[#F2F4F7] px-3 py-1 text-[12px] font-medium text-[#344054]">
-                  {group.exams.length}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-start gap-4">
-                {group.exams.map((exam) => (
-                  <MyExamCard
-                    key={exam.id}
-                    exam={exam}
-                    mode={mode}
-                    onView={() => {
-                      setSelectedExam(exam);
-                      setIsResultsOpen(false);
-                      setIsPreviewOpen(true);
-                    }}
-                    onResults={() => {
-                      setSelectedExam(exam);
-                      setIsPreviewOpen(false);
-                      setIsResultsOpen(true);
-                    }}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
-          {!errorMessage && !groupedLibraryExams.length ? (
-            <p className="w-full rounded-[24px] border border-[#E9E4F6] bg-white px-6 py-8 text-[14px] text-[#52555B] shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)]">
-              {emptyMessage}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
+                <div className="flex flex-wrap items-start gap-4">
+                  {group.exams.map((exam) => (
+                    <MyExamCard
+                      key={exam.id}
+                      exam={exam}
+                      mode={mode}
+                      onView={() => {
+                        setSelectedExam(exam);
+                        setIsResultsOpen(false);
+                        setIsPreviewOpen(true);
+                      }}
+                      onResults={() => {
+                        setSelectedExam(exam);
+                        setIsPreviewOpen(false);
+                        setIsResultsOpen(true);
+                      }}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+            {!errorMessage && !groupedEvaluationExams.length ? (
+              <p className="w-full rounded-[24px] border border-[#E9E4F6] bg-white px-6 py-8 text-[14px] text-[#52555B] shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)]">
+                {emptyMessage}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+        {!loading && mode !== "evaluation" ? (
+          <div className="space-y-8">
+            {groupedLibraryExams.map((group) => (
+              <section key={group.key} className="space-y-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h2 className="text-[18px] font-semibold text-[#0F1216]">
+                      {group.title}
+                    </h2>
+                    <p className="text-[13px] text-[#667085]">{group.description}</p>
+                  </div>
+                  <span className="w-fit rounded-full bg-[#F2F4F7] px-3 py-1 text-[12px] font-medium text-[#344054]">
+                    {group.exams.length}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-start gap-4">
+                  {group.exams.map((exam) => (
+                    <MyExamCard
+                      key={exam.id}
+                      exam={exam}
+                      mode={mode}
+                      onView={() => {
+                        setSelectedExam(exam);
+                        setIsResultsOpen(false);
+                        setIsPreviewOpen(true);
+                      }}
+                      onResults={() => {
+                        setSelectedExam(exam);
+                        setIsPreviewOpen(false);
+                        setIsResultsOpen(true);
+                      }}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+            {!errorMessage && !groupedLibraryExams.length ? (
+              <p className="w-full rounded-[24px] border border-[#E9E4F6] bg-white px-6 py-8 text-[14px] text-[#52555B] shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)]">
+                {emptyMessage}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
       <ExamPreviewDialog
         exam={selectedExam}
         open={isPreviewOpen}

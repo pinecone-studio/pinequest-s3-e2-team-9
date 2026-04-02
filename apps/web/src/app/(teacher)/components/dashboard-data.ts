@@ -31,7 +31,7 @@ export const navItems: NavItem[] = [
   { label: "Шалгалт авах", href: "/create-exam", icon: HexagonIcon },
   { label: "Ангиуд", href: "/classes", icon: PeopleAltIcon },
   { label: "Асуултын сан", href: "/question-bank", icon: MenuIcon },
-  { label: "Community", href: "/community", icon: CommunityButtonIcon },
+  { label: "Нийгэмлэг", href: "/community", icon: CommunityButtonIcon },
   { label: "Үнэлгээ", href: "/evaluation", icon: CheckCirclesIcon },
 ];
 

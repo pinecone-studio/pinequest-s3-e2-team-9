@@ -1,11 +1,7 @@
 /* eslint-disable max-lines */
 import Link from "next/link";
-import {
-  ClockIcon,
-  DetailsIcon,
-  PreviewPencilIcon,
-} from "../icons";
-import { StickyNoteIcon } from "../icons-addition";
+import { ClockIcon, DetailsIcon, PreviewPencilIcon } from "../icons";
+import { EditIcon, PrintIcon, StickyNoteIcon } from "../icons-addition";
 import type { MyExamsSectionMode } from "./my-exams-section-config";
 import type { MyExamListView } from "./my-exams-types";
 
@@ -94,20 +90,22 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
     (exam.status.label === "Ноорог" ? "Хараахан эхлээгүй" : "Эхлэх хугацаагүй");
   const endsLabel =
     exam.endsAtLabel ??
-    (exam.status.label === "Ноорог" ? "Дуусах хугацаа товлоогүй" : "Дуусах хугацаагүй");
+    (exam.status.label === "Ноорог"
+      ? "Дуусах хугацаа товлоогүй"
+      : "Дуусах хугацаагүй");
 
   if (mode === "library") {
     return (
-      <article className="box-border flex h-[215px] w-[268px] max-w-full flex-none flex-col items-start gap-[10px] rounded-[5.74216px] border border-[#E4E4E4] bg-white p-3 shadow-[0px_3.22191px_4.83286px_rgba(0,0,0,0.09)]">
+      <article className="box-border flex h-[215px] w-[268px] max-w-full flex-none flex-col items-start gap-[10px] rounded-[5.74216px] border border-[#E4E4E4] border-[0.805477px] bg-white p-3 shadow-[0px_3.22191px_4.83286px_rgba(0,0,0,0.09)]">
         <div className="flex h-[191px] w-[244px] flex-col items-start gap-4 self-stretch">
-          <div className="relative flex h-24 w-[244px] items-center gap-[11px] overflow-hidden rounded-[4px] border border-[#F2E8C9] bg-[#FFF9EC] px-3">
+          <div className="relative flex h-[96px] w-[244px] items-center gap-[11px] overflow-hidden rounded-[4px] border border-[#F2E8C9] bg-[#FFF9EC] px-3">
             <div className="absolute inset-0 bg-[radial-gradient(circle,#EBDDB6_1px,transparent_1.2px)] [background-size:10px_10px] opacity-45" />
             <div className="relative z-10 shrink-0">
               <ExamCardIllustration />
             </div>
-            <div className="relative z-10 flex min-w-0 flex-1 flex-col items-start justify-center gap-2">
-              <div className="ml-auto box-border inline-flex h-5 max-w-full items-center justify-center rounded-[8.4px] border border-[#6E11B0] bg-[#F3E8FF] px-2">
-                <span className="truncate font-[var(--font-inter)] text-[10px] font-semibold leading-3 text-[#6E11B0]">
+            <div className="relative z-10 flex min-w-0 flex-1 flex-col items-start justify-center gap-2 pr-[132px]">
+              <div className="right-[4px] top-[3px] box-border inline-flex h-5 w-[126px] items-center justify-center rounded-[8.4px] border border-[#6E11B0] bg-[#F3E8FF] px-2 py-1">
+                <span className="whitespace-nowrap font-[var(--font-inter)] text-[10px] font-semibold leading-[12px] text-[#6E11B0]">
                   {exam.subjectName}, {exam.classGrade}-р анги
                 </span>
               </div>
@@ -117,7 +115,7 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
             </div>
           </div>
 
-          <div className="flex w-[244px] flex-col items-start gap-[10px] self-stretch">
+          <div className="flex h-[39px] w-[244px] flex-col items-start gap-[10px] self-stretch">
             <h3 className="line-clamp-2 w-full font-[var(--font-inter)] text-[14px] font-bold leading-[17px] text-[#211C37]">
               {exam.title}
             </h3>
@@ -142,15 +140,15 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
           <div className="flex h-6 w-[244px] items-center gap-3 self-stretch">
             {canEdit ? (
               <Link
-                className="inline-flex h-6 w-[70px] items-center justify-center gap-1 rounded-[4px] bg-[#6434F8] px-3 font-[var(--font-inter)] text-[10px] font-semibold leading-3 text-white transition hover:bg-[#5628E8]"
+                className="inline-flex h-6 w-[70px] items-center justify-center gap-1 rounded-[4px] bg-[#6434F8] px-3 font-[var(--font-inter)] text-[10px] font-semibold leading-[12px] text-white transition hover:bg-[#5628E8]"
                 href={editHref}
               >
-                <PreviewPencilIcon className="h-3 w-3" />
+                <EditIcon className="h-3 w-3" />
                 Засах
               </Link>
             ) : (
               <button
-                className="inline-flex h-6 min-w-[70px] items-center justify-center gap-1 rounded-[4px] bg-[#6434F8] px-3 font-[var(--font-inter)] text-[10px] font-semibold leading-3 text-white transition hover:bg-[#5628E8]"
+                className="inline-flex h-6 min-w-[70px] items-center justify-center gap-1 rounded-[4px] bg-[#6434F8] px-3 font-[var(--font-inter)] text-[10px] font-semibold leading-[12px] text-white transition hover:bg-[#5628E8]"
                 onClick={onView}
                 type="button"
               >
@@ -160,11 +158,11 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
             )}
 
             <button
-              className="inline-flex h-6 w-[93px] items-center justify-center gap-1 rounded-[4px] bg-[rgba(255,75,0,0.06)] px-3 font-[var(--font-inter)] text-[10px] font-medium leading-3 text-[#6434F8] transition hover:bg-[rgba(255,75,0,0.1)]"
+              className="inline-flex h-6 w-[93px] items-center justify-center gap-1 whitespace-nowrap rounded-[4px] bg-[rgba(255,75,0,0.06)] px-3 font-[var(--font-inter)] text-[9.51046px] font-medium leading-[12px] text-[#6434F8] transition hover:bg-[rgba(255,75,0,0.1)]"
               onClick={() => downloadExamSummary(exam)}
               type="button"
             >
-              <DownloadIcon className="h-3 w-3" />
+              <PrintIcon className="h-3 w-3" />
               Татаж авах
             </button>
           </div>
@@ -200,10 +198,12 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
           {mode === "evaluation" ? (
             <div className="space-y-2 rounded-[4px] border border-[#ECECEC] bg-[#FAFAFA] px-3 py-2 text-[10px] text-[#344054]">
               <p>
-                <span className="font-semibold text-[#101828]">Эхэлсэн:</span> {startedLabel}
+                <span className="font-semibold text-[#101828]">Эхэлсэн:</span>{" "}
+                {startedLabel}
               </p>
               <p>
-                <span className="font-semibold text-[#101828]">Дууссан:</span> {endsLabel}
+                <span className="font-semibold text-[#101828]">Дууссан:</span>{" "}
+                {endsLabel}
               </p>
             </div>
           ) : null}
@@ -231,11 +231,7 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
               Засах
             </Link>
           ) : (
-            <button
-              className={primaryClassName}
-              onClick={onView}
-              type="button"
-            >
+            <button className={primaryClassName} onClick={onView} type="button">
               <DetailsIcon className="h-3 w-3" />
               Харах
             </button>
@@ -263,24 +259,5 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
         </div>
       </div>
     </article>
-  );
-}
-
-function DownloadIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 12 12"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M9.5 4.5V2.25A1.25 1.25 0 0 0 8.25 1h-4.5A1.25 1.25 0 0 0 2.5 2.25V4.5m0 2.5v1.75c0 .414.336.75.75.75h5.5a.75.75 0 0 0 .75-.75V7M6 4v3.25m0 0 1.5-1.5M6 7.25l-1.5-1.5"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.1"
-      />
-    </svg>
   );
 }
