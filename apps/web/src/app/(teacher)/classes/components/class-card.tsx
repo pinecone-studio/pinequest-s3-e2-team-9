@@ -1,53 +1,82 @@
 import Link from "next/link";
-import CastForEducationIcon from "../../components/icons/CastForEducationIcon";
-import { ClassManagementIcon } from "../../components/icons";
+import {
+  CalendarIcon,
+  PeopleIcon,
+  SchoolIcon,
+} from "../../components/icons-more";
+import { EyeIcon } from "../../components/icons-actions";
 
 type ClassCardProps = {
   href: string;
   name: string;
-  meta: string;
+  subject: string;
+  grade: number;
   studentCountLabel: string;
-  upcomingLabel: string;
-  completedLabel: string;
+  assignedExamCountLabel: string;
+  averageScoreLabel: string;
+  lastExamLabel: string;
 };
 
 export function ClassCard({
   href,
   name,
-  meta,
+  subject,
+  grade,
   studentCountLabel,
-  upcomingLabel,
-  completedLabel,
+  assignedExamCountLabel,
+  averageScoreLabel,
+  lastExamLabel,
 }: ClassCardProps) {
+  const normalizedStudentCountLabel = studentCountLabel.replace("сурагч", "Сурагч");
+
   return (
-    <article className="flex min-h-[214px] w-full flex-col gap-4 rounded-[18px] border border-[#E7E8EC] bg-white p-3 shadow-[0px_10px_30px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0px_14px_36px_rgba(15,23,42,0.12)]">
-      <div className="flex w-full flex-col items-start gap-2 rounded-[16px] bg-[linear-gradient(135deg,#5B7CFA_0%,#86A5FF_100%)] px-4 py-5">
-        <h2 className="text-[18px] font-bold leading-5 text-white">{name}</h2>
-        <div className="flex items-center gap-1.5 text-[14px] leading-4 text-[#F5F5F5]">
-          <CastForEducationIcon className="h-4 w-4" />
-          <span>{meta}</span>
+    <article className="box-border flex h-[233.6px] w-[268px] flex-none flex-col items-start gap-[10px] rounded-[6px] border border-[#E4E4E4] bg-white px-4 py-5 shadow-[0px_3.22191px_4.83286px_rgba(0,0,0,0.09)]">
+      <div className="flex h-[193.6px] w-[236px] flex-col items-start gap-4 self-stretch">
+        <div className="flex h-[21.6px] w-[236px] items-start justify-between self-stretch">
+          <span className="inline-flex h-[21.6px] items-center justify-center rounded-[8.4px] border border-[#E4E4E7] px-[7.8px] text-center text-[11.1px] font-semibold leading-4 text-[#231D17]">
+            {subject}
+          </span>
+          <span className="text-[11.3px] font-normal leading-4 text-[#71717B]">
+            {grade}-р анги
+          </span>
         </div>
-        <div className="flex items-center gap-1.5 text-[14px] leading-4 text-[#F5F5F5]">
-          <ClassManagementIcon className="h-4 w-4" />
-          <span>{studentCountLabel}</span>
+
+        <div className="flex h-[77px] w-[236px] flex-col items-start gap-6 self-stretch">
+          <h2 className="w-[236px] text-[18px] font-bold leading-[22px] text-[#211C37]">
+            {name}
+          </h2>
+          <div className="relative h-[36px] w-[236px]">
+            <div className="absolute left-0 top-0 flex h-3 items-center gap-1 text-[10px] font-normal leading-[13px] text-[#1C1D1D]">
+              <PeopleIcon className="h-3 w-3 shrink-0" />
+              <span>{normalizedStudentCountLabel}</span>
+            </div>
+            <div className="absolute left-[122px] top-0 flex h-3 items-center gap-1 text-[10px] font-normal leading-[13px] text-[#1C1D1D]">
+              <SchoolIcon className="h-3 w-3 shrink-0" />
+              <span>{averageScoreLabel}</span>
+            </div>
+            <div className="absolute left-0 top-6 flex h-3 items-center gap-1 text-[10px] font-normal leading-[13px] text-[#1C1D1D]">
+              <CalendarIcon className="h-3 w-3 shrink-0" />
+              <span>{assignedExamCountLabel}</span>
+            </div>
+          </div>
         </div>
+
+        <div className="h-0 w-[236px] border-t border-[#E4E4E4]" />
+
+        <p className="text-[10px] font-normal leading-3 text-[#71717B]">
+          {lastExamLabel}
+        </p>
+
+        <Link
+          href={href}
+          className="mt-auto inline-flex h-6 w-[236px] items-center justify-center gap-1 self-stretch rounded-[4px] bg-[#6434F8] px-3 py-[6px] text-[10px] font-semibold leading-none text-white transition hover:bg-[#5A2EF0]"
+        >
+          <span className="flex h-3 w-3 items-center justify-center">
+            <EyeIcon className="block h-3 w-3 shrink-0 text-white" />
+          </span>
+          <span className="flex h-3 items-center">Дэлгэрэнгүй харах</span>
+        </Link>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-[14px] bg-[#F4F7FF] px-4 py-3">
-          <p className="text-[12px] font-medium text-[#5E6470]">Удахгүй</p>
-          <p className="mt-1 text-[15px] font-semibold text-[#101828]">{upcomingLabel}</p>
-        </div>
-        <div className="rounded-[14px] bg-[#F7F6FF] px-4 py-3">
-          <p className="text-[12px] font-medium text-[#5E6470]">Дууссан</p>
-          <p className="mt-1 text-[15px] font-semibold text-[#101828]">{completedLabel}</p>
-        </div>
-      </div>
-      <Link
-        href={href}
-        className="mt-auto inline-flex h-10 w-full items-center justify-center rounded-[12px] border border-[#D8DCE6] bg-white text-[13px] font-semibold leading-5 text-[#252B37] transition hover:border-[#CFC5FF] hover:bg-[#F8F6FF]"
-      >
-        Ангийг харах
-      </Link>
     </article>
   );
 }

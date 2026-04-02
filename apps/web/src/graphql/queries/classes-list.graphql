@@ -5,7 +5,9 @@ query ClassesList {
     subject
     grade
     studentCount
+    assignedExamCount
     upcomingExamCount
     completedExamCount
+    averageScore
   }
 }

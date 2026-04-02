@@ -63,19 +63,8 @@ export function useClassesList() {
     );
   }, [allClasses, deferredSearch, gradeFilter, subjectFilter]);
 
-  const summary = useMemo(
-    () => ({
-      classCount: classes.length,
-      totalStudents: classes.reduce((sum, item) => sum + item.studentCount, 0),
-      totalUpcomingExams: classes.reduce((sum, item) => sum + item.upcomingExamCount, 0),
-      totalCompletedExams: classes.reduce((sum, item) => sum + item.completedExamCount, 0),
-    }),
-    [classes],
-  );
-
   return {
     classes,
-    summary,
     search,
     setSearch,
     subjectFilter,

@@ -34,13 +34,19 @@ export type ClassListItemView = {
   name: string;
   subject: string;
   grade: number;
-  meta: string;
   studentCount: number;
   studentCountLabel: string;
+  studentCountValue: string;
+  assignedExamCount: number;
+  assignedExamCountLabel: string;
+  assignedExamCountValue: string;
   upcomingExamCount: number;
   upcomingLabel: string;
   completedExamCount: number;
   completedLabel: string;
+  averageScoreLabel: string;
+  averageScoreValue: string;
+  lastExamLabel: string;
   searchText: string;
 };
 
@@ -91,13 +97,28 @@ export const buildClassesListViewModel = (data: ClassesListQuery): ClassListItem
     name: item.name,
     subject: item.subject,
     grade: item.grade,
-    meta: `${item.subject} · ${formatGradeLabel(item.grade)}`,
     studentCount: item.studentCount,
     studentCountLabel: `${item.studentCount} сурагч`,
+    studentCountValue: String(item.studentCount),
+    assignedExamCount: item.assignedExamCount,
+    assignedExamCountLabel: `${item.assignedExamCount} Нийт авсан шалгалт`,
+    assignedExamCountValue: String(item.assignedExamCount),
     upcomingExamCount: item.upcomingExamCount,
     upcomingLabel: `${item.upcomingExamCount} шалгалт удахгүй`,
     completedExamCount: item.completedExamCount,
     completedLabel: `${item.completedExamCount} шалгалт дууссан`,
+    averageScoreLabel:
+      item.averageScore === null || item.averageScore === undefined
+        ? "Дундаж дүн алга"
+        : `${formatPercentage(item.averageScore)} Дундаж дүн`,
+    averageScoreValue:
+      item.averageScore === null || item.averageScore === undefined
+        ? "-"
+        : formatPercentage(item.averageScore),
+    lastExamLabel:
+      item.completedExamCount > 0
+        ? `Сүүлд авсан шалгалт: ${item.completedExamCount} дууссан`
+        : "Сүүлд авсан шалгалт: мэдээлэл алга",
     searchText: `${item.name} ${item.subject} ${item.grade}`,
   }));
 

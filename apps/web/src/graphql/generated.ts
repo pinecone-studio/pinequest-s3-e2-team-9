@@ -1014,7 +1014,7 @@ export type ClassDetailQuery = { __typename?: 'Query', class?: { __typename?: 'C
 export type ClassesListQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ClassesListQuery = { __typename?: 'Query', classes: Array<{ __typename?: 'Class', id: string, name: string, subject: string, grade: number, studentCount: number, upcomingExamCount: number, completedExamCount: number }> };
+export type ClassesListQuery = { __typename?: 'Query', classes: Array<{ __typename?: 'Class', id: string, name: string, subject: string, grade: number, studentCount: number, assignedExamCount: number, upcomingExamCount: number, completedExamCount: number, averageScore?: number | null }> };
 
 export type CommunityDetailQueryVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -2423,8 +2423,10 @@ export const ClassesListDocument = gql`
     subject
     grade
     studentCount
+    assignedExamCount
     upcomingExamCount
     completedExamCount
+    averageScore
   }
 }
     `;
