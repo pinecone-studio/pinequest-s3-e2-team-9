@@ -130,9 +130,10 @@ const buildBaseExamView = (
 
   return {
     id: exam.id,
+    mode: exam.mode,
     title: exam.title,
-    subject: exam.class.name,
-    className: exam.class.name,
+    subject: exam.mode === "PRACTICE" ? "Нээлттэй сорил" : exam.class.name,
+    className: exam.mode === "PRACTICE" ? "Free test" : exam.class.name,
     subjectName: exam.class.subject,
     classGrade: exam.class.grade,
     createdDateLabel: formatDateOnly(exam.createdAt),
@@ -143,9 +144,13 @@ const buildBaseExamView = (
     passingCriteriaType: exam.passingCriteriaType,
     passingThreshold: exam.passingThreshold,
     secondaryLabel:
-      exam.status === ExamStatus.Draft
-        ? "Хувийн сан"
-        : `${getExamStatus(exam.status).label} • ${submittedAttempts.length}/${totalStudents} илгээсэн`,
+      exam.mode === "PRACTICE"
+        ? exam.status === ExamStatus.Draft
+          ? "Free test ноорог"
+          : `Нээлттэй • ${submittedAttempts.length} оролдлого`
+        : exam.status === ExamStatus.Draft
+          ? "Хувийн сан"
+          : `${getExamStatus(exam.status).label} • ${submittedAttempts.length}/${totalStudents} илгээсэн`,
     questionCountLabel,
     durationLabel,
     totalPointsLabel,

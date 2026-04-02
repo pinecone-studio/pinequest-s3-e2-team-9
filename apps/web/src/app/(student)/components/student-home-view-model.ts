@@ -19,6 +19,7 @@ export type StudentExamCardView = {
   duration: string;
   endLabel: string;
   id: string;
+  mode: ExamMode;
   points: string;
   progress: number;
   questionCount: string;
@@ -30,7 +31,9 @@ export type StudentExamCardView = {
 };
 
 export type StudentCompletedExamView = {
+  attemptId: string;
   id: string;
+  mode: ExamMode;
   scoreLabel: string;
   scoreTone: string;
   searchText: string;
@@ -68,6 +71,7 @@ const buildExamCard = ({
       ? formatRemaining((parseDate(end)?.getTime() ?? nowMs) - nowMs)
       : formatMonthDay(end),
     id: exam.id,
+    mode: exam.mode,
     points: `${totalPoints} оноо`,
     progress: getProgress({ exam, nowMs, tone }),
     questionCount: `${exam.questions.length} асуулт`,
@@ -126,7 +130,9 @@ export const buildStudentHomeViewModel = (data: StudentHomeQuery): StudentHomeVi
       );
 
       return {
+        attemptId: attempt.id,
         id: attempt.exam.id,
+        mode: attempt.exam.mode,
         scoreLabel:
           attempt.status === AttemptStatus.Graded
             ? `${formatScore(attempt.totalScore)} / ${formatScore(totalPoints)} оноо`

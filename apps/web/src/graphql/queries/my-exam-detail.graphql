@@ -1,6 +1,7 @@
 query MyExamDetailQuery($id: ID!) {
   exam(id: $id) {
     id
+    mode
     isTemplate
     sourceExamId
     title

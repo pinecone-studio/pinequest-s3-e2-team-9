@@ -19,6 +19,7 @@ export type CreateExamFormValues = {
   description: string;
   durationMinutes: string;
   mode: ExamMode;
+  publishOnCreate: boolean;
   scheduledFor: string;
   shuffleQuestions: boolean;
   shuffleAnswers: boolean;
@@ -45,6 +46,8 @@ export type CreateExamFieldErrors = {
 export type CreateExamClassOption = {
   id: string;
   name: string;
+  subject: string;
+  grade: number;
 };
 
 export type CreateExamQuestionOption = {
@@ -97,7 +100,7 @@ export type CreateExamSubmitState =
   | { status: "idle" }
   | {
       status: "success";
-      action: "created" | "updated";
+      action: "created" | "updated" | "published";
       examId: string;
       title: string;
       questionCount: number;

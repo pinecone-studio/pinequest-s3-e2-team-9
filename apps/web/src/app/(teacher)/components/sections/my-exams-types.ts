@@ -1,4 +1,5 @@
 import type { PassingCriteriaType } from "@/graphql/generated";
+import type { ExamMode } from "@/graphql/generated";
 import type { MyExamDetailQueryQuery, MyExamsSectionQueryQuery } from "@/graphql/generated";
 
 type IconComponent = (props: { className?: string }) => React.JSX.Element;
@@ -68,6 +69,7 @@ export type MyExamStudentRow = {
 
 export type MyExamListView = {
   id: string;
+  mode: ExamMode;
   title: string;
   subject: string;
   className: string;

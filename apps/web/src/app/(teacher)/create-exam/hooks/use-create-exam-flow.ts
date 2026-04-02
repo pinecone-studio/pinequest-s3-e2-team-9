@@ -5,11 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ExamMode,
   ExamGenerationMode,
+  ExamStatus,
   useAddQuestionToExamMutation,
   useAssignExamToClassMutation,
   useCreateExamMutation,
   useCreateExamOptionsQuery,
   useEditExamDraftQuery,
+  usePublishExamMutation,
   useUpdateExamDraftMutation,
 } from "@/graphql/generated";
 import { useLiveQuestionBankEvents } from "@/lib/use-live-question-bank-events";
@@ -76,6 +78,7 @@ export const useCreateExamFlow = (
   const [runUpdateExamDraft, updateExamDraftState] = useUpdateExamDraftMutation();
   const [runAddQuestionToExam] = useAddQuestionToExamMutation();
   const [runAssignExamToClass, assignExamState] = useAssignExamToClassMutation();
+  const [runPublishExam, publishExamState] = usePublishExamMutation();
   const [formValues, setFormValues] = useState(INITIAL_FORM_VALUES);
   const [selectedQuestionPoints, setSelectedQuestionPoints] = useState<SelectedQuestionPoints>({});
   const [errors, setErrors] = useState<CreateExamFieldErrors>(EMPTY_ERRORS);
@@ -94,6 +97,8 @@ export const useCreateExamFlow = (
       (optionsQuery.data?.classes ?? []).map((classroom) => ({
         id: classroom.id,
         name: classroom.name,
+        subject: classroom.subject ?? "",
+        grade: classroom.grade,
       })),
     [optionsQuery.data?.classes],
   );
@@ -129,12 +134,15 @@ export const useCreateExamFlow = (
   }, [draftExam, hasHydratedDraft, optionsQuery.data, ruleSourceOptions]);
 
   useEffect(() => {
-    if (isEditMode || formValues.classId || !classOptions.length) {
+    if (isEditMode || formValues.classId || !classOptions.length || !initialClassId.trim()) {
       return;
     }
 
-    const nextClassId =
-      classOptions.find((item) => item.id === initialClassId)?.id ?? classOptions[0].id;
+    const nextClassId = classOptions.find((item) => item.id === initialClassId)?.id;
+    if (!nextClassId) {
+      return;
+    }
+
     setFormValues((previous) => ({ ...previous, classId: nextClassId }));
   }, [classOptions, formValues.classId, initialClassId, isEditMode]);
 
@@ -156,6 +164,11 @@ export const useCreateExamFlow = (
         if (nextMode === ExamGenerationMode.RuleBased && previous.generationRules.length === 0) {
           nextValues.generationRules = [createEmptyGenerationRule(getDefaultRuleSourceId())];
         }
+      }
+
+      if (field === "mode") {
+        const nextMode = value as CreateExamFormValues["mode"];
+        nextValues.publishOnCreate = nextMode === ExamMode.Practice;
       }
 
       return nextValues;
@@ -253,11 +266,52 @@ export const useCreateExamFlow = (
     setSubmitState({ status: "idle" });
   };
 
+  const resolvePracticeOwnerClassId = () => {
+    const selectedQuestionDetails = Object.keys(selectedQuestionPoints)
+      .map((questionId) => questionOptions.find((question) => question.id === questionId))
+      .filter((question): question is NonNullable<typeof question> => Boolean(question));
+
+    const preferredSubject =
+      formValues.generationMode === ExamGenerationMode.RuleBased
+        ? ruleSourceOptions.find((option) => option.id === formValues.generationRules[0]?.sourceId)?.subject
+        : selectedQuestionDetails[0]?.bankSubject;
+
+    const preferredGrade =
+      formValues.generationMode === ExamGenerationMode.RuleBased
+        ? ruleSourceOptions.find((option) => option.id === formValues.generationRules[0]?.sourceId)?.grade
+        : selectedQuestionDetails[0]?.bankGrade;
+
+    const subjectMatchedClass = classOptions.find(
+      (item) =>
+        preferredSubject &&
+        item.subject.toLowerCase() === preferredSubject.toLowerCase() &&
+        (preferredGrade ? item.grade === preferredGrade : true),
+    );
+
+    return subjectMatchedClass?.id ?? classOptions[0]?.id ?? "";
+  };
+
   const submitForm = async (): Promise<string | null> => {
     const nextErrors = validateCreateExamForm(formValues, selectedQuestionPoints);
     if (hasValidationErrors(nextErrors)) {
       setErrors(nextErrors);
       setSubmitState({ status: "idle" });
+      return null;
+    }
+
+    const resolvedClassId =
+      formValues.mode === ExamMode.Practice
+        ? resolvePracticeOwnerClassId()
+        : formValues.classId;
+
+    if (!resolvedClassId.trim()) {
+      setSubmitState({
+        status: "error",
+        message:
+          formValues.mode === ExamMode.Practice
+            ? "Free test үүсгэхэд эзэмшигч хичээлийн анги олдсонгүй."
+            : "Анги сонгоно уу.",
+      });
       return null;
     }
 
@@ -344,7 +398,7 @@ export const useCreateExamFlow = (
         const updateResult = await runUpdateExamDraft({
           variables: {
             examId,
-            classId: formValues.classId,
+            classId: resolvedClassId,
             title: formValues.title.trim(),
             description: formValues.description.trim() || null,
             mode: formValues.mode,
@@ -380,7 +434,7 @@ export const useCreateExamFlow = (
 
       const createResult = await runCreateExam({
         variables: {
-          classId: formValues.classId,
+          classId: resolvedClassId,
           title: formValues.title.trim(),
           description: formValues.description.trim() || null,
           mode: formValues.mode,
@@ -424,10 +478,18 @@ export const useCreateExamFlow = (
         throw new Error("Шалгалтыг ангид холбоход алдаа гарлаа.");
       }
 
+      const targetExamId = resolvedAssignedExamId ?? createdExam.id;
+
+      if (formValues.mode === ExamMode.Practice && formValues.publishOnCreate) {
+        await runPublishExam({
+          variables: { examId: targetExamId },
+        });
+      }
+
       setSubmitState({
         status: "success",
         action: "created",
-        examId: createdExam.id,
+        examId: targetExamId,
         title: createdExam.title,
         questionCount:
           formValues.generationMode === ExamGenerationMode.RuleBased
@@ -457,6 +519,43 @@ export const useCreateExamFlow = (
     }
   };
 
+  const publishPracticeDraft = async (): Promise<string | null> => {
+    if (!isEditMode || !draftExam || formValues.mode !== ExamMode.Practice) {
+      return null;
+    }
+
+    const submittedExamId = await submitForm();
+    if (!submittedExamId) {
+      return null;
+    }
+
+    try {
+      const publishResult = await runPublishExam({
+        variables: { examId: submittedExamId },
+      });
+      const publishedExam = publishResult.data?.publishExam;
+      if (!publishedExam) {
+        throw new Error("Free test нийтлэгдсэн мэдээлэл ирсэнгүй.");
+      }
+
+      setSubmitState({
+        status: "success",
+        action: "published",
+        examId: submittedExamId,
+        title: formValues.title.trim(),
+        questionCount:
+          formValues.generationMode === ExamGenerationMode.RuleBased
+            ? formValues.generationRules.reduce((sum, rule) => sum + (Number(rule.count) || 0), 0)
+            : Object.keys(selectedQuestionPoints).length,
+      });
+      await Promise.all([optionsQuery.refetch(), draftQuery.refetch()]);
+      return submittedExamId;
+    } catch (error) {
+      setSubmitState({ status: "error", message: toErrorMessage(error) });
+      return null;
+    }
+  };
+
   return {
     classOptions,
     questionBankOptions,
@@ -468,12 +567,15 @@ export const useCreateExamFlow = (
     errors,
     submitState,
     isEditMode,
+    canPublishPracticeDraft:
+      Boolean(isEditMode && draftExam?.status === ExamStatus.Draft && formValues.mode === ExamMode.Practice),
     isOptionsLoading: optionsQuery.loading || (isEditMode && draftQuery.loading && !hasHydratedDraft),
     optionsError: optionsQuery.error ?? draftQuery.error,
     isSubmitting:
       createExamState.loading ||
       updateExamDraftState.loading ||
       assignExamState.loading ||
+      publishExamState.loading ||
       isAddingQuestions,
     isClassSelectionLocked: Boolean(initialClassId),
     setFieldValue,
@@ -486,6 +588,7 @@ export const useCreateExamFlow = (
     updateGenerationRule,
     replaceWithPracticeDifficultyRules,
     submitForm,
+    publishPracticeDraft,
     refetchOptions: async () => Promise.all([optionsQuery.refetch(), isEditMode ? draftQuery.refetch() : Promise.resolve()]),
   };
 };

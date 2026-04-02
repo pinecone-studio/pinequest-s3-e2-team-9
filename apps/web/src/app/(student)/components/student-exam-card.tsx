@@ -14,6 +14,7 @@ export type ExamCardData = {
   duration: string;
   endLabel: string;
   id: string;
+  mode?: string;
   points: string;
   progress: number;
   questionCount: string;
@@ -25,7 +26,9 @@ export type ExamCardData = {
 };
 
 export type CompletedExamCardData = {
+  attemptId?: string;
   id: string;
+  mode?: string;
   scoreLabel: string;
   scoreTone: string;
   searchText: string;

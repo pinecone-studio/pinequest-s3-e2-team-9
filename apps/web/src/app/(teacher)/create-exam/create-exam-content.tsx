@@ -103,6 +103,15 @@ export function CreateExamContent({
       const submittedExamId = await flow.submitForm();
       if (submittedExamId && returnTo) {
         router.push(`${returnTo}?assignedExamId=${submittedExamId}`);
+        return;
+      }
+
+      if (
+        submittedExamId &&
+        flow.formValues.mode === ExamMode.Practice &&
+        flow.formValues.publishOnCreate
+      ) {
+        router.push("/evaluation");
       }
     })();
   };
@@ -159,6 +168,16 @@ export function CreateExamContent({
           isSubmitting={flow.isSubmitting}
           disabled={isDisabled}
           isEditMode={flow.isEditMode}
+          isPublishing={false}
+          showPublishAction={flow.canPublishPracticeDraft}
+          onPublish={() => {
+            void (async () => {
+              const publishedExamId = await flow.publishPracticeDraft();
+              if (publishedExamId) {
+                router.push("/evaluation");
+              }
+            })();
+          }}
         />
         <CreateExamSubmitAlert submitState={flow.submitState} />
 
@@ -194,11 +213,14 @@ export function CreateExamContent({
           values={flow.formValues}
           errors={flow.errors}
           disabled={isDisabled}
+          classOptions={flow.classOptions}
+          isClassSelectionLocked={flow.isClassSelectionLocked}
           showModeSelector={isEditMode}
           onFieldChange={flow.setFieldValue}
         />
         <CreateExamSettingsCard
           disabled={isDisabled}
+          isEditMode={flow.isEditMode}
           values={flow.formValues}
           errors={flow.errors}
           selectedQuestionPoints={flow.selectedQuestionPoints}

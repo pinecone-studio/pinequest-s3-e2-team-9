@@ -36,6 +36,7 @@ export const toDraftFormValues = (
   description: exam.description ?? "",
   durationMinutes: String(exam.durationMinutes),
   mode: exam.mode,
+  publishOnCreate: false,
   scheduledFor: toDraftScheduledInput(exam.scheduledFor),
   shuffleQuestions: exam.shuffleQuestions,
   shuffleAnswers: exam.shuffleAnswers,

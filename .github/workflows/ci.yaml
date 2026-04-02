@@ -219,16 +219,10 @@ jobs:
         if: steps.cloudflare.outputs.available == 'true'
         id: web-graphql
         env:
-          API_PREVIEW_URL: ${{ needs.api_preview.outputs.preview_url }}
           DEFAULT_GRAPHQL_ENDPOINT: https://pinequest-api.b94889340.workers.dev/graphql
         run: |
           set -euo pipefail
-
-          if [ -n "${API_PREVIEW_URL}" ]; then
-            echo "endpoint=${API_PREVIEW_URL}/graphql" >> "$GITHUB_OUTPUT"
-          else
-            echo "endpoint=${DEFAULT_GRAPHQL_ENDPOINT}" >> "$GITHUB_OUTPUT"
-          fi
+          echo "endpoint=${DEFAULT_GRAPHQL_ENDPOINT}" >> "$GITHUB_OUTPUT"
 
       - name: Render web preview Wrangler config
         if: steps.cloudflare.outputs.available == 'true'
