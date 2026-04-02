@@ -1,5 +1,6 @@
 import { all, first, invariant, run, type D1DatabaseLike } from "../../lib/d1";
 import type { RequestContext } from "../../auth";
+import { buildVisibleQuestionBankObject } from "./questions";
 import {
   type AddCommunityCommentArgs,
   makeId,
@@ -1222,7 +1223,15 @@ export const createCommunityQueriesAndMutations = ({
           copyCount: row.copy_count ?? 0,
           communityId: row.community_id,
           communityName: row.community_name,
-          bank: async () => toQuestionBank(db, await findQuestionBank(db, row.bank_id)),
+          bank: async () =>
+            buildVisibleQuestionBankObject({
+              actor,
+              bank: await findQuestionBank(db, row.bank_id),
+              communityAccessible: true,
+              db,
+              findUser,
+              toUser,
+            }),
         })),
       ),
       topExams: await Promise.all(
@@ -1260,25 +1269,41 @@ export const createCommunityQueriesAndMutations = ({
     user: async () => toUser(await findUser(db, row.user_id)),
   });
 
-  const toCommunitySharedBank = (
-    row: CommunitySharedBankRow,
-    viewerId: string | null,
-  ) => ({
-    id: row.id,
-    status: row.status,
-    copyCount: async () => countCommunitySharedBankCopies(db, row.id),
-    ratingCount: async () =>
-      (await getCommunityRatingSummary(db, row.community_id, "SHARED_BANK", row.id, viewerId))
+const toCommunitySharedBank = (
+  row: CommunitySharedBankRow,
+  viewer: UserRow | null,
+) => ({
+  id: row.id,
+  status: row.status,
+  copyCount: async () => countCommunitySharedBankCopies(db, row.id),
+  ratingCount: async () =>
+      (await getCommunityRatingSummary(db, row.community_id, "SHARED_BANK", row.id, viewer?.id ?? null))
         .ratingCount,
-    averageRating: async () =>
-      (await getCommunityRatingSummary(db, row.community_id, "SHARED_BANK", row.id, viewerId))
+  averageRating: async () =>
+      (await getCommunityRatingSummary(db, row.community_id, "SHARED_BANK", row.id, viewer?.id ?? null))
         .averageRating,
-    viewerRating: async () =>
-      (await getCommunityRatingSummary(db, row.community_id, "SHARED_BANK", row.id, viewerId))
+  viewerRating: async () =>
+      (await getCommunityRatingSummary(db, row.community_id, "SHARED_BANK", row.id, viewer?.id ?? null))
         .viewerRating,
-    createdAt: row.created_at,
-    sharedBy: async () => toUser(await findUser(db, row.shared_by_id)),
-    bank: async () => toQuestionBank(db, await findQuestionBank(db, row.bank_id)),
+  createdAt: row.created_at,
+  sharedBy: async () => toUser(await findUser(db, row.shared_by_id)),
+  bank: async () =>
+      buildVisibleQuestionBankObject({
+        actor:
+          viewer ??
+          ({
+            id: "__community-viewer__",
+            full_name: "Community Viewer",
+            email: "",
+            role: "TEACHER",
+            created_at: row.created_at,
+          } satisfies UserRow),
+        bank: await findQuestionBank(db, row.bank_id),
+        communityAccessible: true,
+        db,
+        findUser,
+        toUser,
+      }),
     comments: async () =>
       (await listCommunityComments(db, row.community_id, "SHARED_BANK", row.id)).map(
         toCommunityComment,
@@ -1364,6 +1389,7 @@ export const createCommunityQueriesAndMutations = ({
     const viewerRole = viewerId
       ? (await findCommunityMember(db, row.id, viewerId))?.role ?? null
       : null;
+    const viewer = viewerId ? await findUser(db, viewerId) : null;
 
     return {
       id: row.id,
@@ -1380,7 +1406,7 @@ export const createCommunityQueriesAndMutations = ({
       members: async () => (await listCommunityMembers(db, row.id)).map(toCommunityMember),
       sharedBanks: async () =>
         (await listCommunitySharedBanks(db, row.id)).map((item) =>
-          toCommunitySharedBank(item, viewerId),
+          toCommunitySharedBank(item, viewer),
         ),
       sharedExams: async () =>
         (await listCommunitySharedExams(db, row.id)).map((item) =>
@@ -1571,9 +1597,9 @@ export const createCommunityQueriesAndMutations = ({
             [existing.id],
           );
           invariant(revived, "Shared bank not found after update.");
-          return toCommunitySharedBank(revived, actor.id);
+          return toCommunitySharedBank(revived, actor);
         }
-        return toCommunitySharedBank(existing, actor.id);
+        return toCommunitySharedBank(existing, actor);
       }
 
       const sharedBankId = makeId("community_shared_bank");
@@ -1610,7 +1636,7 @@ export const createCommunityQueriesAndMutations = ({
         [sharedBankId],
       );
       invariant(sharedBank, "Shared bank was not created.");
-      return toCommunitySharedBank(sharedBank, actor.id);
+      return toCommunitySharedBank(sharedBank, actor);
     },
     shareExamToCommunity: async (
       { communityId, examId }: ShareExamToCommunityArgs,
