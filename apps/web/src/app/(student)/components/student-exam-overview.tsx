@@ -43,7 +43,7 @@ export function StudentExamOverview({
             </h1>
             <p className="mt-3 text-[15px] leading-7 text-[#475467]">
               {exam.description?.trim() || (isPractice
-                ? "Энэ practice test-ийг хүссэн үедээ олон дахин ажиллаж, дуусмагц шууд feedback авч болно."
+                ? "Энэ practice mode нь Easy, Medium, Hard шаттай. 70%-иас дээш зөв байвал дараагийн түвшин unlock хийж, Kahoot-style нэг нэгээрээ асуулттай явна."
                 : "Энэ шалгалтыг эхлүүлэхээс өмнө ерөнхий мэдээллийг нягталж, бэлэн болмогц орж ажиллана.")}
             </p>
             <p className="mt-4 text-[14px] leading-6 text-[#667085]">
@@ -56,7 +56,7 @@ export function StudentExamOverview({
             </p>
             <p className="mt-2 max-w-[220px] text-[14px] leading-6 text-white/92">
               {isPractice
-                ? "Дуусмагц оноо, зөв хариу, сул сэдвийн зөвлөмж гарч ирнэ."
+                ? "Instant feedback, streak bonus XP, level up flow-оор ахицaa шууд мэдэрнэ."
                 : "Эхлүүлэх товч дарсны дараа асуултууд харагдаж, хугацаатай бол хугацаа шууд явж эхэлнэ."}
             </p>
           </div>
@@ -84,7 +84,7 @@ export function StudentExamOverview({
         </h2>
         <p className="mt-3 text-[15px] leading-7 text-[#475467]">
           {isPractice
-            ? "Хариулт бүр автоматаар хадгалагдана. Энэ self-test-ийг олон удаа өгч, бүрт нь шинэ feedback авч болно."
+            ? "Хариулт бүр автоматаар хадгалагдана. Easy-ээс эхэлж, threshold давбал дараагийн шат нээгдэнэ. Алдаа их байвал тухайн шат дээрээ дахин оролдоно."
             : "Хариулт бүр автоматаар хадгалагдана. Шалгалт эхэлсний дараа тойм дэлгэц асуултын дэлгэц рүү шилжинэ."}
         </p>
         <div className="mt-6 rounded-[20px] bg-[#F8FAFF] px-4 py-4 text-[14px] leading-6 text-[#475467]">
