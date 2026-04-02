@@ -77,7 +77,7 @@ type MapperDependencies = {
 const createPlaceholders = (count: number) =>
   Array.from({ length: count }, () => "?").join(", ");
 
-const D1_SAFE_IN_CHUNK = 50;
+const D1_SAFE_IN_CHUNK = 20;
 
 const chunkArray = <T,>(items: T[], chunkSize: number) => {
   const chunks: T[][] = [];
