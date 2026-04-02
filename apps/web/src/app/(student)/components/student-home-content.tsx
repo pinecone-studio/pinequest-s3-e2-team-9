@@ -84,7 +84,7 @@ export function StudentHomeContent() {
               className="mt-1 inline-flex h-9 items-center justify-center rounded-[12px] bg-white px-4 text-[14px] font-medium leading-5 text-[#0F1216]"
               href="/student/my-exams"
             >
-              Дэлгэрэнгүй
+              Өөрийгөө сорьё
             </Link>
           </div>
 
@@ -118,7 +118,7 @@ export function StudentHomeContent() {
             badge={String(filtered.availableExams.length)}
             badgeTone="bg-[#F63D6B] text-white"
             icon={<ClipboardIcon className="h-5 w-5 text-[#F63D6B]" />}
-            title="Available Exams"
+            title="Нээлттэй шалгалтууд"
           />
           {loading ? (
             <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
@@ -154,7 +154,7 @@ export function StudentHomeContent() {
           {!loading && filtered.completedExams.length ? (
             <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
               {filtered.completedExams.map((exam) => (
-                <CompletedExamCard key={exam.id} card={exam} />
+                <CompletedExamCard key={exam.attemptId} card={exam} />
               ))}
             </div>
           ) : null}

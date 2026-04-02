@@ -20,7 +20,11 @@ export function CreateExamSubmitAlert({ submitState }: CreateExamSubmitAlertProp
   return (
     <div className="rounded-md border border-[#ABEFC6] bg-[#ECFDF3] px-4 py-3 text-[13px] text-[#067647]">
       {`"${submitState.title}" шалгалт амжилттай ${
-        submitState.action === "updated" ? "шинэчлэгдлээ" : "үүсгэгдлээ"
+        submitState.action === "updated"
+          ? "шинэчлэгдлээ"
+          : submitState.action === "published"
+            ? "нийтлэгдлээ"
+            : "үүсгэгдлээ"
       }. Шалгалтын дугаар: ${submitState.examId}.`}
       {` Нийт ${submitState.questionCount} асуулт нэмэгдэв.`}
     </div>

@@ -5,6 +5,8 @@ query CreateExamOptions {
   classes {
     id
     name
+    subject
+    grade
   }
   questionBanks {
     id

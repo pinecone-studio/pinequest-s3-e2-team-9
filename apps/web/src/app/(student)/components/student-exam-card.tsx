@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { PersonIcon, EducationIcon, PendingIcon, ResultIcon } from "./student-home-icons";
@@ -6,6 +7,7 @@ export type ExamCardData = {
   duration: string;
   endLabel: string;
   id: string;
+  mode?: "PRACTICE" | "SCHEDULED" | "OPEN_WINDOW";
   points: string;
   progress: number;
   questionCount: string;
@@ -17,7 +19,9 @@ export type ExamCardData = {
 };
 
 export type CompletedExamCardData = {
+  attemptId: string;
   id: string;
+  mode?: "PRACTICE" | "SCHEDULED" | "OPEN_WINDOW";
   scoreLabel: string;
   scoreTone: string;
   searchText: string;
@@ -77,13 +81,16 @@ export function ExamCard({
   card: ExamCardData;
   tone: "live" | "available";
 }) {
+  const isPractice = card.mode === "PRACTICE";
   const cardTone =
     tone === "live"
       ? "bg-[#31AA40] shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)]"
       : "bg-[#6F90FF]";
   const progressTone = tone === "live" ? "bg-[#31AA40]" : "bg-[#6F90FF]";
   const buttonTone = tone === "live" ? "bg-[#31AA40] text-[#F6F9FC]" : "bg-[#6F90FF] text-[#F6F9FC]";
-  const buttonLabel = tone === "live" ? "Шалгалтаа үргэлжлүүлэх" : "Шалгалтруу орох";
+  const buttonLabel = tone === "live"
+    ? (isPractice ? "Сорилыг үргэлжлүүлэх" : "Шалгалтаа үргэлжлүүлэх")
+    : (isPractice ? "Өөрийгөө сорих" : "Шалгалт руу орох");
 
   return (
     <article className="flex flex-col rounded-[16px] border border-[#F1F2F3] bg-white p-[10px] shadow-[0_4px_8px_-2px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.06)]">
@@ -140,6 +147,8 @@ export function ExamCard({
 }
 
 export function CompletedExamCard({ card }: { card: CompletedExamCardData }) {
+  const isPractice = card.mode === "PRACTICE";
+
   return (
     <article className="relative max-w-[373px] overflow-hidden rounded-[12px] border border-[rgba(254,154,0,0.3)] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
       <div className="p-5">
@@ -158,7 +167,7 @@ export function CompletedExamCard({ card }: { card: CompletedExamCardData }) {
         </div>
 
         <div className="mt-5 flex items-center justify-between">
-          <span className="text-[14px] leading-5 text-[#52555B]">Score</span>
+          <span className="text-[14px] leading-5 text-[#52555B]">Оноо</span>
           <span className={`text-[14px] font-bold leading-5 ${card.scoreTone}`}>{card.scoreLabel}</span>
         </div>
 
@@ -167,7 +176,7 @@ export function CompletedExamCard({ card }: { card: CompletedExamCardData }) {
           href={`/student/exams/${card.id}`}
         >
           <ResultIcon className="h-4 w-4 text-[#0F1216]" />
-          View Result
+          {isPractice ? "Дахин оролдох" : "Үр дүн харах"}
         </Link>
       </div>
     </article>

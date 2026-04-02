@@ -41,6 +41,7 @@ export const INITIAL_FORM_VALUES: CreateExamFormValues = {
   description: "",
   durationMinutes: "60",
   mode: ExamMode.Scheduled,
+  publishOnCreate: false,
   scheduledFor: "",
   shuffleQuestions: false,
   shuffleAnswers: false,

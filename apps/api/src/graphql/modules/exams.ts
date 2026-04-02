@@ -665,7 +665,10 @@ export const createExamQueriesAndMutations = ({
   publishExam: async ({ examId }: PublishExamArgs, context: RequestContext) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
     const exam = await findExamById(db, examId);
-    invariant(!exam.is_template, "Template шалгалтыг ангид оноосны дараа эхлүүлнэ үү.");
+    invariant(
+      !exam.is_template || exam.mode === "PRACTICE",
+      "Template шалгалтыг ангид оноосны дараа эхлүүлнэ үү.",
+    );
     if (actor.role === "TEACHER") {
       const classroom = await findClass(db, exam.class_id);
       invariant(
@@ -675,10 +678,14 @@ export const createExamQueriesAndMutations = ({
     }
     invariant(exam.status === "DRAFT", "Only draft exams can be started.");
     const startedAt = now();
-    const endsAt = getExamEndTimestamp(startedAt, exam.duration_minutes);
+    const endsAt = exam.mode === "PRACTICE"
+      ? null
+      : getExamEndTimestamp(startedAt, exam.duration_minutes);
     await run(
       db,
-      "UPDATE exams SET status = 'PUBLISHED', started_at = ?, ends_at = ? WHERE id = ?",
+      exam.mode === "PRACTICE"
+        ? "UPDATE exams SET is_template = 0, status = 'PUBLISHED', started_at = ?, ends_at = ? WHERE id = ?"
+        : "UPDATE exams SET status = 'PUBLISHED', started_at = ?, ends_at = ? WHERE id = ?",
       [startedAt, endsAt, examId],
     );
     const publishedExam = await findExamById(db, examId);

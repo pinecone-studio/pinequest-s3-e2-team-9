@@ -48,6 +48,7 @@ function ExamCardIllustration() {
 }
 
 export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
+  const isPractice = exam.mode === "PRACTICE";
   const durationLabel = exam.durationLabel.replace("минут", "мин");
   const showResults = mode === "evaluation" && exam.actions.results;
   const canEdit = mode === "library" && exam.actions.edit;
@@ -77,7 +78,7 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
         </div>
         <div className="relative min-w-0">
           <p className="truncate text-[14px] font-bold leading-[1.2] text-[#D8A028]">
-            {exam.className}
+            {isPractice ? "Нээлттэй free test" : exam.className}
           </p>
         </div>
         <span

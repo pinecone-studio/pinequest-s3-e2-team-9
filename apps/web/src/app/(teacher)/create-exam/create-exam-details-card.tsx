@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { CreateExamClassOption } from "./create-exam-types";
 import { ExamMode } from "@/graphql/generated";
 import {
   type CreateExamFieldErrors,
@@ -9,6 +10,8 @@ type CreateExamDetailsCardProps = {
   values: CreateExamFormValues;
   errors: CreateExamFieldErrors;
   disabled: boolean;
+  classOptions: CreateExamClassOption[];
+  isClassSelectionLocked?: boolean;
   showModeSelector?: boolean;
   onFieldChange: <K extends keyof CreateExamFormValues>(
     field: K,
@@ -42,6 +45,8 @@ export function CreateExamDetailsCard({
   values,
   errors,
   disabled,
+  classOptions,
+  isClassSelectionLocked = false,
   showModeSelector = true,
   onFieldChange,
 }: CreateExamDetailsCardProps) {
@@ -100,6 +105,36 @@ export function CreateExamDetailsCard({
           disabled={disabled}
         />
       </Field>
+
+      {values.mode === ExamMode.Practice ? (
+        <div className="rounded-[8px] border border-[#D5E7FF] bg-[#F5F9FF] px-4 py-3 text-[13px] leading-6 text-[#175CD3]">
+          Энэ free test ангид оноогдохгүй. Нийтэлсний дараа бүх сурагчийн
+          <span className="font-semibold"> “Өөрийгөө сорьё” </span>
+          хэсэгт харагдана.
+        </div>
+      ) : (
+        <Field htmlFor="exam-class" label="Анги" error={errors.classId}>
+          <label className="relative block">
+            <select
+              id="exam-class"
+              value={values.classId}
+              onChange={(event) => onFieldChange("classId", event.target.value)}
+              disabled={disabled || isClassSelectionLocked}
+              className={`${BASE_INPUT_CLASS} h-11 w-full appearance-none rounded-[6px] px-[11.8px] pr-10 text-[14px] leading-[18px] text-[#0F1216]`}
+            >
+              <option value="">Анги сонгоно уу</option>
+              {classOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.name} · {option.subject || "Ерөнхий"}
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#52555B] opacity-50">
+              ⌄
+            </span>
+          </label>
+        </Field>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[14px] font-medium leading-5 text-[#52555B]">

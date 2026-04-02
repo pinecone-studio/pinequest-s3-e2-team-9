@@ -31,19 +31,19 @@ export function StudentExamOverview({
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_360px]">
       <section className="overflow-hidden rounded-[28px] border border-[#D7E3FF] bg-[radial-gradient(circle_at_top_left,#EAF1FF_0%,#F8FAFF_42%,#FFFFFF_100%)] p-7 shadow-[0_24px_60px_rgba(36,102,208,0.12)] sm:p-8">
         <Link className="inline-flex text-[14px] font-medium text-[#2466D0]" href="/student">
-          Student home руу буцах
+          Нүүр рүү буцах
         </Link>
         <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-[720px]">
             <span className="inline-flex rounded-full bg-white px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.12em] text-[#2466D0] shadow-[0_4px_16px_rgba(36,102,208,0.08)]">
-              {isPractice ? "Self test" : "Шалгалтын тойм"}
+              {isPractice ? "Өөрийгөө сорьё" : "Шалгалтын тойм"}
             </span>
             <h1 className="mt-4 text-[32px] font-semibold tracking-[-0.03em] text-[#0F172A]">
               {exam.title}
             </h1>
             <p className="mt-3 text-[15px] leading-7 text-[#475467]">
               {exam.description?.trim() || (isPractice
-                ? "Энэ practice test-ийг хүссэн үедээ олон дахин ажиллаж, дуусмагц шууд feedback авч болно."
+                ? "Энэ free test-ийг хүссэн үедээ олон дахин ажиллаж, дуусмагц шууд feedback авч болно."
                 : "Энэ шалгалтыг эхлүүлэхээс өмнө ерөнхий мэдээллийг нягталж, бэлэн болмогц орж ажиллана.")}
             </p>
             <p className="mt-4 text-[14px] leading-6 text-[#667085]">
@@ -97,13 +97,13 @@ export function StudentExamOverview({
           type="button"
         >
           {isStarting
-            ? (isPractice ? "Practice test-ийг эхлүүлж байна..." : "Шалгалтыг эхлүүлж байна...")
-            : (isPractice ? "Practice test эхлүүлэх" : "Шалгалт эхлүүлэх")}
+            ? (isPractice ? "Сорилыг эхлүүлж байна..." : "Шалгалтыг эхлүүлж байна...")
+            : (isPractice ? "Сорилоо эхлүүлэх" : "Шалгалт эхлүүлэх")}
         </button>
         {!canStart ? (
           <p className="mt-3 text-[13px] leading-6 text-[#667085]">
             {isPractice
-              ? "Энэ practice test-ийг одоогоор эхлүүлэх боломжгүй байна."
+              ? "Энэ free test-ийг одоогоор эхлүүлэх боломжгүй байна."
               : "Энэ шалгалтыг одоогоор эхлүүлэх боломжгүй байна."}
           </p>
         ) : null}

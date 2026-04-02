@@ -17,6 +17,6 @@ export type StudentNavItem = {
 
 export const studentNavItems: StudentNavItem[] = [
   { label: "Нүүр", href: "/student", icon: HomeIcon, exact: true },
-  { label: "Миний шалгалтууд", href: "/student/my-exams", icon: ClipboardIcon },
+  { label: "Өөрийгөө сорьё", href: "/student/my-exams", icon: ClipboardIcon },
   { label: "Үнэлгээ", href: "/student/results", icon: CheckCirclesIcon },
 ];

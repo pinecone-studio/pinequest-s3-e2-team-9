@@ -74,7 +74,7 @@ export const validateCreateExamForm = (
     pointsByQuestionId: {},
   };
 
-  if (!values.classId.trim()) {
+  if (values.mode !== "PRACTICE" && !values.classId.trim()) {
     errors.classId = "Анги сонгоно уу.";
   }
 

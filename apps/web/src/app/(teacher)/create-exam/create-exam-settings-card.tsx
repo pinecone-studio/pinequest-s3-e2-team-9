@@ -14,6 +14,7 @@ type CreateExamSettingsCardProps = {
   disabled: boolean;
   values: CreateExamFormValues;
   errors: CreateExamFieldErrors;
+  isEditMode: boolean;
   selectedQuestionPoints: SelectedQuestionPoints;
   onFieldChange: <K extends keyof CreateExamFormValues>(
     field: K,
@@ -86,6 +87,7 @@ export function CreateExamSettingsCard({
   disabled,
   values,
   errors,
+  isEditMode,
   selectedQuestionPoints,
   onFieldChange,
 }: CreateExamSettingsCardProps) {
@@ -263,6 +265,18 @@ export function CreateExamSettingsCard({
           onChange={(value) => onFieldChange("shuffleAnswers", value)}
         />
       </div>
+
+      {values.mode === "PRACTICE" && !isEditMode ? (
+        <div className="rounded-[10px] border border-[#C7D7FE] bg-[#F5F8FF] p-3">
+          <ToggleBox
+            title="Үүсгээд шууд нийтлэх"
+            description="Нийтэлсэн даруйд бүх сурагчийн “Өөрийгөө сорьё” хэсэгт харагдаж, үргэлж идэвхтэй байна."
+            checked={values.publishOnCreate}
+            disabled={disabled}
+            onChange={(value) => onFieldChange("publishOnCreate", value)}
+          />
+        </div>
+      ) : null}
     </section>
   );
 }
