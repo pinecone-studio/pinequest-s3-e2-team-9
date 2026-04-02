@@ -80,12 +80,16 @@ export const schemaDomainTypes = /* GraphQL */ `
   type Question {
     id: ID!
     bank: QuestionBank!
+    canonicalQuestionId: ID
+    forkedFromQuestionId: ID
     type: QuestionType!
     title: String!
     prompt: String!
     options: [String!]!
     correctAnswer: String
     difficulty: Difficulty!
+    shareScope: QuestionShareScope!
+    requiresAccessRequest: Boolean!
     tags: [String!]!
     createdBy: User!
     createdAt: String!

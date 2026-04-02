@@ -94,6 +94,8 @@ export const schemaRootTypes = /* GraphQL */ `
       options: [String!]
       correctAnswer: String
       difficulty: Difficulty = MEDIUM
+      shareScope: QuestionShareScope = PRIVATE
+      requiresAccessRequest: Boolean = false
       tags: [String!]
     ): Question!
     updateQuestion(
@@ -104,6 +106,8 @@ export const schemaRootTypes = /* GraphQL */ `
       options: [String!]
       correctAnswer: String
       difficulty: Difficulty = MEDIUM
+      shareScope: QuestionShareScope
+      requiresAccessRequest: Boolean
       tags: [String!]
     ): Question!
     createQuestionVariants(sourceQuestionId: ID!, totalVariants: Int! = 4): [Question!]!

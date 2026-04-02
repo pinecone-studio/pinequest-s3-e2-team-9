@@ -272,12 +272,16 @@ export const createEntityMappers = ({
         `SELECT
           id,
           bank_id,
+          canonical_question_id,
+          forked_from_question_id,
           type,
           title,
           prompt,
           options_json,
           correct_answer,
           difficulty,
+          share_scope,
+          requires_access_request,
           tags_json,
           created_by_id,
           created_at
@@ -301,12 +305,16 @@ export const createEntityMappers = ({
         `SELECT
           id,
           bank_id,
+          canonical_question_id,
+          forked_from_question_id,
           type,
           title,
           prompt,
           options_json,
           correct_answer,
           difficulty,
+          share_scope,
+          requires_access_request,
           tags_json,
           created_by_id,
           created_at
@@ -324,6 +332,30 @@ export const createEntityMappers = ({
         } else {
           rowsByBankId.set(row.bank_id, [row]);
         }
+      }
+
+      return rowsByBankId;
+    },
+  );
+
+  const loadQuestionCountsByBankId = createGroupedBatchLoader<string, { count: number }>(
+    async (bankIds) => {
+      if (bankIds.length === 0) {
+        return new Map();
+      }
+
+      const rows = await all<{ bank_id: string; count: number | null }>(
+        db,
+        `SELECT bank_id, COUNT(*) AS count
+         FROM questions
+         WHERE bank_id IN (${createPlaceholders(bankIds.length)})
+         GROUP BY bank_id`,
+        bankIds,
+      );
+
+      const rowsByBankId = new Map<string, Array<{ count: number }>>();
+      for (const row of rows) {
+        rowsByBankId.set(row.bank_id, [{ count: row.count ?? 0 }]);
       }
 
       return rowsByBankId;
@@ -470,11 +502,7 @@ export const createEntityMappers = ({
       return [bank.topic];
     }
 
-    const rows = await all<{ tags_json: string }>(
-      db,
-      "SELECT tags_json FROM questions WHERE bank_id = ? ORDER BY created_at DESC",
-      [bank.id],
-    );
+    const rows = await loadQuestionsByBankId.load(bank.id);
 
     return [...new Set(
       rows
@@ -546,7 +574,8 @@ export const createEntityMappers = ({
     topics: async () => deriveBankTopics(bank),
     visibility: bank.visibility,
     createdAt: bank.created_at,
-    questionCount: async () => (await first<{ count: number | null }>(db, "SELECT COUNT(*) AS count FROM questions WHERE bank_id = ?", [bank.id]))?.count ?? 0,
+    questionCount: async () =>
+      (await loadQuestionCountsByBankId.load(bank.id))[0]?.count ?? 0,
     owner: async () => toUser(await loadUsersById.load(bank.owner_id)),
     questions: async () => (await loadQuestionsByBankId.load(bank.id)).map(toQuestion),
   });
@@ -554,11 +583,15 @@ export const createEntityMappers = ({
   const toQuestion = (question: QuestionRow) => ({
     id: question.id,
     type: question.type,
+    canonicalQuestionId: question.canonical_question_id,
+    forkedFromQuestionId: question.forked_from_question_id,
     title: question.title,
     prompt: question.prompt,
     options: parseJsonArray(question.options_json),
     correctAnswer: question.correct_answer,
     difficulty: question.difficulty,
+    shareScope: question.share_scope,
+    requiresAccessRequest: question.requires_access_request === 1,
     tags: parseJsonArray(question.tags_json),
     createdAt: question.created_at,
     bank: async () => toQuestionBank(await loadQuestionBanksById.load(question.bank_id)),

@@ -19,6 +19,12 @@ export const schemaEnums = /* GraphQL */ `
     HARD
   }
 
+  enum QuestionShareScope {
+    PRIVATE
+    COMMUNITY
+    PUBLIC
+  }
+
   enum QuestionBankVisibility {
     PRIVATE
     PUBLIC

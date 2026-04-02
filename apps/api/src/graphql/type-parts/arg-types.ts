@@ -8,6 +8,7 @@ import type {
   ExamMode,
   PassingCriteriaType,
   QuestionBankVisibility,
+  QuestionShareScope,
   QuestionType,
 } from "./model-types";
 
@@ -38,6 +39,8 @@ export type CreateQuestionArgs = {
   options?: string[];
   correctAnswer?: string;
   difficulty?: Difficulty;
+  shareScope?: QuestionShareScope;
+  requiresAccessRequest?: boolean;
   tags?: string[];
 };
 
@@ -49,6 +52,8 @@ export type UpdateQuestionArgs = {
   options?: string[];
   correctAnswer?: string;
   difficulty?: Difficulty;
+  shareScope?: QuestionShareScope;
+  requiresAccessRequest?: boolean;
   tags?: string[];
 };
 

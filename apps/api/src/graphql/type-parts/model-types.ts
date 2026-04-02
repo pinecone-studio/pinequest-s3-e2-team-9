@@ -17,6 +17,7 @@ export type QuestionType =
   | "ESSAY"
   | "IMAGE_UPLOAD";
 export type Difficulty = "EASY" | "MEDIUM" | "HARD";
+export type QuestionShareScope = "PRIVATE" | "COMMUNITY" | "PUBLIC";
 export type ExamMode = "SCHEDULED" | "OPEN_WINDOW" | "PRACTICE";
 export type ExamStatus = "DRAFT" | "PUBLISHED" | "CLOSED";
 export type ExamGenerationMode = "MANUAL" | "RULE_BASED";
@@ -149,12 +150,16 @@ export type CommunityUsageEventRow = {
 export type QuestionRow = {
   id: string;
   bank_id: string;
+  canonical_question_id: string | null;
+  forked_from_question_id: string | null;
   type: QuestionType;
   title: string;
   prompt: string;
   options_json: string;
   correct_answer: string | null;
   difficulty: Difficulty;
+  share_scope: QuestionShareScope;
+  requires_access_request: number;
   tags_json: string;
   created_by_id: string;
   created_at: string;
