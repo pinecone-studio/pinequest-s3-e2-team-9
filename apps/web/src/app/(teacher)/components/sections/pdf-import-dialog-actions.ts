@@ -15,9 +15,7 @@ import {
   type GetToken,
 } from "./pdf-import-extraction-service-helpers";
 
-type CreateImportJobFn = (options: {
-  variables: CreateExamImportJobMutationMutationVariables;
-}) => Promise<{ data?: CreateExamImportJobMutationMutation | null }>;
+type CreateImportJobFn = (options: { variables: CreateExamImportJobMutationMutationVariables }) => Promise<{ data?: CreateExamImportJobMutationMutation | null }>;
 
 export const getPdfImportErrorMessage = (error: unknown): string => {
   const extractJsonErrorMessage = (value: unknown): string | null => {
@@ -26,10 +24,7 @@ export const getPdfImportErrorMessage = (error: unknown): string => {
     }
 
     try {
-      const parsed = JSON.parse(value) as {
-        error?: unknown;
-        errors?: Array<{ message?: unknown }>;
-      };
+      const parsed = JSON.parse(value) as { error?: unknown; errors?: Array<{ message?: unknown }> };
 
       if (typeof parsed.error === "string" && parsed.error.trim()) {
         return parsed.error.trim();
@@ -50,16 +45,7 @@ export const getPdfImportErrorMessage = (error: unknown): string => {
       return null;
     }
 
-    const candidate = value as {
-      message?: unknown;
-      error?: unknown;
-      bodyText?: unknown;
-      errors?: Array<{ message?: unknown }>;
-      graphQLErrors?: Array<{ message?: unknown }>;
-      result?: { errors?: Array<{ message?: unknown }> };
-      networkError?: unknown;
-      cause?: unknown;
-    };
+    const candidate = value as { message?: unknown; error?: unknown; bodyText?: unknown; errors?: Array<{ message?: unknown }>; graphQLErrors?: Array<{ message?: unknown }>; result?: { errors?: Array<{ message?: unknown }> }; networkError?: unknown; cause?: unknown };
 
     if (typeof candidate.error === "string" && candidate.error.trim()) {
       return candidate.error.trim();

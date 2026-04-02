@@ -1,10 +1,4 @@
-import type {
-  AttemptIntegrityEventType,
-  ClassDetailQuery,
-  ClassesListQuery,
-  ClassStudentStatus,
-  IntegritySeverity,
-} from "@/graphql/generated";
+import type { AttemptIntegrityEventType, ClassDetailQuery, ClassesListQuery, ClassStudentStatus, IntegritySeverity } from "@/graphql/generated";
 import {
   formatExamStatus,
   formatGradeLabel,
@@ -18,63 +12,15 @@ import {
 
 type StatusTone = "success" | "warning" | "muted";
 type IntegrityTone = StatusTone | "danger";
-type StudentInsightRisk =
-  NonNullable<ClassDetailQuery["class"]>["studentInsights"][number]["integrityRisk"];
+type StudentInsightRisk = NonNullable<ClassDetailQuery["class"]>["studentInsights"][number]["integrityRisk"];
 
-export type ClassStudentIntegritySignalView = {
-  label: string;
-  count: number;
-  severityLabel: string;
-  tone: IntegrityTone;
-};
+export type ClassStudentIntegritySignalView = { label: string; count: number; severityLabel: string; tone: IntegrityTone };
 
-export type ClassListItemView = {
-  id: string;
-  href: string;
-  name: string;
-  subject: string;
-  grade: number;
-  studentCount: number;
-  studentCountLabel: string;
-  studentCountValue: string;
-  assignedExamCount: number;
-  assignedExamCountLabel: string;
-  assignedExamCountValue: string;
-  upcomingExamCount: number;
-  upcomingLabel: string;
-  completedExamCount: number;
-  completedLabel: string;
-  averageScoreLabel: string;
-  averageScoreValue: string;
-  lastExamLabel: string;
-  searchText: string;
-};
+export type ClassListItemView = { id: string; href: string; name: string; subject: string; grade: number; studentCount: number; studentCountLabel: string; studentCountValue: string; assignedExamCount: number; assignedExamCountLabel: string; assignedExamCountValue: string; upcomingExamCount: number; upcomingLabel: string; completedExamCount: number; completedLabel: string; averageScoreLabel: string; averageScoreValue: string; lastExamLabel: string; searchText: string };
 
-export type ClassStudentIntegrityEventView = {
-  id: string;
-  type: AttemptIntegrityEventType;
-  severity: IntegritySeverity;
-  details: string;
-  createdAt: string;
-};
+export type ClassStudentIntegrityEventView = { id: string; type: AttemptIntegrityEventType; severity: IntegritySeverity; details: string; createdAt: string };
 
-export type ClassStudentTableRow = {
-  id: string;
-  name: string;
-  email: string;
-  status: string;
-  lastActive: string;
-  averageScore: string;
-  integrityDetail: string;
-  integrityRiskLabel: string;
-  integrityLabel: string;
-  integrityTone: IntegrityTone;
-  integrityEventCount: number;
-  integritySignals: ClassStudentIntegritySignalView[];
-  integrityEvents: ClassStudentIntegrityEventView[];
-  searchText: string;
-  tone: StatusTone;
-};
+export type ClassStudentTableRow = { id: string; name: string; email: string; status: string; lastActive: string; averageScore: string; integrityDetail: string; integrityRiskLabel: string; integrityLabel: string; integrityTone: IntegrityTone; integrityEventCount: number; integritySignals: ClassStudentIntegritySignalView[]; integrityEvents: ClassStudentIntegrityEventView[]; searchText: string; tone: StatusTone };
 
 const resolveIntegrityTone = (
   suspiciousEventCount: number,
