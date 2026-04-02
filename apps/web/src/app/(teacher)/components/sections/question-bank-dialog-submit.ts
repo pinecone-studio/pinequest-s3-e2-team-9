@@ -1,6 +1,6 @@
 "use client";
 
-import { Difficulty, QuestionType } from "@/graphql/generated";
+import { Difficulty, QuestionShareScope, QuestionType } from "@/graphql/generated";
 import {
   stripQuestionPromptImageTag,
   withQuestionPromptImageTag,
@@ -29,6 +29,8 @@ export const getInitialQuestionState = (
   prompt: string;
   questionType: QuestionType;
   difficulty: Difficulty;
+  shareScope: QuestionShareScope;
+  requiresAccessRequest: boolean;
   options: string[];
   correctIndex: number;
   truthValue: string;
@@ -40,6 +42,8 @@ export const getInitialQuestionState = (
   prompt: question?.prompt ?? "",
   questionType: (question?.rawType as QuestionType | undefined) ?? QuestionType.Mcq,
   difficulty: (question?.rawDifficulty as Difficulty | undefined) ?? Difficulty.Medium,
+  shareScope: (question?.shareScope as QuestionShareScope | undefined) ?? QuestionShareScope.Private,
+  requiresAccessRequest: question?.requiresAccessRequest ?? false,
   options:
     question?.rawType === "MCQ" && question.options.length
       ? question.options

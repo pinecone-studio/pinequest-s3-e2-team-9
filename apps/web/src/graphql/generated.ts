@@ -1154,6 +1154,8 @@ export type CreateQuestionMutationMutationVariables = Exact<{
   options?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
   correctAnswer?: InputMaybe<Scalars['String']['input']>;
   difficulty: Difficulty;
+  shareScope?: InputMaybe<QuestionShareScope>;
+  requiresAccessRequest?: InputMaybe<Scalars['Boolean']['input']>;
   tags?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
 }>;
 
@@ -1315,6 +1317,8 @@ export type UpdateQuestionMutationMutationVariables = Exact<{
   options?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
   correctAnswer?: InputMaybe<Scalars['String']['input']>;
   difficulty: Difficulty;
+  shareScope?: InputMaybe<QuestionShareScope>;
+  requiresAccessRequest?: InputMaybe<Scalars['Boolean']['input']>;
   tags?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
 }>;
 
@@ -2076,7 +2080,7 @@ export type CreateQuestionVariantsMutationMutationHookResult = ReturnType<typeof
 export type CreateQuestionVariantsMutationMutationResult = ApolloReactCommon.MutationResult<CreateQuestionVariantsMutationMutation>;
 export type CreateQuestionVariantsMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateQuestionVariantsMutationMutation, CreateQuestionVariantsMutationMutationVariables>;
 export const CreateQuestionMutationDocument = gql`
-    mutation CreateQuestionMutation($bankId: ID!, $type: QuestionType!, $title: String!, $prompt: String!, $options: [String!], $correctAnswer: String, $difficulty: Difficulty!, $tags: [String!]) {
+    mutation CreateQuestionMutation($bankId: ID!, $type: QuestionType!, $title: String!, $prompt: String!, $options: [String!], $correctAnswer: String, $difficulty: Difficulty!, $shareScope: QuestionShareScope, $requiresAccessRequest: Boolean, $tags: [String!]) {
   createQuestion(
     bankId: $bankId
     type: $type
@@ -2085,6 +2089,8 @@ export const CreateQuestionMutationDocument = gql`
     options: $options
     correctAnswer: $correctAnswer
     difficulty: $difficulty
+    shareScope: $shareScope
+    requiresAccessRequest: $requiresAccessRequest
     tags: $tags
   ) {
     id
@@ -2113,6 +2119,8 @@ export type CreateQuestionMutationMutationFn = ApolloReactCommon.MutationFunctio
  *      options: // value for 'options'
  *      correctAnswer: // value for 'correctAnswer'
  *      difficulty: // value for 'difficulty'
+ *      shareScope: // value for 'shareScope'
+ *      requiresAccessRequest: // value for 'requiresAccessRequest'
  *      tags: // value for 'tags'
  *   },
  * });
@@ -2862,7 +2870,7 @@ export type UpdateExamDraftMutationHookResult = ReturnType<typeof useUpdateExamD
 export type UpdateExamDraftMutationResult = ApolloReactCommon.MutationResult<UpdateExamDraftMutation>;
 export type UpdateExamDraftMutationOptions = ApolloReactCommon.BaseMutationOptions<UpdateExamDraftMutation, UpdateExamDraftMutationVariables>;
 export const UpdateQuestionMutationDocument = gql`
-    mutation UpdateQuestionMutation($id: ID!, $type: QuestionType!, $title: String!, $prompt: String!, $options: [String!], $correctAnswer: String, $difficulty: Difficulty!, $tags: [String!]) {
+    mutation UpdateQuestionMutation($id: ID!, $type: QuestionType!, $title: String!, $prompt: String!, $options: [String!], $correctAnswer: String, $difficulty: Difficulty!, $shareScope: QuestionShareScope, $requiresAccessRequest: Boolean, $tags: [String!]) {
   updateQuestion(
     id: $id
     type: $type
@@ -2871,6 +2879,8 @@ export const UpdateQuestionMutationDocument = gql`
     options: $options
     correctAnswer: $correctAnswer
     difficulty: $difficulty
+    shareScope: $shareScope
+    requiresAccessRequest: $requiresAccessRequest
     tags: $tags
   ) {
     id
@@ -2899,6 +2909,8 @@ export type UpdateQuestionMutationMutationFn = ApolloReactCommon.MutationFunctio
  *      options: // value for 'options'
  *      correctAnswer: // value for 'correctAnswer'
  *      difficulty: // value for 'difficulty'
+ *      shareScope: // value for 'shareScope'
+ *      requiresAccessRequest: // value for 'requiresAccessRequest'
  *      tags: // value for 'tags'
  *   },
  * });

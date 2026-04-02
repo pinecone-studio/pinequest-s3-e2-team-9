@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Difficulty, QuestionType } from "@/graphql/generated";
+import type { Difficulty, QuestionShareScope, QuestionType } from "@/graphql/generated";
 import {
   getInitialQuestionState,
 } from "./question-bank-dialog-submit";
@@ -15,6 +15,8 @@ export function useQuestionBankDialogState(
   const [prompt, setPrompt] = useState(initialState.prompt);
   const [questionType, setQuestionType] = useState(initialState.questionType);
   const [difficulty, setDifficulty] = useState<Difficulty>(initialState.difficulty);
+  const [shareScope, setShareScope] = useState<QuestionShareScope>(initialState.shareScope);
+  const [requiresAccessRequest, setRequiresAccessRequest] = useState(initialState.requiresAccessRequest);
   const [options, setOptions] = useState(initialState.options);
   const [correctIndex, setCorrectIndex] = useState(initialState.correctIndex);
   const [truthValue, setTruthValue] = useState(initialState.truthValue);
@@ -30,6 +32,8 @@ export function useQuestionBankDialogState(
     setPrompt(nextState.prompt);
     setQuestionType(nextState.questionType);
     setDifficulty(nextState.difficulty);
+    setShareScope(nextState.shareScope);
+    setRequiresAccessRequest(nextState.requiresAccessRequest);
     setOptions(nextState.options);
     setCorrectIndex(nextState.correctIndex);
     setTruthValue(nextState.truthValue);
@@ -84,6 +88,8 @@ export function useQuestionBankDialogState(
     prompt, setPrompt,
     questionType, setQuestionType: setQuestionType as (value: QuestionType) => void,
     difficulty, setDifficulty,
+    shareScope, setShareScope,
+    requiresAccessRequest, setRequiresAccessRequest,
     options, correctIndex, setCorrectIndex,
     truthValue, setTruthValue,
     numericAnswer, setNumericAnswer,

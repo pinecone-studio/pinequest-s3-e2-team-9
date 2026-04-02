@@ -3,6 +3,7 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useEffect, useState, type ReactNode } from "react";
+import { QuestionShareScope } from "@/graphql/generated";
 import {
   uploadImageAnswer,
   useProtectedImageSource,
@@ -212,6 +213,47 @@ export function QuestionBankDialogMedia({
           {imageSourceError}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+export function QuestionBankDialogSharingSection({
+  shareScope,
+  requiresAccessRequest,
+  disabled,
+  onShareScopeChange,
+  onRequiresAccessRequestChange,
+}: {
+  shareScope: QuestionShareScope;
+  requiresAccessRequest: boolean;
+  disabled?: boolean;
+  onShareScopeChange: (value: QuestionShareScope) => void;
+  onRequiresAccessRequestChange: (value: boolean) => void;
+}) {
+  return (
+    <div className="grid gap-3 rounded-lg border border-[#EAECF0] bg-white p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+      <label className="space-y-2">
+        <span className="text-[12px] font-medium text-[#52555B]">Хуваалцах хүрээ</span>
+        <QuestionBankDialogSelect
+          value={shareScope}
+          disabled={disabled}
+          onChange={(value) => onShareScopeChange(value as QuestionShareScope)}
+        >
+          <option value={QuestionShareScope.Private}>Миний сан дотор</option>
+          <option value={QuestionShareScope.Community}>Community дотор ашиглаж болно</option>
+          <option value={QuestionShareScope.Public}>Нэгдсэн санд нээлттэй</option>
+        </QuestionBankDialogSelect>
+      </label>
+      <label className="flex items-center gap-3 rounded-md border border-[#E4E7EC] px-3 py-2.5 text-[13px] text-[#344054]">
+        <input
+          type="checkbox"
+          checked={requiresAccessRequest}
+          onChange={(event) => onRequiresAccessRequestChange(event.target.checked)}
+          disabled={disabled}
+          className="h-4 w-4 rounded border-[#D0D5DD] text-[#00267F] focus:ring-[#00267F]"
+        />
+        <span>Ашиглахын өмнө зөвшөөрөл авна</span>
+      </label>
     </div>
   );
 }
