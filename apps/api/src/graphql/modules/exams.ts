@@ -253,6 +253,70 @@ const getExamEndTimestamp = (startedAt: string, durationMinutes: number): string
   return new Date(startedAtMs + durationMinutes * 60_000).toISOString();
 };
 
+const parseTimestamp = (value: string | null | undefined): number | null => {
+  if (!value) {
+    return null;
+  }
+
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? null : timestamp;
+};
+
+const resolveDraftTiming = ({
+  currentScheduledFor = null,
+  currentStartedAt = null,
+  durationMinutes,
+  mode,
+  scheduledFor,
+}: {
+  currentScheduledFor?: string | null;
+  currentStartedAt?: string | null;
+  durationMinutes: number;
+  mode: ExamMode;
+  scheduledFor?: string | null;
+}) => {
+  if (mode === "PRACTICE") {
+    return {
+      endsAt: null,
+      scheduledFor: scheduledFor ?? currentScheduledFor,
+      startedAt: null,
+    };
+  }
+
+  if (scheduledFor) {
+    invariant(
+      parseTimestamp(scheduledFor) !== null,
+      "Товлосон огноо, цаг буруу байна.",
+    );
+
+    return {
+      endsAt: getExamEndTimestamp(scheduledFor, durationMinutes),
+      scheduledFor,
+      startedAt: scheduledFor,
+    };
+  }
+
+  const fallbackStart = currentStartedAt ?? currentScheduledFor;
+  if (!fallbackStart) {
+    return {
+      endsAt: null,
+      scheduledFor: currentScheduledFor,
+      startedAt: null,
+    };
+  }
+
+  invariant(
+    parseTimestamp(fallbackStart) !== null,
+    "Товлосон огноо, цаг буруу байна.",
+  );
+
+  return {
+    endsAt: getExamEndTimestamp(fallbackStart, durationMinutes),
+    scheduledFor: currentScheduledFor ?? fallbackStart,
+    startedAt: fallbackStart,
+  };
+};
+
 const canReuseAsAssignmentSource = (exam: ExamRow) =>
   exam.is_template === 1 || (!exam.source_exam_id && exam.status === "DRAFT");
 
@@ -400,6 +464,7 @@ export const createExamQueriesAndMutations = ({
   ) => {
     const classroom = await findClass(db, classId);
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    invariant(durationMinutes > 0, "Шалгалтын хугацаа 0-ээс их байна.");
     if (actor.role === "TEACHER") {
       invariant(
         classroom.teacher_id === actor.id,
@@ -413,6 +478,12 @@ export const createExamQueriesAndMutations = ({
     if ((generationMode ?? "MANUAL") === "RULE_BASED") {
       invariant(normalizedRules.length > 0, "Rule-based шалгалтад дор хаяж нэг rule хэрэгтэй.");
     }
+    const resolvedMode = mode ?? "SCHEDULED";
+    const timing = resolveDraftTiming({
+      durationMinutes,
+      mode: resolvedMode,
+      scheduledFor,
+    });
 
     await run(
       db,
@@ -446,13 +517,13 @@ export const createExamQueriesAndMutations = ({
         null,
         title,
         description ?? null,
-        mode ?? "SCHEDULED",
+        resolvedMode,
         "DRAFT",
         durationMinutes,
-        null,
-        null,
+        timing.startedAt,
+        timing.endsAt,
         actor.id,
-        scheduledFor ?? createdAt,
+        timing.scheduledFor ?? createdAt,
         shuffleQuestions ? 1 : 0,
         shuffleAnswers ? 1 : 0,
         generationMode ?? "MANUAL",
@@ -530,20 +601,20 @@ export const createExamQueriesAndMutations = ({
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        nextExamId,
-        classId,
-        0,
-        sourceExam.source_exam_id ?? sourceExam.id,
+          nextExamId,
+          classId,
+          0,
+          sourceExam.source_exam_id ?? sourceExam.id,
         sourceExam.title,
         sourceExam.description,
-        sourceExam.mode,
-        "DRAFT",
-        sourceExam.duration_minutes,
-        null,
-        null,
-        actor.id,
-        sourceExam.scheduled_for,
-        sourceExam.shuffle_questions,
+          sourceExam.mode,
+          "DRAFT",
+          sourceExam.duration_minutes,
+          sourceExam.started_at,
+          sourceExam.ends_at,
+          actor.id,
+          sourceExam.scheduled_for,
+          sourceExam.shuffle_questions,
         sourceExam.shuffle_answers,
         sourceExam.generation_mode,
         sourceExam.rules_json,
@@ -639,6 +710,7 @@ export const createExamQueriesAndMutations = ({
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
     const exam = await findExamById(db, examId);
     invariant(exam.status === "DRAFT", "Зөвхөн draft шалгалтыг засварлаж болно.");
+    invariant(durationMinutes > 0, "Шалгалтын хугацаа 0-ээс их байна.");
 
     const currentClass = await findClass(db, exam.class_id);
     const nextClass = await findClass(db, classId);
@@ -669,6 +741,14 @@ export const createExamQueriesAndMutations = ({
         }
       }
     }
+    const resolvedMode = mode ?? exam.mode;
+    const timing = resolveDraftTiming({
+      currentScheduledFor: exam.scheduled_for,
+      currentStartedAt: exam.started_at,
+      durationMinutes,
+      mode: resolvedMode,
+      scheduledFor,
+    });
 
     await run(
       db,
@@ -678,6 +758,8 @@ export const createExamQueriesAndMutations = ({
            description = ?,
            mode = ?,
            duration_minutes = ?,
+           started_at = ?,
+           ends_at = ?,
            scheduled_for = ?,
            shuffle_questions = ?,
            shuffle_answers = ?,
@@ -690,9 +772,11 @@ export const createExamQueriesAndMutations = ({
         classId,
         title,
         description ?? null,
-        mode ?? "SCHEDULED",
+        resolvedMode,
         durationMinutes,
-        scheduledFor ?? now(),
+        timing.startedAt,
+        timing.endsAt,
+        timing.scheduledFor ?? exam.scheduled_for ?? now(),
         shuffleQuestions ? 1 : 0,
         shuffleAnswers ? 1 : 0,
         generationMode ?? "MANUAL",
@@ -736,10 +820,13 @@ export const createExamQueriesAndMutations = ({
       );
     }
     invariant(exam.status === "DRAFT", "Only draft exams can be started.");
-    const startedAt = now();
+    const startedAt =
+      exam.mode === "PRACTICE"
+        ? now()
+        : exam.started_at ?? now();
     const endsAt = exam.mode === "PRACTICE"
       ? null
-      : getExamEndTimestamp(startedAt, exam.duration_minutes);
+      : exam.ends_at ?? getExamEndTimestamp(startedAt, exam.duration_minutes);
     await run(
       db,
       exam.mode === "PRACTICE"

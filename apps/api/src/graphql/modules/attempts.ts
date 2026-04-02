@@ -323,6 +323,42 @@ const sanitizeIntegrityDetails = (details?: string): string => {
   }
 };
 
+const parseTimestamp = (value: string | null | undefined): number | null => {
+  if (!value) {
+    return null;
+  }
+
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? null : timestamp;
+};
+
+const getExamWindowEnd = (exam: ExamRow): string | null => {
+  if (exam.ends_at) {
+    return exam.ends_at;
+  }
+
+  const startedAtMs = parseTimestamp(exam.started_at ?? exam.scheduled_for);
+  if (startedAtMs === null) {
+    return null;
+  }
+
+  return new Date(startedAtMs + exam.duration_minutes * 60_000).toISOString();
+};
+
+const getAttemptDeadline = (
+  exam: ExamRow,
+  attempt: Pick<AttemptRow, "started_at">,
+): string | null => {
+  if (exam.mode === "PRACTICE") {
+    const startedAtMs = parseTimestamp(attempt.started_at);
+    return startedAtMs === null
+      ? null
+      : new Date(startedAtMs + exam.duration_minutes * 60_000).toISOString();
+  }
+
+  return getExamWindowEnd(exam);
+};
+
 type AttemptMutationDependencies = {
   db: D1DatabaseLike;
   requireActor: (context: RequestContext, roles: Role[]) => Promise<UserRow>;
@@ -343,137 +379,190 @@ export const createAttemptMutations = ({
   publishLiveEvent,
   toAttempt,
   toAnswer,
-}: AttemptMutationDependencies) => ({
-  startAttempt: async (
-    { examId, studentId }: StartAttemptArgs,
-    context: RequestContext,
-  ) => {
-    await closeExpiredExams(db);
-    const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
-    const exam = await findExam(db, examId);
-    invariant(
-      exam.status === "PUBLISHED",
-      "Only published exams can be started.",
-    );
-    const effectiveStudentId =
-      actor.role === "STUDENT" ? actor.id : studentId;
-
-    if (actor.role === "STUDENT") {
-      invariant(
-        studentId === actor.id,
-        "Students can only start their own attempts.",
-      );
+}: AttemptMutationDependencies) => {
+  const syncExpiredAttemptIfNeeded = async (
+    attempt: AttemptRow | null,
+    exam: ExamRow,
+  ): Promise<AttemptRow | null> => {
+    if (!attempt || attempt.status !== "IN_PROGRESS") {
+      return attempt;
     }
 
-    await findUser(db, effectiveStudentId);
-
-    const existingAttempt = await findLatestAttemptForExamStudent(
-      db,
-      examId,
-      effectiveStudentId,
-    );
-
-    if (existingAttempt && (exam.mode !== "PRACTICE" || existingAttempt.status === "IN_PROGRESS")) {
-      return toAttempt(db, existingAttempt);
+    const deadline = getAttemptDeadline(exam, attempt);
+    const deadlineMs = parseTimestamp(deadline);
+    if (deadlineMs === null || deadlineMs > Date.now()) {
+      return attempt;
     }
 
-    const id = makeId("attempt");
-    const startedAt = now();
+    await recalculateAttemptScores(db, attempt.id);
+    const requiresReview = await attemptNeedsManualReview(db, attempt.id);
+    const submittedAt = deadline ?? now();
+    const nextStatus =
+      exam.mode === "PRACTICE" || !requiresReview ? "GRADED" : "SUBMITTED";
 
     await run(
       db,
-      `INSERT INTO attempts (
-        id,
-        exam_id,
-        student_id,
-        status,
-        auto_score,
-        manual_score,
-        total_score,
-        generation_seed,
-        started_at,
-        submitted_at
-      )
-      VALUES (?, ?, ?, ?, 0, 0, 0, ?, ?, NULL)`,
-      [
-        id,
-        examId,
-        effectiveStudentId,
-        "IN_PROGRESS",
-        buildAttemptSeed(examId, effectiveStudentId),
-        startedAt,
-      ],
+      `UPDATE attempts
+       SET status = ?, submitted_at = COALESCE(submitted_at, ?)
+       WHERE id = ?`,
+      [nextStatus, submittedAt, attempt.id],
     );
 
-    const createdAttempt = await findAttemptById(db, id);
-    await publishLiveEvent?.({
-      type: "attempt_started",
-      attemptId: createdAttempt.id,
-      classId: exam.class_id,
-      emittedAt: now(),
-      examId,
-      startedAt: createdAttempt.started_at,
-      status: "IN_PROGRESS",
-      studentId: effectiveStudentId,
-      submittedAt: null,
-    });
+    const finalizedAttempt = await findAttemptById(db, attempt.id);
+    const emittedAt = now();
 
-    return toAttempt(db, createdAttempt);
-  },
-  saveAnswer: async (
-    { attemptId, questionId, value }: SaveAnswerArgs,
-    context: RequestContext,
-  ) => {
-    const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
-    const attempt = await findAttemptById(db, attemptId);
-    const exam = await findExam(db, attempt.exam_id);
-    if (actor.role === "STUDENT") {
-      invariant(
-        attempt.student_id === actor.id,
-        "Students can only update their own attempts.",
-      );
-    }
-    invariant(attempt.status === "IN_PROGRESS", "Only in-progress attempts can be edited.");
-
-    const question = await findQuestion(db, questionId);
-    const examQuestion = await first<ExamQuestionRow>(
-      db,
-      `SELECT id, exam_id, question_id, points, display_order
-       FROM exam_questions
-       WHERE exam_id = ? AND question_id = ?`,
-      [attempt.exam_id, questionId],
-    );
-    invariant(examQuestion, "This question is not part of the attempt's exam.");
-
-    const existing = await first<AnswerRow>(
-      db,
-      `SELECT
-        id,
-        attempt_id,
-        question_id,
-        value,
-        auto_score,
-        manual_score,
-        feedback,
-        created_at
-       FROM answers
-       WHERE attempt_id = ? AND question_id = ?`,
-      [attemptId, questionId],
-    );
-    const autoScore = scoreAnswer(question, value, examQuestion);
-
-    if (existing) {
-      await run(
-        db,
-        `UPDATE answers
-         SET value = ?, auto_score = ?
-         WHERE id = ?`,
-        [value, autoScore, existing.id],
-      );
+    if (nextStatus === "SUBMITTED") {
+      await publishLiveEvent?.({
+        type: "attempt_submitted",
+        attemptId: finalizedAttempt.id,
+        classId: exam.class_id,
+        emittedAt,
+        examId: finalizedAttempt.exam_id,
+        startedAt: finalizedAttempt.started_at,
+        status: "SUBMITTED",
+        studentId: finalizedAttempt.student_id,
+        submittedAt: finalizedAttempt.submitted_at ?? submittedAt,
+      });
     } else {
+      await publishLiveEvent?.({
+        type: "attempt_reviewed",
+        attemptId: finalizedAttempt.id,
+        classId: exam.class_id,
+        emittedAt,
+        examId: finalizedAttempt.exam_id,
+        startedAt: finalizedAttempt.started_at,
+        status: "GRADED",
+        studentId: finalizedAttempt.student_id,
+        submittedAt: finalizedAttempt.submitted_at ?? submittedAt,
+      });
+    }
+
+    return finalizedAttempt;
+  };
+
+  return {
+    startAttempt: async (
+      { examId, studentId }: StartAttemptArgs,
+      context: RequestContext,
+    ) => {
+      await closeExpiredExams(db);
+      const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
+      const exam = await findExam(db, examId);
+      invariant(
+        exam.status === "PUBLISHED",
+        "Only published exams can be started.",
+      );
+      if (exam.mode !== "PRACTICE") {
+        const startAtMs = parseTimestamp(exam.started_at ?? exam.scheduled_for);
+        const endAtMs = parseTimestamp(getExamWindowEnd(exam));
+        invariant(
+          startAtMs === null || Date.now() >= startAtMs,
+          "This exam has not started yet.",
+        );
+        invariant(endAtMs === null || Date.now() < endAtMs, "This exam is closed.");
+      }
+      const effectiveStudentId =
+        actor.role === "STUDENT" ? actor.id : studentId;
+
+      if (actor.role === "STUDENT") {
+        invariant(
+          studentId === actor.id,
+          "Students can only start their own attempts.",
+        );
+      }
+
+      await findUser(db, effectiveStudentId);
+
+      const existingAttempt = await syncExpiredAttemptIfNeeded(
+        await findLatestAttemptForExamStudent(
+          db,
+          examId,
+          effectiveStudentId,
+        ),
+        exam,
+      );
+
+      if (
+        existingAttempt
+        && (exam.mode !== "PRACTICE" || existingAttempt.status === "IN_PROGRESS")
+      ) {
+        return toAttempt(db, existingAttempt);
+      }
+
+      const id = makeId("attempt");
+      const startedAt = now();
+
       await run(
         db,
-        `INSERT INTO answers (
+        `INSERT INTO attempts (
+          id,
+          exam_id,
+          student_id,
+          status,
+          auto_score,
+          manual_score,
+          total_score,
+          generation_seed,
+          started_at,
+          submitted_at
+        )
+        VALUES (?, ?, ?, ?, 0, 0, 0, ?, ?, NULL)`,
+        [
+          id,
+          examId,
+          effectiveStudentId,
+          "IN_PROGRESS",
+          buildAttemptSeed(examId, effectiveStudentId),
+          startedAt,
+        ],
+      );
+
+      const createdAttempt = await findAttemptById(db, id);
+      await publishLiveEvent?.({
+        type: "attempt_started",
+        attemptId: createdAttempt.id,
+        classId: exam.class_id,
+        emittedAt: now(),
+        examId,
+        startedAt: createdAttempt.started_at,
+        status: "IN_PROGRESS",
+        studentId: effectiveStudentId,
+        submittedAt: null,
+      });
+
+      return toAttempt(db, createdAttempt);
+    },
+    saveAnswer: async (
+      { attemptId, questionId, value }: SaveAnswerArgs,
+      context: RequestContext,
+    ) => {
+      await closeExpiredExams(db);
+      const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
+      const existingAttempt = await findAttemptById(db, attemptId);
+      const exam = await findExam(db, existingAttempt.exam_id);
+      const attempt = await syncExpiredAttemptIfNeeded(existingAttempt, exam);
+      invariant(attempt, "Attempt not found.");
+      if (actor.role === "STUDENT") {
+        invariant(
+          attempt.student_id === actor.id,
+          "Students can only update their own attempts.",
+        );
+      }
+      invariant(attempt.status === "IN_PROGRESS", "Only in-progress attempts can be edited.");
+
+      const question = await findQuestion(db, questionId);
+      const examQuestion = await first<ExamQuestionRow>(
+        db,
+        `SELECT id, exam_id, question_id, points, display_order
+         FROM exam_questions
+         WHERE exam_id = ? AND question_id = ?`,
+        [attempt.exam_id, questionId],
+      );
+      invariant(examQuestion, "This question is not part of the attempt's exam.");
+
+      const existing = await first<AnswerRow>(
+        db,
+        `SELECT
           id,
           attempt_id,
           question_id,
@@ -482,219 +571,250 @@ export const createAttemptMutations = ({
           manual_score,
           feedback,
           created_at
-        )
-        VALUES (?, ?, ?, ?, ?, NULL, NULL, ?)`,
-        [makeId("answer"), attemptId, questionId, value, autoScore, now()],
+         FROM answers
+         WHERE attempt_id = ? AND question_id = ?`,
+        [attemptId, questionId],
       );
-    }
+      const autoScore = scoreAnswer(question, value, examQuestion);
 
-    await recalculateAttemptScores(db, attemptId);
-    return toAttempt(db, await findAttemptById(db, attemptId));
-  },
-  recordAttemptIntegrityEvent: async (
-    { attemptId, type, details }: RecordAttemptIntegrityEventArgs,
-    context: RequestContext,
-  ) => {
-    const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
-    const attempt = await findAttemptById(db, attemptId);
+      if (existing) {
+        await run(
+          db,
+          `UPDATE answers
+           SET value = ?, auto_score = ?
+           WHERE id = ?`,
+          [value, autoScore, existing.id],
+        );
+      } else {
+        await run(
+          db,
+          `INSERT INTO answers (
+            id,
+            attempt_id,
+            question_id,
+            value,
+            auto_score,
+            manual_score,
+            feedback,
+            created_at
+          )
+          VALUES (?, ?, ?, ?, ?, NULL, NULL, ?)`,
+          [makeId("answer"), attemptId, questionId, value, autoScore, now()],
+        );
+      }
 
-    if (actor.role === "STUDENT") {
+      await recalculateAttemptScores(db, attemptId);
+      return toAttempt(db, await findAttemptById(db, attemptId));
+    },
+    recordAttemptIntegrityEvent: async (
+      { attemptId, type, details }: RecordAttemptIntegrityEventArgs,
+      context: RequestContext,
+    ) => {
+      await closeExpiredExams(db);
+      const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
+      const existingAttempt = await findAttemptById(db, attemptId);
+      const exam = await findExam(db, existingAttempt.exam_id);
+      const attempt = await syncExpiredAttemptIfNeeded(existingAttempt, exam);
+      invariant(attempt, "Attempt not found.");
+
+      if (actor.role === "STUDENT") {
+        invariant(
+          attempt.student_id === actor.id,
+          "Students can only flag their own attempts.",
+        );
+      }
+
       invariant(
-        attempt.student_id === actor.id,
-        "Students can only flag their own attempts.",
+        attempt.status === "IN_PROGRESS",
+        "Only in-progress attempts can record integrity events.",
       );
-    }
 
-    invariant(
-      attempt.status === "IN_PROGRESS",
-      "Only in-progress attempts can record integrity events.",
-    );
+      const latestEvent = await findLatestIntegrityEventByType(db, attemptId, type);
+      const latestTimestamp = latestEvent?.created_at
+        ? new Date(latestEvent.created_at).getTime()
+        : Number.NaN;
 
-    const latestEvent = await findLatestIntegrityEventByType(db, attemptId, type);
-    const latestTimestamp = latestEvent?.created_at
-      ? new Date(latestEvent.created_at).getTime()
-      : Number.NaN;
+      if (
+        Number.isFinite(latestTimestamp)
+        && Date.now() - latestTimestamp < INTEGRITY_EVENT_DEDUPE_WINDOW_MS
+      ) {
+        return true;
+      }
 
-    if (
-      Number.isFinite(latestTimestamp)
-      && Date.now() - latestTimestamp < INTEGRITY_EVENT_DEDUPE_WINDOW_MS
-    ) {
-      return true;
-    }
-
-    await run(
-      db,
-      `INSERT INTO attempt_integrity_events (
-        id,
-        attempt_id,
-        exam_id,
-        student_id,
-        event_type,
-        severity,
-        details_json,
-        created_at
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        makeId("integrity"),
-        attempt.id,
-        attempt.exam_id,
-        attempt.student_id,
-        type,
-        integrityEventSeverity[type],
-        sanitizeIntegrityDetails(details),
-        now(),
-      ],
-    );
-
-    const eventCount = await countIntegrityEventsByType(db, attempt.id, type);
-    const exam = await findExam(db, attempt.exam_id);
-
-    await publishLiveEvent?.({
-      type: "attempt_integrity_flag",
-      attemptId: attempt.id,
-      classId: exam.class_id,
-      emittedAt: now(),
-      eventCount,
-      eventType: type,
-      examId: attempt.exam_id,
-      severity: integrityEventSeverity[type],
-      studentId: attempt.student_id,
-    });
-
-    return true;
-  },
-  reviewAnswer: async (
-    { answerId, manualScore, feedback }: ReviewAnswerArgs,
-    context: RequestContext,
-  ) => {
-    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
-    invariant(manualScore >= 0, "Оноо 0-ээс багагүй байна.");
-    invariant(
-      Math.abs(roundScore(manualScore) - manualScore) < 0.000001,
-      "Оноог хамгийн ихдээ нэг орны нарийвчлалтай оруулна уу.",
-    );
-
-    const answer = await findAnswerById(db, answerId);
-    const attempt = await findAttemptById(db, answer.attempt_id);
-    const exam = await findExam(db, attempt.exam_id);
-    const question = await findQuestion(db, answer.question_id);
-    const examQuestion = await first<ExamQuestionRow>(
-      db,
-      `SELECT id, exam_id, question_id, points, display_order
-       FROM exam_questions
-       WHERE exam_id = ? AND question_id = ?`,
-      [attempt.exam_id, answer.question_id],
-    );
-    invariant(examQuestion, "Энэ хариулт шалгалтын асуулттай таарахгүй байна.");
-
-    if (actor.role === "TEACHER") {
-      const examClass = await first<{ teacher_id: string }>(
+      await run(
         db,
-        `SELECT teacher_id
-         FROM classes
+        `INSERT INTO attempt_integrity_events (
+          id,
+          attempt_id,
+          exam_id,
+          student_id,
+          event_type,
+          severity,
+          details_json,
+          created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          makeId("integrity"),
+          attempt.id,
+          attempt.exam_id,
+          attempt.student_id,
+          type,
+          integrityEventSeverity[type],
+          sanitizeIntegrityDetails(details),
+          now(),
+        ],
+      );
+      const eventCount = await countIntegrityEventsByType(db, attempt.id, type);
+
+      await publishLiveEvent?.({
+        type: "attempt_integrity_flag",
+        attemptId: attempt.id,
+        classId: exam.class_id,
+        emittedAt: now(),
+        eventCount,
+        eventType: type,
+        examId: attempt.exam_id,
+        severity: integrityEventSeverity[type],
+        studentId: attempt.student_id,
+      });
+
+      return true;
+    },
+    reviewAnswer: async (
+      { answerId, manualScore, feedback }: ReviewAnswerArgs,
+      context: RequestContext,
+    ) => {
+      const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+      invariant(manualScore >= 0, "Оноо 0-ээс багагүй байна.");
+      invariant(
+        Math.abs(roundScore(manualScore) - manualScore) < 0.000001,
+        "Оноог хамгийн ихдээ нэг орны нарийвчлалтай оруулна уу.",
+      );
+
+      const answer = await findAnswerById(db, answerId);
+      const attempt = await findAttemptById(db, answer.attempt_id);
+      const exam = await findExam(db, attempt.exam_id);
+      const question = await findQuestion(db, answer.question_id);
+      const examQuestion = await first<ExamQuestionRow>(
+        db,
+        `SELECT id, exam_id, question_id, points, display_order
+         FROM exam_questions
+         WHERE exam_id = ? AND question_id = ?`,
+        [attempt.exam_id, answer.question_id],
+      );
+      invariant(examQuestion, "Энэ хариулт шалгалтын асуулттай таарахгүй байна.");
+
+      if (actor.role === "TEACHER") {
+        const examClass = await first<{ teacher_id: string }>(
+          db,
+          `SELECT teacher_id
+           FROM classes
+           WHERE id = ?`,
+          [exam.class_id],
+        );
+        invariant(
+          examClass?.teacher_id === actor.id,
+          "Зөвхөн өөрийн ангийн хариултыг үнэлнэ.",
+        );
+      }
+
+      invariant(
+        manualScore <= examQuestion.points,
+        `Энэ асуултын оноо ${examQuestion.points}-оос их байж болохгүй.`,
+      );
+
+      await run(
+        db,
+        `UPDATE answers
+         SET auto_score = ?, manual_score = ?, feedback = ?
          WHERE id = ?`,
-        [exam.class_id],
+        [
+          question.type === "SHORT_ANSWER" ? 0 : answer.auto_score,
+          roundScore(manualScore),
+          feedback?.trim() || null,
+          answerId,
+        ],
       );
+
+      await recalculateAttemptScores(db, attempt.id);
+      return toAnswer(await findAnswerById(db, answerId));
+    },
+    submitAttempt: async (
+      { attemptId }: SubmitAttemptArgs,
+      context: RequestContext,
+    ) => {
+      await closeExpiredExams(db);
+      const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
+      const existingAttempt = await findAttemptById(db, attemptId);
+      const exam = await findExam(db, existingAttempt.exam_id);
+      const attempt = await syncExpiredAttemptIfNeeded(existingAttempt, exam);
+      invariant(attempt, "Attempt not found.");
+      if (actor.role === "STUDENT") {
+        invariant(
+          attempt.student_id === actor.id,
+          "Students can only submit their own attempts.",
+        );
+      }
+
+      if (attempt.status === "SUBMITTED" || attempt.status === "GRADED") {
+        return toAttempt(db, attempt);
+      }
+
       invariant(
-        examClass?.teacher_id === actor.id,
-        "Зөвхөн өөрийн ангийн хариултыг үнэлнэ.",
+        attempt.status === "IN_PROGRESS",
+        "Only in-progress attempts can be submitted.",
       );
-    }
 
-    invariant(
-      manualScore <= examQuestion.points,
-      `Энэ асуултын оноо ${examQuestion.points}-оос их байж болохгүй.`,
-    );
-
-    await run(
-      db,
-      `UPDATE answers
-       SET auto_score = ?, manual_score = ?, feedback = ?
-       WHERE id = ?`,
-      [
-        question.type === "SHORT_ANSWER" ? 0 : answer.auto_score,
-        roundScore(manualScore),
-        feedback?.trim() || null,
-        answerId,
-      ],
-    );
-
-    await recalculateAttemptScores(db, attempt.id);
-    return toAnswer(await findAnswerById(db, answerId));
-  },
-  submitAttempt: async (
-    { attemptId }: SubmitAttemptArgs,
-    context: RequestContext,
-  ) => {
-    const actor = await requireActor(context, ["ADMIN", "TEACHER", "STUDENT"]);
-    const attempt = await findAttemptById(db, attemptId);
-    const exam = await findExam(db, attempt.exam_id);
-    if (actor.role === "STUDENT") {
-      invariant(
-        attempt.student_id === actor.id,
-        "Students can only submit their own attempts.",
+      await recalculateAttemptScores(db, attemptId);
+      const requiresReview = await attemptNeedsManualReview(db, attemptId);
+      const submittedAt = now();
+      const nextStatus =
+        exam.mode === "PRACTICE" || !requiresReview ? "GRADED" : "SUBMITTED";
+      await run(
+        db,
+        `UPDATE attempts
+         SET status = ?, submitted_at = ?
+         WHERE id = ?`,
+        [nextStatus, submittedAt, attemptId],
       );
-    }
+      const submittedAttempt = await findAttemptById(db, attemptId);
+      const emittedAt = now();
 
-    if (attempt.status === "SUBMITTED" || attempt.status === "GRADED") {
-      return toAttempt(db, attempt);
-    }
+      if (nextStatus === "SUBMITTED") {
+        await publishLiveEvent?.({
+          type: "attempt_submitted",
+          attemptId: submittedAttempt.id,
+          classId: exam.class_id,
+          emittedAt,
+          examId: submittedAttempt.exam_id,
+          startedAt: submittedAttempt.started_at,
+          status: "SUBMITTED",
+          studentId: submittedAttempt.student_id,
+          submittedAt: submittedAttempt.submitted_at ?? submittedAt,
+        });
+      } else {
+        await publishLiveEvent?.({
+          type: "attempt_reviewed",
+          attemptId: submittedAttempt.id,
+          classId: exam.class_id,
+          emittedAt,
+          examId: submittedAttempt.exam_id,
+          startedAt: submittedAttempt.started_at,
+          status: "GRADED",
+          studentId: submittedAttempt.student_id,
+          submittedAt: submittedAttempt.submitted_at ?? submittedAt,
+        });
+      }
 
-    invariant(
-      attempt.status === "IN_PROGRESS",
-      "Only in-progress attempts can be submitted.",
-    );
-
-    await recalculateAttemptScores(db, attemptId);
-    const requiresReview = await attemptNeedsManualReview(db, attemptId);
-    const submittedAt = now();
-    const nextStatus =
-      exam.mode === "PRACTICE" || !requiresReview ? "GRADED" : "SUBMITTED";
-    await run(
-      db,
-      `UPDATE attempts
-       SET status = ?, submitted_at = ?
-       WHERE id = ?`,
-      [nextStatus, submittedAt, attemptId],
-    );
-    const submittedAttempt = await findAttemptById(db, attemptId);
-    const emittedAt = now();
-
-    if (nextStatus === "SUBMITTED") {
-      await publishLiveEvent?.({
-        type: "attempt_submitted",
-        attemptId: submittedAttempt.id,
-        classId: exam.class_id,
-        emittedAt,
-        examId: submittedAttempt.exam_id,
-        startedAt: submittedAttempt.started_at,
-        status: "SUBMITTED",
-        studentId: submittedAttempt.student_id,
-        submittedAt: submittedAttempt.submitted_at ?? submittedAt,
-      });
-    } else {
-      await publishLiveEvent?.({
-        type: "attempt_reviewed",
-        attemptId: submittedAttempt.id,
-        classId: exam.class_id,
-        emittedAt,
-        examId: submittedAttempt.exam_id,
-        startedAt: submittedAttempt.started_at,
-        status: "GRADED",
-        studentId: submittedAttempt.student_id,
-        submittedAt: submittedAttempt.submitted_at ?? submittedAt,
-      });
-    }
-
-    return toAttempt(db, submittedAttempt);
-  },
-  reviewAttempt: async (
-    { attemptId, answers }: ReviewAttemptArgs,
-    context: RequestContext,
-  ) => {
-    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
-    const attempt = await findAttemptById(db, attemptId);
+      return toAttempt(db, submittedAttempt);
+    },
+    reviewAttempt: async (
+      { attemptId, answers }: ReviewAttemptArgs,
+      context: RequestContext,
+    ) => {
+      const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+      const attempt = await findAttemptById(db, attemptId);
 
     invariant(
       attempt.status === "SUBMITTED" || attempt.status === "GRADED",
@@ -809,18 +929,19 @@ export const createAttemptMutations = ({
     const reviewedAttempt = await findAttemptById(db, attemptId);
     const exam = await findExam(db, reviewedAttempt.exam_id);
 
-    await publishLiveEvent?.({
-      type: "attempt_reviewed",
-      attemptId: reviewedAttempt.id,
-      classId: exam.class_id,
-      emittedAt: now(),
-      examId: reviewedAttempt.exam_id,
-      startedAt: reviewedAttempt.started_at,
-      status: "GRADED",
-      studentId: reviewedAttempt.student_id,
-      submittedAt: reviewedAttempt.submitted_at ?? reviewedAt,
-    });
+      await publishLiveEvent?.({
+        type: "attempt_reviewed",
+        attemptId: reviewedAttempt.id,
+        classId: exam.class_id,
+        emittedAt: now(),
+        examId: reviewedAttempt.exam_id,
+        startedAt: reviewedAttempt.started_at,
+        status: "GRADED",
+        studentId: reviewedAttempt.student_id,
+        submittedAt: reviewedAttempt.submitted_at ?? reviewedAt,
+      });
 
-    return toAttempt(db, reviewedAttempt);
-  },
-});
+      return toAttempt(db, reviewedAttempt);
+    },
+  };
+};
