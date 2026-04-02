@@ -8,6 +8,8 @@ import type {
   ExamMode,
   PassingCriteriaType,
   QuestionBankVisibility,
+  QuestionRepositoryFilter,
+  QuestionRepositoryKind,
   QuestionShareScope,
   QuestionType,
 } from "./model-types";
@@ -21,6 +23,7 @@ export type CreateQuestionBankArgs = {
   subject?: string;
   topic?: string;
   visibility?: QuestionBankVisibility;
+  repositoryKind?: QuestionRepositoryKind;
 };
 
 export type CreateCommunityArgs = {
@@ -39,6 +42,7 @@ export type CreateQuestionArgs = {
   options?: string[];
   correctAnswer?: string;
   difficulty?: Difficulty;
+  repositoryKind?: QuestionRepositoryKind;
   shareScope?: QuestionShareScope;
   requiresAccessRequest?: boolean;
   tags?: string[];
@@ -52,6 +56,7 @@ export type UpdateQuestionArgs = {
   options?: string[];
   correctAnswer?: string;
   difficulty?: Difficulty;
+  repositoryKind?: QuestionRepositoryKind;
   shareScope?: QuestionShareScope;
   requiresAccessRequest?: boolean;
   tags?: string[];
@@ -224,6 +229,7 @@ export type ReviewAttemptArgs = {
   attemptId: string;
   answers: ReviewAttemptAnswerInput[];
 };
-export type QuestionsArgs = { bankId?: string };
+export type QuestionBanksArgs = { repository?: QuestionRepositoryFilter };
+export type QuestionsArgs = { bankId?: string; repository?: QuestionRepositoryFilter };
 export type ByIdArgs = { id: string };
 export type CommunityExamPreviewArgs = { examId: string; communityId?: string | null };

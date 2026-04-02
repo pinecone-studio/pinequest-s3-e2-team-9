@@ -66,6 +66,7 @@ export const schemaDomainTypes = /* GraphQL */ `
     id: ID!
     title: String!
     description: String
+    repositoryKind: QuestionRepositoryKind!
     grade: Int!
     subject: String!
     topic: String!
@@ -80,6 +81,7 @@ export const schemaDomainTypes = /* GraphQL */ `
   type Question {
     id: ID!
     bank: QuestionBank!
+    repositoryKind: QuestionRepositoryKind!
     canonicalQuestionId: ID
     forkedFromQuestionId: ID
     type: QuestionType!

@@ -678,6 +678,7 @@ ${legacyQuestionSelectFields}
     id: bank.id,
     title: bank.title,
     description: bank.description,
+    repositoryKind: bank.visibility === "PUBLIC" ? "UNIFIED" : "MINE",
     grade: bank.grade,
     subject: bank.subject,
     topic: bank.topic,
@@ -692,6 +693,7 @@ ${legacyQuestionSelectFields}
 
   const toQuestion = (question: QuestionRow) => ({
     id: question.id,
+    repositoryKind: question.share_scope === "PRIVATE" ? "MINE" : "UNIFIED",
     type: question.type,
     canonicalQuestionId: question.canonical_question_id,
     forkedFromQuestionId: question.forked_from_question_id,

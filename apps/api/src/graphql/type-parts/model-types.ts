@@ -18,6 +18,8 @@ export type QuestionType =
   | "IMAGE_UPLOAD";
 export type Difficulty = "EASY" | "MEDIUM" | "HARD";
 export type QuestionShareScope = "PRIVATE" | "COMMUNITY" | "PUBLIC";
+export type QuestionRepositoryKind = "MINE" | "UNIFIED";
+export type QuestionRepositoryFilter = "ALL" | "MINE" | "UNIFIED";
 export type QuestionAccessRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type ExamMode = "SCHEDULED" | "OPEN_WINDOW" | "PRACTICE";
 export type ExamStatus = "DRAFT" | "PUBLISHED" | "CLOSED";

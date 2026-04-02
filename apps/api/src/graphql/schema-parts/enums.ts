@@ -25,6 +25,17 @@ export const schemaEnums = /* GraphQL */ `
     PUBLIC
   }
 
+  enum QuestionRepositoryKind {
+    MINE
+    UNIFIED
+  }
+
+  enum QuestionRepositoryFilter {
+    ALL
+    MINE
+    UNIFIED
+  }
+
   enum QuestionAccessRequestStatus {
     PENDING
     APPROVED

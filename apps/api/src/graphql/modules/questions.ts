@@ -16,6 +16,9 @@ import {
   type CreateQuestionBankArgs,
   type QuestionAccessRequestRow,
   type QuestionBankRow,
+  type QuestionBanksArgs,
+  type QuestionRepositoryFilter,
+  type QuestionRepositoryKind,
   type QuestionRow,
   type QuestionsArgs,
   type RequestQuestionAccessArgs,
@@ -372,6 +375,21 @@ type AccessibleQuestionBank = {
   communityAccessible: boolean;
 };
 
+const getRepositoryKindForBank = ({
+  bank,
+  communityAccessible,
+}: {
+  bank: QuestionBankRow;
+  communityAccessible: boolean;
+}): QuestionRepositoryKind => {
+  return bank.visibility === "PUBLIC" || communityAccessible ? "UNIFIED" : "MINE";
+};
+
+const matchesRepositoryFilter = (
+  repository: QuestionRepositoryFilter | undefined,
+  repositoryKind: QuestionRepositoryKind,
+) => !repository || repository === "ALL" || repository === repositoryKind;
+
 type VisibleQuestionGraphDependencies = {
   actor: UserRow;
   bank: QuestionBankRow;
@@ -385,6 +403,7 @@ type VisibleQuestionBankNode = {
   id: string;
   title: string;
   description: string | null;
+  repositoryKind: QuestionRepositoryKind;
   grade: number;
   subject: string;
   topic: string;
@@ -398,6 +417,7 @@ type VisibleQuestionBankNode = {
 
 type VisibleQuestionNode = {
   id: string;
+  repositoryKind: QuestionRepositoryKind;
   type: QuestionRow["type"];
   canonicalQuestionId: string | null;
   forkedFromQuestionId: string | null;
@@ -636,6 +656,10 @@ const buildVisibleQuestionBankObject = ({
   let bankObject = null as unknown as VisibleQuestionBankNode;
   let discoverableQuestionsPromise: Promise<QuestionRow[]> | null = null;
   let bankTopicsPromise: Promise<string[]> | null = null;
+  const repositoryKind = getRepositoryKindForBank({
+    bank,
+    communityAccessible,
+  });
 
   const loadDiscoverableQuestions = () => {
     discoverableQuestionsPromise ??= listDiscoverableQuestionsForBank({
@@ -663,6 +687,7 @@ const buildVisibleQuestionBankObject = ({
 
   const toVisibleQuestion = (question: QuestionRow): VisibleQuestionNode => ({
     id: question.id,
+    repositoryKind,
     type: question.type,
     canonicalQuestionId: question.canonical_question_id,
     forkedFromQuestionId: question.forked_from_question_id,
@@ -683,6 +708,7 @@ const buildVisibleQuestionBankObject = ({
     id: bank.id,
     title: bank.title,
     description: bank.description,
+    repositoryKind,
     grade: bank.grade,
     subject: bank.subject,
     topic: bank.topic,
@@ -756,7 +782,7 @@ export const createQuestionQueriesAndMutations = ({
   findUser,
   toUser,
 }: QuestionModuleDependencies) => ({
-  questionBanks: async (_args: unknown, context: RequestContext) => {
+  questionBanks: async ({ repository }: QuestionBanksArgs, context: RequestContext) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
     const rows =
       actor.role === "ADMIN"
@@ -769,29 +795,53 @@ export const createQuestionQueriesAndMutations = ({
         : [];
 
     if (actor.role === "ADMIN") {
-      return rows.map((row) =>
-        buildVisibleQuestionBankObject({
-          actor,
+      return rows
+        .map((row) => ({
           bank: row,
           communityAccessible: false,
+        }))
+        .filter(({ bank, communityAccessible }) =>
+          matchesRepositoryFilter(
+            repository,
+            getRepositoryKindForBank({
+              bank,
+              communityAccessible,
+            }),
+          ),
+        )
+        .map(({ bank, communityAccessible }) =>
+          buildVisibleQuestionBankObject({
+            actor,
+            bank,
+            communityAccessible,
+            db,
+            findUser,
+            toUser,
+          }),
+        );
+    }
+
+    const accessibleBanks = await getAccessibleQuestionBanksForTeacher(db, actor.id);
+    return accessibleBanks
+      .filter(({ bank, communityAccessible }) =>
+        matchesRepositoryFilter(
+          repository,
+          getRepositoryKindForBank({
+            bank,
+            communityAccessible,
+          }),
+        ),
+      )
+      .map(({ bank, communityAccessible }) =>
+        buildVisibleQuestionBankObject({
+          actor,
+          bank,
+          communityAccessible,
           db,
           findUser,
           toUser,
         }),
       );
-    }
-
-    const accessibleBanks = await getAccessibleQuestionBanksForTeacher(db, actor.id);
-    return accessibleBanks.map(({ bank, communityAccessible }) =>
-      buildVisibleQuestionBankObject({
-        actor,
-        bank,
-        communityAccessible,
-        db,
-        findUser,
-        toUser,
-      }),
-    );
   },
   questionBank: async ({ id }: ByIdArgs, context: RequestContext) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
@@ -827,7 +877,7 @@ export const createQuestionQueriesAndMutations = ({
         })
       : null;
   },
-  questions: async ({ bankId }: QuestionsArgs, context: RequestContext) => {
+  questions: async ({ bankId, repository }: QuestionsArgs, context: RequestContext) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
     if (actor.role === "ADMIN") {
       const rows = bankId
@@ -853,7 +903,13 @@ export const createQuestionQueriesAndMutations = ({
              ORDER BY created_at DESC`,
             [],
           );
-      return rows.map((row) => toQuestion(db, row));
+      return rows
+        .map((row) => ({
+          row,
+          repositoryKind: "UNIFIED" as QuestionRepositoryKind,
+        }))
+        .filter(({ repositoryKind }) => matchesRepositoryFilter(repository, repositoryKind))
+        .map(({ row }) => toQuestion(db, row));
     }
 
     const accessibleBanks = bankId
@@ -871,13 +927,27 @@ export const createQuestionQueriesAndMutations = ({
       return [];
     }
 
+    const filteredAccessibleBanks = accessibleBanks.filter(({ bank, communityAccessible }) =>
+      matchesRepositoryFilter(
+        repository,
+        getRepositoryKindForBank({
+          bank,
+          communityAccessible,
+        }),
+      ),
+    );
+
+    if (!filteredAccessibleBanks.length) {
+      return [];
+    }
+
     const bankMetaById = new Map(
-      accessibleBanks.map((item) => [item.bank.id, item] as const),
+      filteredAccessibleBanks.map((item) => [item.bank.id, item] as const),
     );
 
     const rows = (await listQuestionsByBankIdsCompat(
       db,
-      accessibleBanks.map((item) => item.bank.id),
+      filteredAccessibleBanks.map((item) => item.bank.id),
     )).filter((row) => {
       const bankMeta = bankMetaById.get(row.bank_id);
       if (!bankMeta) {
@@ -893,7 +963,7 @@ export const createQuestionQueriesAndMutations = ({
     });
 
     const bankObjectById = new Map(
-      accessibleBanks.map((item) => [
+      filteredAccessibleBanks.map((item) => [
         item.bank.id,
         buildVisibleQuestionBankObject({
           actor,
@@ -916,6 +986,10 @@ export const createQuestionQueriesAndMutations = ({
       return [
         {
           id: row.id,
+          repositoryKind: getRepositoryKindForBank({
+            bank: bankMeta.bank,
+            communityAccessible: bankMeta.communityAccessible,
+          }),
           type: row.type,
           canonicalQuestionId: row.canonical_question_id,
           forkedFromQuestionId: row.forked_from_question_id,
@@ -974,7 +1048,7 @@ export const createQuestionQueriesAndMutations = ({
     );
   },
   createQuestionBank: async (
-    { title, description, grade, subject, topic, visibility }: CreateQuestionBankArgs,
+    { title, description, grade, subject, topic, visibility, repositoryKind }: CreateQuestionBankArgs,
     context: RequestContext,
   ) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
@@ -992,7 +1066,7 @@ export const createQuestionQueriesAndMutations = ({
         grade ?? 10,
         subject?.trim() || "Ерөнхий",
         topic?.trim() || "Ерөнхий",
-        visibility ?? "PRIVATE",
+        repositoryKind === "UNIFIED" ? "PUBLIC" : (visibility ?? "PRIVATE"),
         actor.id,
         createdAt,
       ],
@@ -1020,6 +1094,7 @@ export const createQuestionQueriesAndMutations = ({
       options,
       correctAnswer,
       difficulty,
+      repositoryKind,
       shareScope,
       requiresAccessRequest,
       tags,
@@ -1054,7 +1129,7 @@ export const createQuestionQueriesAndMutations = ({
         created_by_id,
         created_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         bankId,
@@ -1066,7 +1141,9 @@ export const createQuestionQueriesAndMutations = ({
         toJsonArray(normalizedOptions),
         correctAnswer ?? null,
         difficulty ?? "MEDIUM",
-        shareScope ?? (bank.visibility === "PUBLIC" ? "PUBLIC" : "PRIVATE"),
+        repositoryKind === "UNIFIED"
+          ? "PUBLIC"
+          : (shareScope ?? (bank.visibility === "PUBLIC" ? "PUBLIC" : "PRIVATE")),
         requiresAccessRequest ? 1 : 0,
         toJsonArray(tags),
         actor.id,
@@ -1154,7 +1231,7 @@ export const createQuestionQueriesAndMutations = ({
           created_by_id,
           created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           nextId,
           question.bank_id,
@@ -1248,7 +1325,7 @@ export const createQuestionQueriesAndMutations = ({
           created_by_id,
           created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           nextId,
           question.bank_id,
@@ -1327,6 +1404,7 @@ export const createQuestionQueriesAndMutations = ({
       options,
       correctAnswer,
       difficulty,
+      repositoryKind,
       shareScope,
       requiresAccessRequest,
       tags,
@@ -1352,7 +1430,11 @@ export const createQuestionQueriesAndMutations = ({
         toJsonArray(normalizeQuestionOptions(type, options)),
         correctAnswer ?? null,
         difficulty ?? question.difficulty,
-        shareScope ?? question.share_scope,
+        repositoryKind === "UNIFIED"
+          ? "PUBLIC"
+          : repositoryKind === "MINE"
+            ? "PRIVATE"
+            : (shareScope ?? question.share_scope),
         typeof requiresAccessRequest === "boolean"
           ? (requiresAccessRequest ? 1 : 0)
           : question.requires_access_request,
