@@ -35,8 +35,10 @@ export const schemaRootTypes = /* GraphQL */ `
     hello(name: String): Hello!
     me: User
     users: [User!]!
+    communityHome: CommunityHome!
     communities: [Community!]!
     community(id: ID!): Community
+    communityExamPreview(examId: ID!, communityId: ID): CommunityExamPreview
     classes: [Class!]!
     class(id: ID!): Class
     questionBanks: [QuestionBank!]!
@@ -62,6 +64,19 @@ export const schemaRootTypes = /* GraphQL */ `
     ): Community!
     joinCommunity(communityId: ID!): Community!
     shareQuestionBankToCommunity(communityId: ID!, bankId: ID!): CommunitySharedBank!
+    shareExamToCommunity(communityId: ID!, examId: ID!): CommunitySharedExam!
+    addCommunityComment(
+      communityId: ID!
+      entityType: CommunityCommentEntityType!
+      entityId: ID!
+      body: String!
+    ): CommunityComment!
+    rateCommunityItem(
+      communityId: ID!
+      entityType: CommunityCommentEntityType!
+      entityId: ID!
+      value: Int!
+    ): Boolean!
     copyCommunitySharedBankToMyBank(sharedBankId: ID!): QuestionBank!
     createQuestionBank(
       title: String!

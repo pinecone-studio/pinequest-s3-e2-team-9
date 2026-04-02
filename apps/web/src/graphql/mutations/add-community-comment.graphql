@@ -1,0 +1,23 @@
+mutation AddCommunityCommentAction(
+  $communityId: ID!
+  $entityType: CommunityCommentEntityType!
+  $entityId: ID!
+  $body: String!
+) {
+  addCommunityComment(
+    communityId: $communityId
+    entityType: $entityType
+    entityId: $entityId
+    body: $body
+  ) {
+    id
+    entityType
+    entityId
+    body
+    createdAt
+    author {
+      id
+      fullName
+    }
+  }
+}

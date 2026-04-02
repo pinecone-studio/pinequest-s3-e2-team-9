@@ -1,0 +1,68 @@
+query CommunityExamPreview($examId: ID!, $communityId: ID) {
+  communityExamPreview(examId: $examId, communityId: $communityId) {
+    examId
+    communityId
+    communityName
+    title
+    description
+    subject
+    grade
+    className
+    status
+    durationMinutes
+    questionCount
+    totalPoints
+    passingCriteriaType
+    passingThreshold
+    createdAt
+    sharedAt
+    sharedBy {
+      id
+      fullName
+    }
+    summary {
+      studentCount
+      submittedCount
+      averagePercent
+      passRate
+      highestPercent
+      lowestPercent
+      completionRate
+    }
+    questions {
+      id
+      order
+      prompt
+      type
+      options
+      correctAnswer
+      points
+      topic
+      tags
+    }
+    scoreDistribution {
+      label
+      value
+      meta
+      note
+    }
+    topicPerformance {
+      label
+      value
+      meta
+      note
+    }
+    questionPerformance {
+      label
+      value
+      meta
+      note
+    }
+    insights {
+      title
+      description
+      tone
+    }
+    overallConclusion
+  }
+}

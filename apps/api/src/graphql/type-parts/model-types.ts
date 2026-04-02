@@ -3,6 +3,13 @@ export type QuestionBankVisibility = "PRIVATE" | "PUBLIC";
 export type CommunityVisibility = "PRIVATE" | "PUBLIC";
 export type CommunityMemberRole = "OWNER" | "MODERATOR" | "MEMBER";
 export type CommunitySharedBankStatus = "ACTIVE" | "ARCHIVED" | "FEATURED";
+export type CommunityCommentEntityType = "SHARED_BANK" | "SHARED_EXAM";
+export type CommunityUsageEventType =
+  | "CREATE_COMMUNITY"
+  | "JOIN_COMMUNITY"
+  | "SHARE_BANK"
+  | "COPY_BANK";
+export type CommunityUsageEntityType = "COMMUNITY" | "SHARED_BANK";
 export type QuestionType =
   | "MCQ"
   | "TRUE_FALSE"
@@ -96,6 +103,46 @@ export type CommunitySharedBankRow = {
   bank_id: string;
   shared_by_id: string;
   status: CommunitySharedBankStatus;
+  created_at: string;
+};
+
+export type CommunitySharedExamRow = {
+  id: string;
+  community_id: string;
+  exam_id: string;
+  shared_by_id: string;
+  created_at: string;
+};
+
+export type CommunityCommentRow = {
+  id: string;
+  community_id: string;
+  author_user_id: string;
+  entity_type: CommunityCommentEntityType;
+  entity_id: string;
+  body: string;
+  created_at: string;
+};
+
+export type CommunityRatingRow = {
+  id: string;
+  community_id: string;
+  entity_type: CommunityCommentEntityType;
+  entity_id: string;
+  user_id: string;
+  value: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CommunityUsageEventRow = {
+  id: string;
+  community_id: string;
+  actor_user_id: string | null;
+  event_type: CommunityUsageEventType;
+  entity_type: CommunityUsageEntityType;
+  entity_id: string;
+  metadata_json: string;
   created_at: string;
 };
 

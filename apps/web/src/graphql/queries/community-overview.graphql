@@ -1,6 +1,71 @@
 query CommunityOverview {
   me {
     id
+    fullName
+    classes {
+      id
+      subject
+      grade
+    }
+  }
+  communityHome {
+    stats {
+      totalCommunities
+      totalSharedBanks
+      totalCopies
+      activeTeachers
+    }
+    weeklyActivity {
+      label
+      value
+    }
+    trendingBanks {
+      sharedBankId
+      copyCount
+      communityId
+      communityName
+      bank {
+        id
+        title
+        description
+        grade
+        subject
+        topic
+        visibility
+        questionCount
+        createdAt
+        owner {
+          id
+          fullName
+        }
+      }
+    }
+    topExams {
+      examId
+      title
+      subject
+      grade
+      attemptCount
+      averageScorePercent
+      communityId
+      communityName
+      createdBy {
+        id
+        fullName
+      }
+    }
+    mostMissedQuestions {
+      questionId
+      prompt
+      subject
+      grade
+      topic
+      bankTitle
+      communityId
+      communityName
+      attemptCount
+      missRate
+    }
   }
   communities {
     id

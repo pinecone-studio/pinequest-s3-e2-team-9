@@ -1,5 +1,6 @@
 import type {
   AttemptIntegrityEventType,
+  CommunityCommentEntityType,
   CommunityVisibility,
   Difficulty,
   ExamGenerationMode,
@@ -62,6 +63,25 @@ export type JoinCommunityArgs = {
 export type ShareQuestionBankToCommunityArgs = {
   communityId: string;
   bankId: string;
+};
+
+export type ShareExamToCommunityArgs = {
+  communityId: string;
+  examId: string;
+};
+
+export type AddCommunityCommentArgs = {
+  communityId: string;
+  entityType: CommunityCommentEntityType;
+  entityId: string;
+  body: string;
+};
+
+export type RateCommunityItemArgs = {
+  communityId: string;
+  entityType: CommunityCommentEntityType;
+  entityId: string;
+  value: number;
 };
 
 export type CopyCommunitySharedBankToMyBankArgs = {
@@ -186,3 +206,4 @@ export type ReviewAttemptArgs = {
 };
 export type QuestionsArgs = { bankId?: string };
 export type ByIdArgs = { id: string };
+export type CommunityExamPreviewArgs = { examId: string; communityId?: string | null };

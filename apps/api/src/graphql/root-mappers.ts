@@ -27,6 +27,16 @@ type MapperDependencies = {
 const createPlaceholders = (count: number) =>
   Array.from({ length: count }, () => "?").join(", ");
 
+const D1_SAFE_IN_CHUNK = 50;
+
+const chunkArray = <T,>(items: T[], chunkSize: number) => {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += chunkSize) {
+    chunks.push(items.slice(index, index + chunkSize));
+  }
+  return chunks;
+};
+
 const scheduleMicrotask = (work: () => Promise<void>) => {
   void Promise.resolve().then(work);
 };
@@ -234,13 +244,18 @@ export const createEntityMappers = ({
         return new Map();
       }
 
-      const rows = await all<QuestionBankRow>(
-        db,
-        `SELECT id, title, description, grade, subject, topic, visibility, owner_id, created_at
-         FROM question_banks
-         WHERE id IN (${createPlaceholders(ids.length)})`,
-        ids,
-      );
+      const rows: QuestionBankRow[] = [];
+      for (const idChunk of chunkArray(ids, D1_SAFE_IN_CHUNK)) {
+        rows.push(
+          ...(await all<QuestionBankRow>(
+            db,
+            `SELECT id, title, description, grade, subject, topic, visibility, owner_id, created_at
+             FROM question_banks
+             WHERE id IN (${createPlaceholders(idChunk.length)})`,
+            idChunk,
+          )),
+        );
+      }
       return new Map(rows.map((row) => [row.id, row]));
     },
     (id) => new Error(`Question bank ${id} not found`),

@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { writeFileSync, unlinkSync } from "node:fs";
+import { buildMockQuestionContent } from "./mock-question-content";
 
 type Difficulty = "EASY" | "MEDIUM" | "HARD";
 type QuestionType = "MCQ" | "TRUE_FALSE" | "SHORT_ANSWER";
@@ -39,9 +40,6 @@ const runWranglerJson = (args: string[]) => {
   return JSON.parse(stdout) as Array<{ results: BankRow[] }>;
 };
 
-const difficultyLabel = (difficulty: Difficulty) =>
-  difficulty === "EASY" ? "Хялбар" : difficulty === "MEDIUM" ? "Дунд" : "Хүнд";
-
 const chooseType = (difficulty: Difficulty, index: number): QuestionType => {
   if (difficulty === "EASY") {
     return index % 2 === 0 ? "MCQ" : "TRUE_FALSE";
@@ -52,68 +50,6 @@ const chooseType = (difficulty: Difficulty, index: number): QuestionType => {
   }
 
   return index % 3 === 0 ? "MCQ" : "SHORT_ANSWER";
-};
-
-const buildMcqOptions = (
-  subject: string,
-  topic: string,
-  difficulty: Difficulty,
-  index: number,
-) => {
-  const label = `${subject}-${topic}-${difficulty.toLowerCase()}-${index}`;
-  const options = [
-    `${label}-A`,
-    `${label}-B`,
-    `${label}-C`,
-    `${label}-D`,
-  ];
-  return {
-    options,
-    correctAnswer: options[1] ?? `${label}-B`,
-  };
-};
-
-const buildQuestionContent = ({
-  subject,
-  topic,
-  difficulty,
-  index,
-  type,
-}: {
-  subject: string;
-  topic: string;
-  difficulty: Difficulty;
-  index: number;
-  type: QuestionType;
-}) => {
-  const level = difficultyLabel(difficulty);
-  const title = `${topic} ${level} mock ${index}`;
-
-  if (type === "TRUE_FALSE") {
-    return {
-      title,
-      prompt: `[Mock] ${subject} · ${topic} · ${level} ${index}. Энэ өгүүлбэрийн үнэн эсэхийг тодорхойл.`,
-      optionsJson: JSON.stringify(["Үнэн", "Худал"]),
-      correctAnswer: index % 2 === 0 ? "Үнэн" : "Худал",
-    };
-  }
-
-  if (type === "SHORT_ANSWER") {
-    return {
-      title,
-      prompt: `[Mock] ${subject} · ${topic} · ${level} ${index}. Богино хариултаа оруул.`,
-      optionsJson: JSON.stringify([]),
-      correctAnswer: `${topic}-${difficulty.toLowerCase()}-${index}`,
-    };
-  }
-
-  const mcq = buildMcqOptions(subject, topic, difficulty, index);
-  return {
-    title,
-    prompt: `[Mock] ${subject} · ${topic} · ${level} ${index}. Зөв хариултыг сонго.`,
-    optionsJson: JSON.stringify(mcq.options),
-    correctAnswer: mcq.correctAnswer,
-  };
 };
 
 const buildInsertSql = (rows: BankRow[]) => {
@@ -134,9 +70,10 @@ const buildInsertSql = (rows: BankRow[]) => {
         const nextIndex = byDifficulty[difficulty] + offset + 1;
         const type = chooseType(difficulty, nextIndex);
         const id = `${row.id}-mock-${difficulty.toLowerCase()}-${String(nextIndex).padStart(2, "0")}`;
-        const content = buildQuestionContent({
+        const content = buildMockQuestionContent({
           subject: row.subject,
           topic: row.topic,
+          grade: row.grade,
           difficulty,
           index: nextIndex,
           type,

@@ -1,0 +1,13 @@
+mutation RateCommunityItemAction(
+  $communityId: ID!
+  $entityType: CommunityCommentEntityType!
+  $entityId: ID!
+  $value: Int!
+) {
+  rateCommunityItem(
+    communityId: $communityId
+    entityType: $entityType
+    entityId: $entityId
+    value: $value
+  )
+}
