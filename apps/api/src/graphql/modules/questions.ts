@@ -166,6 +166,19 @@ const VARIANT_LABEL_TAG = "variant_label:";
 const VARIANT_COUNT_TAG = "variant_count:";
 const DRAFT_VARIANT_TAG = "variant_draft:true";
 
+const D1_SAFE_IN_CHUNK = 20;
+
+const chunkArray = <T,>(items: T[], chunkSize: number) => {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += chunkSize) {
+    chunks.push(items.slice(index, index + chunkSize));
+  }
+  return chunks;
+};
+
+const createPlaceholders = (count: number) =>
+  Array.from({ length: count }, () => "?").join(", ");
+
 const stripVariantTags = (tags: string[]) =>
   tags.filter(
     (tag) =>
@@ -320,7 +333,7 @@ const actorHasApprovedQuestionAccess = async (
        LIMIT 1`,
       [questionId, actorId],
     );
-    return Boolean(row);
+  return Boolean(row);
   } catch (error) {
     if (isMissingQuestionAccessRequestsTableError(error)) {
       return false;
@@ -328,6 +341,363 @@ const actorHasApprovedQuestionAccess = async (
     throw error;
   }
 };
+
+const actorHasCommunityBankAccess = async (
+  db: D1DatabaseLike,
+  bankId: string,
+  actorId: string,
+) => {
+  const row = await first<{ id: string }>(
+    db,
+    `SELECT c.id
+     FROM community_shared_banks csb
+     JOIN communities c ON c.id = csb.community_id
+     LEFT JOIN community_members cm
+       ON cm.community_id = c.id AND cm.user_id = ?
+     WHERE csb.bank_id = ?
+       AND csb.status != 'ARCHIVED'
+       AND (c.visibility = 'PUBLIC' OR c.owner_id = ? OR cm.id IS NOT NULL)
+     LIMIT 1`,
+    [actorId, bankId, actorId],
+  );
+  return Boolean(row);
+};
+
+type AccessibleQuestionBankRow = QuestionBankRow & {
+  community_access: number | null;
+};
+
+type AccessibleQuestionBank = {
+  bank: QuestionBankRow;
+  communityAccessible: boolean;
+};
+
+type VisibleQuestionGraphDependencies = {
+  actor: UserRow;
+  bank: QuestionBankRow;
+  communityAccessible: boolean;
+  db: D1DatabaseLike;
+  findUser: (db: D1DatabaseLike, id: string) => Promise<UserRow>;
+  toUser: (user: UserRow) => unknown;
+};
+
+type VisibleQuestionBankNode = {
+  id: string;
+  title: string;
+  description: string | null;
+  grade: number;
+  subject: string;
+  topic: string;
+  topics: () => Promise<string[]>;
+  visibility: QuestionBankRow["visibility"];
+  createdAt: string;
+  questionCount: () => Promise<number>;
+  owner: () => Promise<unknown>;
+  questions: () => Promise<VisibleQuestionNode[]>;
+};
+
+type VisibleQuestionNode = {
+  id: string;
+  type: QuestionRow["type"];
+  canonicalQuestionId: string | null;
+  forkedFromQuestionId: string | null;
+  title: string;
+  prompt: string;
+  options: string[];
+  correctAnswer: string | null;
+  difficulty: QuestionRow["difficulty"];
+  shareScope: QuestionRow["share_scope"];
+  requiresAccessRequest: boolean;
+  tags: string[];
+  createdAt: string;
+  bank: () => Promise<VisibleQuestionBankNode>;
+  createdBy: () => Promise<unknown>;
+};
+
+const getAccessibleQuestionBanksForTeacher = async (
+  db: D1DatabaseLike,
+  actorId: string,
+): Promise<AccessibleQuestionBank[]> => {
+  const rows = await all<AccessibleQuestionBankRow>(
+    db,
+    `SELECT
+      qb.id,
+      qb.title,
+      qb.description,
+      qb.grade,
+      qb.subject,
+      qb.topic,
+      qb.visibility,
+      qb.owner_id,
+      qb.created_at,
+      MAX(
+        CASE
+          WHEN c.visibility = 'PUBLIC' OR c.owner_id = ? OR cm.id IS NOT NULL
+          THEN 1
+          ELSE 0
+        END
+      ) AS community_access
+     FROM question_banks qb
+     LEFT JOIN community_shared_banks csb
+       ON csb.bank_id = qb.id AND csb.status != 'ARCHIVED'
+     LEFT JOIN communities c
+       ON c.id = csb.community_id
+     LEFT JOIN community_members cm
+       ON cm.community_id = c.id AND cm.user_id = ?
+     WHERE qb.visibility = 'PUBLIC'
+        OR qb.owner_id = ?
+        OR c.visibility = 'PUBLIC'
+        OR c.owner_id = ?
+        OR cm.id IS NOT NULL
+     GROUP BY
+      qb.id,
+      qb.title,
+      qb.description,
+      qb.grade,
+      qb.subject,
+      qb.topic,
+      qb.visibility,
+      qb.owner_id,
+      qb.created_at
+     ORDER BY qb.created_at DESC`,
+    [actorId, actorId, actorId, actorId],
+  );
+
+  return rows.map(({ community_access, ...bank }) => ({
+    bank,
+    communityAccessible: (community_access ?? 0) === 1,
+  }));
+};
+
+const findAccessibleQuestionBankForTeacher = async (
+  db: D1DatabaseLike,
+  bankId: string,
+  actorId: string,
+): Promise<AccessibleQuestionBank | null> => {
+  const row = await first<AccessibleQuestionBankRow>(
+    db,
+    `SELECT
+      qb.id,
+      qb.title,
+      qb.description,
+      qb.grade,
+      qb.subject,
+      qb.topic,
+      qb.visibility,
+      qb.owner_id,
+      qb.created_at,
+      MAX(
+        CASE
+          WHEN c.visibility = 'PUBLIC' OR c.owner_id = ? OR cm.id IS NOT NULL
+          THEN 1
+          ELSE 0
+        END
+      ) AS community_access
+     FROM question_banks qb
+     LEFT JOIN community_shared_banks csb
+       ON csb.bank_id = qb.id AND csb.status != 'ARCHIVED'
+     LEFT JOIN communities c
+       ON c.id = csb.community_id
+     LEFT JOIN community_members cm
+       ON cm.community_id = c.id AND cm.user_id = ?
+     WHERE qb.id = ?
+       AND (
+         qb.visibility = 'PUBLIC'
+         OR qb.owner_id = ?
+         OR c.visibility = 'PUBLIC'
+         OR c.owner_id = ?
+         OR cm.id IS NOT NULL
+       )
+     GROUP BY
+      qb.id,
+      qb.title,
+      qb.description,
+      qb.grade,
+      qb.subject,
+      qb.topic,
+      qb.visibility,
+      qb.owner_id,
+      qb.created_at`,
+    [actorId, actorId, bankId, actorId, actorId],
+  );
+
+  if (!row) {
+    return null;
+  }
+
+  const { community_access, ...bank } = row;
+  return {
+    bank,
+    communityAccessible: (community_access ?? 0) === 1,
+  };
+};
+
+const listQuestionsByBankIdsCompat = async (
+  db: D1DatabaseLike,
+  bankIds: string[],
+) => {
+  const rows: QuestionRow[] = [];
+  for (const bankIdChunk of chunkArray(bankIds, D1_SAFE_IN_CHUNK)) {
+    rows.push(
+      ...(await allQuestionsCompat(
+        db,
+        `SELECT ${fullQuestionSelectFields}
+         FROM questions
+         WHERE bank_id IN (${createPlaceholders(bankIdChunk.length)})`,
+        `SELECT ${legacyQuestionSelectFields}
+         FROM questions
+         WHERE bank_id IN (${createPlaceholders(bankIdChunk.length)})`,
+        bankIdChunk,
+      )),
+    );
+  }
+
+  return rows.sort(
+    (left, right) =>
+      new Date(right.created_at).getTime() - new Date(left.created_at).getTime(),
+  );
+};
+
+const canActorDiscoverQuestion = ({
+  actor,
+  bank,
+  communityAccessible,
+  question,
+}: {
+  actor: UserRow;
+  bank: QuestionBankRow;
+  communityAccessible: boolean;
+  question: QuestionRow;
+}) => {
+  if (actor.role === "ADMIN") {
+    return true;
+  }
+
+  if (bank.owner_id === actor.id || question.created_by_id === actor.id) {
+    return true;
+  }
+
+  if (question.requires_access_request === 1) {
+    return true;
+  }
+
+  if (question.share_scope === "PUBLIC" || bank.visibility === "PUBLIC") {
+    return true;
+  }
+
+  if (question.share_scope === "COMMUNITY" && communityAccessible) {
+    return true;
+  }
+
+  return false;
+};
+
+const listDiscoverableQuestionsForBank = async ({
+  actor,
+  bank,
+  communityAccessible,
+  db,
+}: Pick<VisibleQuestionGraphDependencies, "actor" | "bank" | "communityAccessible" | "db">) => {
+  const rows = await allQuestionsCompat(
+    db,
+    `SELECT ${fullQuestionSelectFields}
+     FROM questions
+     WHERE bank_id = ?
+     ORDER BY created_at DESC`,
+    `SELECT ${legacyQuestionSelectFields}
+     FROM questions
+     WHERE bank_id = ?
+     ORDER BY created_at DESC`,
+    [bank.id],
+  );
+
+  if (actor.role === "ADMIN") {
+    return rows;
+  }
+
+  return rows.filter((question) =>
+    canActorDiscoverQuestion({
+      actor,
+      bank,
+      communityAccessible,
+      question,
+    }),
+  );
+};
+
+const buildVisibleQuestionBankObject = ({
+  actor,
+  bank,
+  communityAccessible,
+  db,
+  findUser,
+  toUser,
+}: VisibleQuestionGraphDependencies): VisibleQuestionBankNode => {
+  let bankObject = null as unknown as VisibleQuestionBankNode;
+  let discoverableQuestionsPromise: Promise<QuestionRow[]> | null = null;
+  let bankTopicsPromise: Promise<string[]> | null = null;
+
+  const loadDiscoverableQuestions = () => {
+    discoverableQuestionsPromise ??= listDiscoverableQuestionsForBank({
+      actor,
+      bank,
+      communityAccessible,
+      db,
+    });
+    return discoverableQuestionsPromise;
+  };
+
+  const loadBankTopics = () => {
+    bankTopicsPromise ??=
+      bank.topic !== "Ерөнхий"
+        ? Promise.resolve([bank.topic])
+        : loadDiscoverableQuestions().then((rows) => [
+            ...new Set(
+              rows
+                .flatMap((row) => parseJsonArray(row.tags_json))
+                .filter((tag) => tag && tag !== bank.subject && !tag.includes("анги")),
+            ),
+          ]);
+    return bankTopicsPromise;
+  };
+
+  const toVisibleQuestion = (question: QuestionRow): VisibleQuestionNode => ({
+    id: question.id,
+    type: question.type,
+    canonicalQuestionId: question.canonical_question_id,
+    forkedFromQuestionId: question.forked_from_question_id,
+    title: question.title,
+    prompt: question.prompt,
+    options: parseJsonArray(question.options_json),
+    correctAnswer: question.correct_answer,
+    difficulty: question.difficulty,
+    shareScope: question.share_scope,
+    requiresAccessRequest: question.requires_access_request === 1,
+    tags: parseJsonArray(question.tags_json),
+    createdAt: question.created_at,
+    bank: async () => bankObject,
+    createdBy: async () => toUser(await findUser(db, question.created_by_id)),
+  });
+
+  bankObject = {
+    id: bank.id,
+    title: bank.title,
+    description: bank.description,
+    grade: bank.grade,
+    subject: bank.subject,
+    topic: bank.topic,
+    topics: async () => loadBankTopics(),
+    visibility: bank.visibility,
+    createdAt: bank.created_at,
+    questionCount: async () => (await loadDiscoverableQuestions()).length,
+    owner: async () => toUser(await findUser(db, bank.owner_id)),
+    questions: async () => (await loadDiscoverableQuestions()).map(toVisibleQuestion),
+  };
+
+  return bankObject;
+};
+
+export { buildVisibleQuestionBankObject };
 
 const actorCanUseQuestion = async ({
   actor,
@@ -357,18 +727,7 @@ const actorCanUseQuestion = async ({
   }
 
   if (question.share_scope === "COMMUNITY") {
-    const membership = await first<{ id: string }>(
-      db,
-      `SELECT cm.id
-       FROM community_shared_banks csb
-       JOIN community_members cm ON cm.community_id = csb.community_id
-       WHERE csb.bank_id = ?
-         AND cm.user_id = ?
-       LIMIT 1`,
-      [bank.id, actor.id],
-    );
-
-    if (membership) {
+    if (await actorHasCommunityBankAccess(db, bank.id, actor.id)) {
       return true;
     }
   }
@@ -407,93 +766,173 @@ export const createQuestionQueriesAndMutations = ({
              FROM question_banks
              ORDER BY created_at DESC`,
           )
-        : await all<QuestionBankRow>(
-            db,
-            `SELECT ${questionBankSelectFields}
-             FROM question_banks
-             WHERE visibility = 'PUBLIC' OR owner_id = ?
-             ORDER BY created_at DESC`,
-            [actor.id],
-          );
-    return rows.map((row) => toQuestionBank(db, row));
+        : [];
+
+    if (actor.role === "ADMIN") {
+      return rows.map((row) =>
+        buildVisibleQuestionBankObject({
+          actor,
+          bank: row,
+          communityAccessible: false,
+          db,
+          findUser,
+          toUser,
+        }),
+      );
+    }
+
+    const accessibleBanks = await getAccessibleQuestionBanksForTeacher(db, actor.id);
+    return accessibleBanks.map(({ bank, communityAccessible }) =>
+      buildVisibleQuestionBankObject({
+        actor,
+        bank,
+        communityAccessible,
+        db,
+        findUser,
+        toUser,
+      }),
+    );
   },
   questionBank: async ({ id }: ByIdArgs, context: RequestContext) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
-    const bank =
-      actor.role === "ADMIN"
-        ? await first<QuestionBankRow>(
+    if (actor.role === "ADMIN") {
+      const bank = await first<QuestionBankRow>(
+        db,
+        `SELECT ${questionBankSelectFields}
+         FROM question_banks
+         WHERE id = ?`,
+        [id],
+      );
+      return bank
+        ? buildVisibleQuestionBankObject({
+            actor,
+            bank,
+            communityAccessible: false,
             db,
-            `SELECT ${questionBankSelectFields}
-             FROM question_banks
-             WHERE id = ?`,
-            [id],
-          )
-        : await first<QuestionBankRow>(
-            db,
-            `SELECT ${questionBankSelectFields}
-             FROM question_banks
-             WHERE id = ? AND (visibility = 'PUBLIC' OR owner_id = ?)`,
-            [id, actor.id],
-          );
-    return bank ? toQuestionBank(db, bank) : null;
+            findUser,
+            toUser,
+          })
+        : null;
+    }
+
+    const accessibleBank = await findAccessibleQuestionBankForTeacher(db, id, actor.id);
+    return accessibleBank
+      ? buildVisibleQuestionBankObject({
+          actor,
+          bank: accessibleBank.bank,
+          communityAccessible: accessibleBank.communityAccessible,
+          db,
+          findUser,
+          toUser,
+        })
+      : null;
   },
   questions: async ({ bankId }: QuestionsArgs, context: RequestContext) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
-    const rows =
-      actor.role === "ADMIN"
-        ? bankId
-          ? await allQuestionsCompat(
-              db,
-              `SELECT ${fullQuestionSelectFields}
-               FROM questions
-               WHERE bank_id = ?
-               ORDER BY created_at DESC`,
-              `SELECT ${legacyQuestionSelectFields}
-               FROM questions
-               WHERE bank_id = ?
-               ORDER BY created_at DESC`,
-              [bankId],
-            )
-          : await allQuestionsCompat(
-              db,
-              `SELECT ${fullQuestionSelectFields}
-               FROM questions
-               ORDER BY created_at DESC`,
-              `SELECT ${legacyQuestionSelectFields}
-               FROM questions
-               ORDER BY created_at DESC`,
-              [],
-            )
-        : bankId
-          ? await allQuestionsCompat(
-              db,
-              `SELECT q.${fullQuestionSelectFields.replaceAll(",\n  ", ",\n                q.")}
-               FROM questions q
-               JOIN question_banks qb ON qb.id = q.bank_id
-               WHERE q.bank_id = ? AND (qb.visibility = 'PUBLIC' OR qb.owner_id = ?)
-               ORDER BY q.created_at DESC`,
-              `SELECT q.${legacyQuestionSelectFields.replaceAll(",\n  ", ",\n                q.")}
-               FROM questions q
-               JOIN question_banks qb ON qb.id = q.bank_id
-               WHERE q.bank_id = ? AND (qb.visibility = 'PUBLIC' OR qb.owner_id = ?)
-               ORDER BY q.created_at DESC`,
-              [bankId, actor.id],
-            )
-          : await allQuestionsCompat(
-              db,
-              `SELECT q.${fullQuestionSelectFields.replaceAll(",\n  ", ",\n                q.")}
-               FROM questions q
-               JOIN question_banks qb ON qb.id = q.bank_id
-               WHERE qb.visibility = 'PUBLIC' OR qb.owner_id = ?
-               ORDER BY q.created_at DESC`,
-              `SELECT q.${legacyQuestionSelectFields.replaceAll(",\n  ", ",\n                q.")}
-               FROM questions q
-               JOIN question_banks qb ON qb.id = q.bank_id
-               WHERE qb.visibility = 'PUBLIC' OR qb.owner_id = ?
-               ORDER BY q.created_at DESC`,
-              [actor.id],
-            );
-    return rows.map((row) => toQuestion(db, row));
+    if (actor.role === "ADMIN") {
+      const rows = bankId
+        ? await allQuestionsCompat(
+            db,
+            `SELECT ${fullQuestionSelectFields}
+             FROM questions
+             WHERE bank_id = ?
+             ORDER BY created_at DESC`,
+            `SELECT ${legacyQuestionSelectFields}
+             FROM questions
+             WHERE bank_id = ?
+             ORDER BY created_at DESC`,
+            [bankId],
+          )
+        : await allQuestionsCompat(
+            db,
+            `SELECT ${fullQuestionSelectFields}
+             FROM questions
+             ORDER BY created_at DESC`,
+            `SELECT ${legacyQuestionSelectFields}
+             FROM questions
+             ORDER BY created_at DESC`,
+            [],
+          );
+      return rows.map((row) => toQuestion(db, row));
+    }
+
+    const accessibleBanks = bankId
+      ? await Promise.resolve().then(async () => {
+          const accessibleBank = await findAccessibleQuestionBankForTeacher(
+            db,
+            bankId,
+            actor.id,
+          );
+          return accessibleBank ? [accessibleBank] : [];
+        })
+      : await getAccessibleQuestionBanksForTeacher(db, actor.id);
+
+    if (!accessibleBanks.length) {
+      return [];
+    }
+
+    const bankMetaById = new Map(
+      accessibleBanks.map((item) => [item.bank.id, item] as const),
+    );
+
+    const rows = (await listQuestionsByBankIdsCompat(
+      db,
+      accessibleBanks.map((item) => item.bank.id),
+    )).filter((row) => {
+      const bankMeta = bankMetaById.get(row.bank_id);
+      if (!bankMeta) {
+        return false;
+      }
+
+      return canActorDiscoverQuestion({
+        actor,
+        bank: bankMeta.bank,
+        communityAccessible: bankMeta.communityAccessible,
+        question: row,
+      });
+    });
+
+    const bankObjectById = new Map(
+      accessibleBanks.map((item) => [
+        item.bank.id,
+        buildVisibleQuestionBankObject({
+          actor,
+          bank: item.bank,
+          communityAccessible: item.communityAccessible,
+          db,
+          findUser,
+          toUser,
+        }),
+      ]),
+    );
+
+    return rows.flatMap((row) => {
+      const bankMeta = bankMetaById.get(row.bank_id);
+      const bankObject = bankObjectById.get(row.bank_id);
+      if (!bankMeta || !bankObject) {
+        return [];
+      }
+
+      return [
+        {
+          id: row.id,
+          type: row.type,
+          canonicalQuestionId: row.canonical_question_id,
+          forkedFromQuestionId: row.forked_from_question_id,
+          title: row.title,
+          prompt: row.prompt,
+          options: parseJsonArray(row.options_json),
+          correctAnswer: row.correct_answer,
+          difficulty: row.difficulty,
+          shareScope: row.share_scope,
+          requiresAccessRequest: row.requires_access_request === 1,
+          tags: parseJsonArray(row.tags_json),
+          createdAt: row.created_at,
+          bank: async () => bankObject,
+          createdBy: async () => toUser(await findUser(db, row.created_by_id)),
+        },
+      ];
+    });
   },
   questionAccessRequests: async (_args: unknown, context: RequestContext) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
