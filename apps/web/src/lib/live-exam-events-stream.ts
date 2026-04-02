@@ -170,6 +170,13 @@ const isLocalDevelopment = () =>
   process.env.NODE_ENV === "development" &&
   window.location.hostname === "localhost";
 
+const isPreviewDeployment = () =>
+  typeof window !== "undefined" &&
+  /-pr-\d+\./.test(window.location.hostname);
+
+const shouldDisableUnavailableSse = () =>
+  isLocalDevelopment() || isPreviewDeployment();
+
 export const connectToLiveExamEvents = async ({
   classId,
   getToken,
@@ -181,6 +188,14 @@ export const connectToLiveExamEvents = async ({
   onEvent: (event: LiveExamEvent) => void;
   signal: AbortSignal;
 }) => {
+  if (shouldDisableUnavailableSse()) {
+    console.warn("Live exam SSE is disabled in this environment.", {
+      host:
+        typeof window !== "undefined" ? window.location.hostname : "unknown",
+    });
+    return;
+  }
+
   let attempt = 0;
 
   while (!signal.aborted) {
@@ -207,8 +222,10 @@ export const connectToLiveExamEvents = async ({
       }
 
       if (!response.ok || !response.body) {
-        if (response.status >= 500 && isLocalDevelopment()) {
-          console.warn("Live exam SSE is unavailable in local development.", {
+        if (response.status >= 500 && shouldDisableUnavailableSse()) {
+          console.warn("Live exam SSE is unavailable in this environment.", {
+            host:
+              typeof window !== "undefined" ? window.location.hostname : "unknown",
             status: response.status,
           });
           return;
@@ -225,6 +242,13 @@ export const connectToLiveExamEvents = async ({
 
       const isNetworkError =
         error instanceof TypeError && error.message === "Failed to fetch";
+      if (isNetworkError && shouldDisableUnavailableSse()) {
+        console.warn("Live exam SSE is unavailable in this environment.", {
+          host:
+            typeof window !== "undefined" ? window.location.hostname : "unknown",
+        });
+        return;
+      }
       if (!isNetworkError) {
         console.error("Live exam SSE connection failed", error);
       }
