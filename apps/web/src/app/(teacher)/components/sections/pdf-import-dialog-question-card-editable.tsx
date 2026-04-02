@@ -1,5 +1,12 @@
 "use client";
 import { Difficulty, QuestionType } from "@/graphql/generated";
+import {
+  formatImportOptionsEditorValue,
+  getImportAnswerHelperText,
+  getImportAnswerPlaceholder,
+  parseImportOptionsEditorValue,
+  splitImportAnswerEditorValue,
+} from "./pdf-import-dialog-editor-utils";
 import { questionTypeLabels, type ImportQuestionView } from "./pdf-import-dialog-utils";
 import { PdfImportDialogQuestionActions, PdfImportDialogQuestionSource } from "./pdf-import-dialog-question-card-tools";
 
@@ -9,11 +16,6 @@ const difficultyLabels: Record<Difficulty, string> = {
   [Difficulty.Hard]: "Хэцүү",
 };
 
-const splitEditorList = (value: string) =>
-  value
-    .split(/\n|,/)
-    .map((item) => item.trim())
-    .filter(Boolean);
 export function PdfImportDialogQuestionCardEditable({
   question,
   onMergeWithNext,
@@ -101,40 +103,38 @@ export function PdfImportDialogQuestionCardEditable({
       {question.type !== QuestionType.Essay && question.type !== QuestionType.ImageUpload ? (
         <div className="grid gap-3 lg:grid-cols-2">
           <label className="space-y-1.5">
-            <span className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#6B7280]">
-              Options
-            </span>
+            <span className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#6B7280]">Options</span>
             <textarea
-              value={question.type === QuestionType.TrueFalse ? "True\nFalse" : question.options.join("\n")}
-              onChange={(event) => handlePatch({ options: splitEditorList(event.target.value) })}
+              value={question.type === QuestionType.TrueFalse ? "A. True\nB. False" : formatImportOptionsEditorValue(question.options)}
+              onChange={(event) => handlePatch({ options: parseImportOptionsEditorValue(event.target.value) })}
               rows={4}
               disabled={question.type === QuestionType.TrueFalse}
               className="w-full rounded-2xl border border-[#D0D5DD] px-4 py-3 text-[14px] leading-6 text-[#101828] outline-none transition focus:border-[#84CAFF] focus:ring-2 focus:ring-[#B2DDFF] disabled:bg-[#F9FAFB] disabled:text-[#667085]"
             />
           </label>
           <label className="space-y-1.5">
-            <span className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#6B7280]">
-              Зөв хариу
-            </span>
+            <span className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#6B7280]">Зөв хариу</span>
             <textarea
               value={question.answers.join("\n")}
-              onChange={(event) => handlePatch({ answers: splitEditorList(event.target.value) })}
+              onChange={(event) => handlePatch({ answers: splitImportAnswerEditorValue(event.target.value) })}
               rows={4}
+              placeholder={getImportAnswerPlaceholder(question)}
               className="w-full rounded-2xl border border-[#D0D5DD] px-4 py-3 text-[14px] leading-6 text-[#101828] outline-none transition focus:border-[#84CAFF] focus:ring-2 focus:ring-[#B2DDFF]"
             />
+            <p className="text-[11px] leading-4 text-[#667085]">{getImportAnswerHelperText(question)}</p>
           </label>
         </div>
       ) : (
         <label className="space-y-1.5">
-          <span className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#6B7280]">
-            Хариу / Тайлбар
-          </span>
+          <span className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#6B7280]">Хариу / Тайлбар</span>
           <textarea
             value={question.answers.join("\n")}
-            onChange={(event) => handlePatch({ answers: splitEditorList(event.target.value) })}
+            onChange={(event) => handlePatch({ answers: splitImportAnswerEditorValue(event.target.value) })}
             rows={3}
+            placeholder={getImportAnswerPlaceholder(question)}
             className="w-full rounded-2xl border border-[#D0D5DD] px-4 py-3 text-[14px] leading-6 text-[#101828] outline-none transition focus:border-[#84CAFF] focus:ring-2 focus:ring-[#B2DDFF]"
           />
+          <p className="text-[11px] leading-4 text-[#667085]">{getImportAnswerHelperText(question)}</p>
         </label>
       )}
       <div className="flex flex-wrap items-center gap-4">

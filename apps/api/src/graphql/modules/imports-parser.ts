@@ -341,17 +341,37 @@ const splitInlineOptionSegments = (value: string) => {
     return [];
   }
 
-  return matches.map((match, index) => {
-    const label = match[1]?.trim() ?? "";
-    const labelStart = match.index ?? 0;
-    const start = labelStart + match[0].length;
-    const end = index + 1 < matches.length ? (matches[index + 1]?.index ?? value.length) : value.length;
-    return {
-      label,
-      labelStart,
-      value: stripBoilerplate(value.slice(start, end).trim()),
-    };
-  });
+  const leadingValue = value.slice(0, matches[0]?.index ?? 0).trim();
+  const firstLabel = toCanonicalOptionLabel(matches[0]?.[1] ?? "");
+  const shouldInjectLeadingOption =
+    matches.length >= 2 &&
+    firstLabel !== "A" &&
+    leadingValue.length > 0 &&
+    leadingValue.length <= 40 &&
+    leadingValue.split(/\s+/u).length <= 6;
+
+  return [
+    ...(shouldInjectLeadingOption
+      ? [
+          {
+            label: "A",
+            labelStart: 0,
+            value: stripBoilerplate(leadingValue),
+          },
+        ]
+      : []),
+    ...matches.map((match, index) => {
+      const label = match[1]?.trim() ?? "";
+      const labelStart = match.index ?? 0;
+      const start = labelStart + match[0].length;
+      const end = index + 1 < matches.length ? (matches[index + 1]?.index ?? value.length) : value.length;
+      return {
+        label,
+        labelStart,
+        value: stripBoilerplate(value.slice(start, end).trim()),
+      };
+    }),
+  ];
 };
 
 const matchStrictOlympiadQuestionStart = (line: string) => {
@@ -435,15 +455,8 @@ const buildQuestionFromChunk = ({
   }
 
   const promptBody = promptParts.join(" ").replace(/\s+/gu, " ").trim();
-  const questionMarkIndex = promptBody.indexOf("?");
-  const promptSource =
-    questionMarkIndex >= 0 ? promptBody.slice(0, questionMarkIndex + 1) : promptBody;
-  const inlineOptionsSource =
-    questionMarkIndex >= 0 ? promptBody.slice(questionMarkIndex + 1).trim() : "";
-  const inlineOptions = splitInlineOptionSegments(inlineOptionsSource)
-    .map((segment) => segment.value)
-    .filter(Boolean);
-  const prompt = stripBoilerplate(promptSource.replace(/\s+/gu, " ").trim());
+  const { promptPart, options: inlineOptions } = splitPromptAndInlineOptions(promptBody);
+  const prompt = stripBoilerplate(promptPart.replace(/\s+/gu, " ").trim());
   const normalizedOptions = [...options, ...inlineOptions].filter(Boolean).slice(0, 4);
 
   if (!prompt || shouldIgnoreQuestionPrompt(prompt)) {
@@ -513,11 +526,9 @@ const finalizeOlympiadQuestionBuilder = (
   }
 
   const promptBody = builder.promptParts.join(" ").replace(/\s+/gu, " ").trim();
-  const questionMarkIndex = promptBody.indexOf("?");
-  const promptSource =
-    questionMarkIndex >= 0 ? promptBody.slice(0, questionMarkIndex + 1) : promptBody;
-  const prompt = stripBoilerplate(promptSource);
-  const options = builder.options.filter(Boolean).slice(0, 4);
+  const { promptPart, options: inlineOptions } = splitPromptAndInlineOptions(promptBody);
+  const prompt = stripBoilerplate(promptPart);
+  const options = [...builder.options, ...inlineOptions].filter(Boolean).slice(0, 4);
 
   if (!prompt || shouldIgnoreQuestionPrompt(prompt)) {
     return null;
@@ -911,18 +922,18 @@ const parseOlympiadStyleQuestionsFromMarkers = (
   const markers = collectOlympiadQuestionMarkers(pageText);
   const scoreMarkers = collectSectionScoreMarkers(pageText);
   const questions: ParsedImportQuestion[] = [];
-  let expectedOrder = 1;
+  let lastAcceptedOrder = 0;
 
   for (let index = 0; index < markers.length; index += 1) {
     const current = markers[index];
-    if (!current || current.order !== expectedOrder) {
+    if (!current || current.order <= lastAcceptedOrder) {
       continue;
     }
 
     let nextIndex = pageText.length;
     for (let lookahead = index + 1; lookahead < markers.length; lookahead += 1) {
       const candidate = markers[lookahead];
-      if (candidate && candidate.order === expectedOrder + 1) {
+      if (candidate && candidate.order > current.order) {
         nextIndex = candidate.index;
         break;
       }
@@ -936,16 +947,16 @@ const parseOlympiadStyleQuestionsFromMarkers = (
     const parsed = buildQuestionFromChunk({
       title,
       pageNumber,
-      order: expectedOrder,
+      order: current.order,
       score: findNearestScoreForIndex(scoreMarkers, current.index),
       lines: chunkLines,
-      sourceBlockId: `page-${pageNumber}-legacy-block-${expectedOrder}`,
+      sourceBlockId: `page-${pageNumber}-legacy-block-${current.order}`,
       sourceBboxJson: null,
     });
 
     if (parsed) {
       questions.push(parsed);
-      expectedOrder += 1;
+      lastAcceptedOrder = current.order;
     }
   }
 

@@ -7,6 +7,7 @@ import type {
   PdfImportClassifier,
   PdfImportStructuredDocument,
 } from "./pdf-import-normalized-document";
+import { normalizeImportQuestionOptions } from "./pdf-import-dialog-editor-utils";
 
 export type ImportQuestionView = {
   id: string;
@@ -93,23 +94,31 @@ export const buildImportJobView = (
             className: job.exam.class.name,
           }
         : null,
-    questions: job.questions.map((question) => ({
-      id: question.id,
-      order: question.order,
-      type: question.type,
-      title: question.title,
-      prompt: question.prompt,
-      options: question.options,
-      answers: question.answers,
-      score: question.score,
-      difficulty: question.difficulty,
-      sourcePage: question.sourcePage,
-      sourceExcerpt: question.sourceExcerpt,
-      sourceBlockId: question.sourceBlockId,
-      sourceBboxJson: question.sourceBboxJson,
-      confidence: question.confidence,
-      needsReview: question.needsReview,
-    })),
+    questions: job.questions.map((question) => {
+      const normalizedOptions = normalizeImportQuestionOptions(question.options);
+      const normalizedType =
+        question.type === QuestionType.ShortAnswer && normalizedOptions.length >= 2
+          ? QuestionType.Mcq
+          : question.type;
+
+      return {
+        id: question.id,
+        order: question.order,
+        type: normalizedType,
+        title: question.title,
+        prompt: question.prompt,
+        options: normalizedOptions,
+        answers: question.answers,
+        score: question.score,
+        difficulty: question.difficulty,
+        sourcePage: question.sourcePage,
+        sourceExcerpt: question.sourceExcerpt,
+        sourceBlockId: question.sourceBlockId,
+        sourceBboxJson: question.sourceBboxJson,
+        confidence: question.confidence,
+        needsReview: question.needsReview,
+      };
+    }),
   };
 };
 

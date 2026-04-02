@@ -9,8 +9,8 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-full bg-[#FAFAFA] lg:h-[900px] lg:w-[256px] lg:min-w-[256px]">
-      <div className="flex h-full flex-col pb-0 pt-[20px]">
+    <aside className="w-full bg-[#FAFAFA] lg:sticky lg:top-0 lg:h-screen lg:w-[256px] lg:min-w-[256px] lg:border-r lg:border-[#ECECF2]">
+      <div className="flex h-full min-h-0 flex-col pb-0 pt-[20px]">
         <div className="flex h-[64px] items-center justify-center px-5">
           <div className="flex h-[56px] w-[89px] flex-col items-center justify-center">
             <div className="relative flex h-7 w-11 items-center justify-center">
@@ -23,7 +23,7 @@ export function Sidebar() {
           </div>
         </div>
 
-        <nav className="flex h-[732px] flex-1 flex-col gap-1 px-4 pb-4 pt-[28px] text-[14px]">
+        <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-4 pb-6 pt-[28px] text-[14px] scrollbar-hidden">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.href
@@ -62,7 +62,7 @@ export function Sidebar() {
           })}
         </nav>
 
-        <div className="mt-auto">
+        <div className="shrink-0 border-t border-[#ECECF2] bg-[#FAFAFA] px-4 pb-5 pt-4">
           <SidebarAccountPanel />
         </div>
       </div>

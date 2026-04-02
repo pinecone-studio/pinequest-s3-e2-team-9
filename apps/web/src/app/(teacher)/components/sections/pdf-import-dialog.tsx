@@ -50,7 +50,7 @@ export function PdfImportDialog({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[92vh] w-full max-w-[1180px] flex-col overflow-hidden rounded-[24px] border border-[#DFE1E5] bg-[#FAFAFA] shadow-[0px_20px_40px_rgba(15,18,22,0.18)]"
+        className="flex h-[min(94vh,860px)] w-full max-w-[1180px] flex-col overflow-hidden rounded-[24px] border border-[#DFE1E5] bg-[#FAFAFA] shadow-[0px_20px_40px_rgba(15,18,22,0.18)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[#EAECF0] px-6 py-5">
