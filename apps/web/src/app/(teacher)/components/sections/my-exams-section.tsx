@@ -1,7 +1,8 @@
 /* eslint-disable max-lines */
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@apollo/client/react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ExamStatus,
   MyExamsSectionQueryDocument,
@@ -34,12 +35,16 @@ const isLibraryExam = (exam: MyExamsSectionQueryQuery["exams"][number]) =>
   exam.isTemplate || (!exam.sourceExamId && exam.status === ExamStatus.Draft);
 
 export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState(ALL_SUBJECTS);
   const [levelFilter, setLevelFilter] = useState(ALL_LEVELS);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isResultsOpen, setIsResultsOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState<MyExamListView | null>(null);
+  const autoOpenedRequestRef = useRef<string | null>(null);
   const { data, loading, error, refetch } = useQuery<MyExamsSectionQueryQuery>(
     MyExamsSectionQueryDocument,
     {
@@ -144,6 +149,67 @@ export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
       })).filter((group) => group.exams.length > 0),
     [filteredExams],
   );
+  const requestedExamId = searchParams.get("examId");
+  const requestedDialog = searchParams.get("dialog") ?? "preview";
+
+  useEffect(() => {
+    if (!requestedExamId) {
+      autoOpenedRequestRef.current = null;
+      return;
+    }
+
+    if (loading) {
+      return;
+    }
+
+    const requestKey = `${mode}:${requestedDialog}:${requestedExamId}`;
+    if (autoOpenedRequestRef.current === requestKey) {
+      return;
+    }
+
+    const targetExam = exams.find((exam) => exam.id === requestedExamId);
+    if (!targetExam) {
+      return;
+    }
+
+    queueMicrotask(() => {
+      setSelectedExam(targetExam);
+      if (requestedDialog === "results" && mode === "evaluation") {
+        setIsPreviewOpen(false);
+        setIsResultsOpen(true);
+      } else {
+        setIsResultsOpen(false);
+        setIsPreviewOpen(true);
+      }
+      autoOpenedRequestRef.current = requestKey;
+    });
+  }, [exams, loading, mode, requestedDialog, requestedExamId]);
+
+  const clearDialogQueryParams = () => {
+    if (!requestedExamId && !searchParams.get("dialog")) {
+      return;
+    }
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("examId");
+    nextParams.delete("dialog");
+    const nextUrl = nextParams.toString()
+      ? `${pathname}?${nextParams.toString()}`
+      : pathname;
+    router.replace(nextUrl, { scroll: false });
+  };
+
+  const closePreview = () => {
+    setIsPreviewOpen(false);
+    setSelectedExam(null);
+    clearDialogQueryParams();
+  };
+
+  const closeResults = () => {
+    setIsResultsOpen(false);
+    setSelectedExam(null);
+    clearDialogQueryParams();
+  };
 
   return (
     <section className="mx-auto flex w-full max-w-[1184px] flex-col gap-[26px] px-6 pb-8 pt-6 sm:px-7 lg:px-8">
@@ -235,19 +301,13 @@ export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
       <ExamPreviewDialog
         exam={selectedExam}
         open={isPreviewOpen}
-        onClose={() => {
-          setIsPreviewOpen(false);
-          setSelectedExam(null);
-        }}
+        onClose={closePreview}
       />
       <ExamResultsDialog
         exam={selectedExam}
         key={isResultsOpen ? "results-open" : "results-closed"}
         open={isResultsOpen}
-        onClose={() => {
-          setIsResultsOpen(false);
-          setSelectedExam(null);
-        }}
+        onClose={closeResults}
         onReviewSaved={() => refetch()}
       />
     </section>

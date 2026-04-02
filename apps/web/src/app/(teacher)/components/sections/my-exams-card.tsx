@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import Link from "next/link";
 import {
   ClockIcon,
@@ -17,11 +18,11 @@ type MyExamCardProps = {
 
 function ExamCardIllustration() {
   return (
-    <div className="flex h-[88px] w-[88px] items-center justify-center rounded-[4px] bg-[#FFD56C]">
-      <svg className="h-12 w-12" viewBox="0 0 48 48" fill="none">
+    <div className="relative flex h-16 w-16 items-center justify-center rounded-[4px] bg-[#FFD780]">
+      <svg className="h-9 w-9" viewBox="0 0 48 48" fill="none">
         <path
           d="m15 9 12 7-5 8-12-7 5-8Z"
-          stroke="#362F57"
+          stroke="#3A2B55"
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth="2.6"
@@ -29,7 +30,7 @@ function ExamCardIllustration() {
         <path
           d="m18 23 14-6 6 13-14 6-6-13Z"
           fill="#FFBC1F"
-          stroke="#362F57"
+          stroke="#3A2B55"
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth="2.6"
@@ -37,7 +38,7 @@ function ExamCardIllustration() {
         <path
           d="m11 27 14-6 6 13-14 6-6-13Z"
           fill="#fff"
-          stroke="#362F57"
+          stroke="#3A2B55"
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth="2.6"
@@ -45,6 +46,32 @@ function ExamCardIllustration() {
       </svg>
     </div>
   );
+}
+
+function downloadExamSummary(exam: MyExamListView) {
+  const lines = [
+    `Гарчиг: ${exam.title}`,
+    `Хичээл: ${exam.subjectName}`,
+    `Анги: ${exam.classGrade}-р анги`,
+    `Бүлэг: ${exam.className}`,
+    `Хугацаа: ${exam.durationLabel}`,
+    `Асуултын тоо: ${exam.questionCount}`,
+    `Нийт оноо: ${exam.totalPointsLabel}`,
+    `Үүсгэсэн огноо: ${exam.createdDateLabel}`,
+    `Төлөв: ${exam.status.label}`,
+  ].join("\n");
+
+  const blob = new Blob([`\uFEFF${lines}`], {
+    type: "text/plain;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${exam.title.replace(/[\\/:*?\"<>|]/g, "-")}-summary.txt`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
@@ -67,6 +94,83 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
   const endsLabel =
     exam.endsAtLabel ??
     (exam.status.label === "Ноорог" ? "Дуусах хугацаа товлоогүй" : "Дуусах хугацаагүй");
+
+  if (mode === "library") {
+    return (
+      <article className="box-border flex h-[215px] w-[268px] max-w-full flex-none flex-col items-start gap-[10px] rounded-[5.74216px] border border-[#E4E4E4] bg-white p-3 shadow-[0px_3.22191px_4.83286px_rgba(0,0,0,0.09)]">
+        <div className="flex h-[191px] w-[244px] flex-col items-start gap-4 self-stretch">
+          <div className="relative flex h-24 w-[244px] items-center gap-[11px] overflow-hidden rounded-[4px] border border-[#F2E8C9] bg-[#FFF9EC] px-3">
+            <div className="absolute inset-0 bg-[radial-gradient(circle,#EBDDB6_1px,transparent_1.2px)] [background-size:10px_10px] opacity-45" />
+            <div className="relative z-10 shrink-0">
+              <ExamCardIllustration />
+            </div>
+            <div className="relative z-10 flex min-w-0 flex-1 flex-col items-start justify-center gap-2">
+              <div className="ml-auto box-border inline-flex h-5 max-w-full items-center justify-center rounded-[8.4px] border border-[#6E11B0] bg-[#F3E8FF] px-2">
+                <span className="truncate font-[var(--font-inter)] text-[10px] font-semibold leading-3 text-[#6E11B0]">
+                  {exam.subjectName}, {exam.classGrade}-р анги
+                </span>
+              </div>
+              <p className="line-clamp-1 font-[var(--font-inter)] text-[19px] font-bold leading-[24px] text-[#D5A12D]">
+                {exam.subjectName}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex w-[244px] flex-col items-start gap-[10px] self-stretch">
+            <h3 className="line-clamp-2 w-full font-[var(--font-inter)] text-[14px] font-bold leading-[17px] text-[#211C37]">
+              {exam.title}
+            </h3>
+
+            <div className="flex h-3 w-[244px] items-start gap-[14px] self-stretch">
+              <div className="flex h-3 items-center gap-1 text-[#1C1D1D]">
+                <ClockIcon className="h-3 w-3" />
+                <span className="font-[var(--font-sora)] text-[10px] font-normal leading-[13px]">
+                  {durationLabel}
+                </span>
+              </div>
+
+              <div className="flex h-3 items-center gap-1 text-[#1C1D1D]">
+                <StickyNoteIcon className="h-3 w-3" />
+                <span className="font-[var(--font-sora)] text-[10px] font-normal leading-[13px]">
+                  {exam.questionCount} Асуулт
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex h-6 w-[244px] items-center gap-3 self-stretch">
+            {canEdit ? (
+              <Link
+                className="inline-flex h-6 w-[70px] items-center justify-center gap-1 rounded-[4px] bg-[#6434F8] px-3 font-[var(--font-inter)] text-[10px] font-semibold leading-3 text-white transition hover:bg-[#5628E8]"
+                href={editHref}
+              >
+                <PreviewPencilIcon className="h-3 w-3" />
+                Засах
+              </Link>
+            ) : (
+              <button
+                className="inline-flex h-6 min-w-[70px] items-center justify-center gap-1 rounded-[4px] bg-[#6434F8] px-3 font-[var(--font-inter)] text-[10px] font-semibold leading-3 text-white transition hover:bg-[#5628E8]"
+                onClick={onView}
+                type="button"
+              >
+                <DetailsIcon className="h-3 w-3" />
+                Харах
+              </button>
+            )}
+
+            <button
+              className="inline-flex h-6 w-[93px] items-center justify-center gap-1 rounded-[4px] bg-[rgba(255,75,0,0.06)] px-3 font-[var(--font-inter)] text-[10px] font-medium leading-3 text-[#6434F8] transition hover:bg-[rgba(255,75,0,0.1)]"
+              onClick={() => downloadExamSummary(exam)}
+              type="button"
+            >
+              <DownloadIcon className="h-3 w-3" />
+              Татаж авах
+            </button>
+          </div>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article className="flex min-h-[300px] w-[268px] max-w-full flex-none flex-col gap-4 rounded-[6px] border border-[#E4E4E4] bg-white p-3 shadow-[0px_3.22px_4.83px_rgba(0,0,0,0.09)]">
@@ -158,5 +262,24 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
         </div>
       </div>
     </article>
+  );
+}
+
+function DownloadIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 12 12"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M9.5 4.5V2.25A1.25 1.25 0 0 0 8.25 1h-4.5A1.25 1.25 0 0 0 2.5 2.25V4.5m0 2.5v1.75c0 .414.336.75.75.75h5.5a.75.75 0 0 0 .75-.75V7M6 4v3.25m0 0 1.5-1.5M6 7.25l-1.5-1.5"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.1"
+      />
+    </svg>
   );
 }
