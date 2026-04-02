@@ -107,5 +107,6 @@ export const schemaEnums = /* GraphQL */ `
 
   enum ExamImportSourceType {
     PDF
+    IMAGE
   }
 `;

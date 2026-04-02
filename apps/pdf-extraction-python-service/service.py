@@ -272,10 +272,113 @@ def extract_with_azure(buffer: bytes) -> ExtractionArtifact | None:
     return ExtractionArtifact(document["fullText"], document, "hybrid", ["azure-di"])
 
 
-def extract_with_ocr(_: bytes) -> ExtractionArtifact | None:
+def extract_image_with_ocr(buffer: bytes) -> ExtractionArtifact | None:
     if pytesseract is None or Image is None:
         return None
-    return None
+
+    image = Image.open(io.BytesIO(buffer)).convert("RGB")
+    data = pytesseract.image_to_data(
+        image,
+        lang=TESSERACT_LANGUAGES,
+        output_type=pytesseract.Output.DICT,
+    )
+
+    line_map: dict[tuple[int, int, int], dict[str, Any]] = {}
+    total_items = len(data.get("text", []))
+    for index in range(total_items):
+        text = normalize_text(str(data["text"][index]))
+        if not text:
+            continue
+
+        key = (
+            int(data["block_num"][index]),
+            int(data["par_num"][index]),
+            int(data["line_num"][index]),
+        )
+        left = int(data["left"][index])
+        top = int(data["top"][index])
+        width = int(data["width"][index])
+        height = int(data["height"][index])
+
+        confidence = None
+        try:
+            confidence = float(data["conf"][index])
+        except (TypeError, ValueError):
+            confidence = None
+
+        token = {
+            "text": text,
+            "bbox": {"x": left, "y": top, "width": width, "height": height},
+            "confidence": confidence,
+        }
+        existing = line_map.get(key)
+        if existing is None:
+            line_map[key] = {
+                "tokens": [token],
+                "left": left,
+                "top": top,
+                "right": left + width,
+                "bottom": top + height,
+            }
+        else:
+            existing["tokens"].append(token)
+            existing["left"] = min(existing["left"], left)
+            existing["top"] = min(existing["top"], top)
+            existing["right"] = max(existing["right"], left + width)
+            existing["bottom"] = max(existing["bottom"], top + height)
+
+    lines = []
+    for line_index, (_, line) in enumerate(
+        sorted(line_map.items(), key=lambda item: (item[1]["top"], item[1]["left"])),
+        start=1,
+    ):
+        tokens = sorted(line["tokens"], key=lambda token: token["bbox"]["x"])
+        line_text = normalize_text(" ".join(token["text"] for token in tokens))
+        if not line_text:
+            continue
+        lines.append(
+            {
+                "id": f"page-1-line-{line_index}",
+                "text": line_text,
+                "bbox": {
+                    "x": line["left"],
+                    "y": line["top"],
+                    "width": max(0, line["right"] - line["left"]),
+                    "height": max(0, line["bottom"] - line["top"]),
+                },
+                "tokens": tokens,
+            }
+        )
+
+    page_text = normalize_multiline("\n".join(line["text"] for line in lines))
+    document = build_document_from_pages(
+        [
+            {
+                "number": 1,
+                "width": float(image.width),
+                "height": float(image.height),
+                "layout": "single-column",
+                "blocks": [
+                    {
+                        "id": "page-1-block-1",
+                        "pageNumber": 1,
+                        "type": detect_block_type(page_text.splitlines()[0] if page_text else "", len(lines)),
+                        "columnIndex": 0,
+                        "bbox": {"x": 0, "y": 0, "width": float(image.width), "height": float(image.height)},
+                        "text": page_text,
+                        "lines": lines,
+                        "sourceEngine": "tesseract-ocr",
+                    }
+                ],
+                "text": page_text,
+            }
+        ],
+        ["tesseract-ocr"],
+        needs_ocr=True,
+    )
+    if not document["fullText"]:
+        return None
+    return ExtractionArtifact(document["fullText"], document, "browser-ocr", ["tesseract-ocr"])
 
 
 def extract_pdf(buffer: bytes) -> dict[str, Any]:
@@ -286,11 +389,47 @@ def extract_pdf(buffer: bytes) -> dict[str, Any]:
             artifact = enrich_with_pdfplumber(buffer, artifact)
 
     if artifact is None:
-        artifact = extract_with_ocr(buffer)
+        artifact = extract_image_with_ocr(buffer)
 
     if artifact is None:
         raise RuntimeError(
             "No extraction engine produced text. Install PyMuPDF/pdfplumber or configure Azure DI."
+        )
+
+    document = artifact.document
+    document["classifier"] = build_classifier(
+        document, artifact.engines_used, artifact.strategy == "browser-ocr"
+    )
+    return {
+        "extractedText": artifact.full_text,
+        "provider": "api",
+        "strategy": artifact.strategy,
+        "document": document,
+        "classification": document["classifier"],
+        "enginesUsed": artifact.engines_used,
+        "capabilities": {
+            "pymupdf": fitz is not None,
+            "pdfplumber": pdfplumber is not None,
+            "ocr": pytesseract is not None and Image is not None,
+            "azure": bool(AZURE_ENDPOINT and AZURE_KEY and DocumentIntelligenceClient is not None),
+            "tesseractLanguages": TESSERACT_LANGUAGES,
+        },
+    }
+
+
+def extract_document(buffer: bytes, *, file_name: str, content_type: str = "") -> dict[str, Any]:
+    normalized_type = (content_type or "").strip().lower()
+    is_pdf = normalized_type == "application/pdf" or file_name.lower().endswith(".pdf")
+    if is_pdf:
+        return extract_pdf(buffer)
+
+    artifact = extract_with_azure(buffer)
+    if artifact is None:
+        artifact = extract_image_with_ocr(buffer)
+
+    if artifact is None:
+        raise RuntimeError(
+            "No extraction engine produced text for the image. Install OCR dependencies or configure Azure DI."
         )
 
     document = artifact.document

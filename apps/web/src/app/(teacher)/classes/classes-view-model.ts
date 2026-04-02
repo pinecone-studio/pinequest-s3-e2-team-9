@@ -28,6 +28,22 @@ export type ClassStudentIntegritySignalView = {
   tone: IntegrityTone;
 };
 
+export type ClassListItemView = {
+  id: string;
+  href: string;
+  name: string;
+  subject: string;
+  grade: number;
+  meta: string;
+  studentCount: number;
+  studentCountLabel: string;
+  upcomingExamCount: number;
+  upcomingLabel: string;
+  completedExamCount: number;
+  completedLabel: string;
+  searchText: string;
+};
+
 export type ClassStudentIntegrityEventView = {
   id: string;
   type: AttemptIntegrityEventType;
@@ -68,14 +84,19 @@ const resolveIntegrityTone = (
           : "muted"
   ) as IntegrityTone;
 
-export const buildClassesListViewModel = (data: ClassesListQuery) =>
+export const buildClassesListViewModel = (data: ClassesListQuery): ClassListItemView[] =>
   data.classes.map((item) => ({
     id: item.id,
     href: `/classes/${item.id}`,
     name: item.name,
+    subject: item.subject,
+    grade: item.grade,
     meta: `${item.subject} · ${formatGradeLabel(item.grade)}`,
+    studentCount: item.studentCount,
     studentCountLabel: `${item.studentCount} сурагч`,
+    upcomingExamCount: item.upcomingExamCount,
     upcomingLabel: `${item.upcomingExamCount} шалгалт удахгүй`,
+    completedExamCount: item.completedExamCount,
     completedLabel: `${item.completedExamCount} шалгалт дууссан`,
     searchText: `${item.name} ${item.subject} ${item.grade}`,
   }));

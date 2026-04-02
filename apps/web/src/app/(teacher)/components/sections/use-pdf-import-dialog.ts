@@ -100,7 +100,7 @@ export function usePdfImportDialog(selectedFile: File | null, open: boolean) {
       setInfoMessage(result.infoMessage);
       setJobView(buildImportJobView(result.job));
     } catch (error) {
-      console.error("Failed to create PDF import job", error);
+      console.error("Failed to create import job", error);
       setErrorMessage(getPdfImportErrorMessage(error));
     } finally {
       setIsExtractingText(false);
@@ -125,11 +125,11 @@ export function usePdfImportDialog(selectedFile: File | null, open: boolean) {
       });
       const nextJob = result.data?.approveExamImportJob;
       if (!nextJob) {
-        throw new Error("PDF import approval мэдээлэл ирсэнгүй.");
+        throw new Error("Import approval мэдээлэл ирсэнгүй.");
       }
       setJobView(buildImportJobView(nextJob));
     } catch (error) {
-      console.error("Failed to approve PDF import job", error);
+      console.error("Failed to approve import job", error);
       setErrorMessage(getPdfImportErrorMessage(error));
     }
   };

@@ -55,16 +55,16 @@ const importQuestionSelectFields = `id,
       needs_review,
       created_at`;
 
-const stripPdfExtension = (fileName: string) =>
-  fileName.replace(/\.pdf$/i, "").trim();
+const stripImportExtension = (fileName: string) =>
+  fileName.replace(/\.(pdf|png|jpe?g|webp|gif|bmp)$/i, "").trim();
 
 const toImportTitle = (fileName: string) => {
-  const normalized = stripPdfExtension(fileName)
+  const normalized = stripImportExtension(fileName)
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
-  return normalized.length > 0 ? normalized : "PDF импорт шалгалт";
+  return normalized.length > 0 ? normalized : "Импорт шалгалт";
 };
 
 const toParsedExamJson = (title: string, questions: ParsedImportQuestion[]) =>
@@ -360,7 +360,7 @@ export const createImportQueriesAndMutations = ({
       return row ? toExamImportJob(row) : null;
     },
     createExamImportJob: async (
-      { fileName, fileSizeBytes, extractedText, storageKey, extractionJson, classifierJson }: CreateExamImportJobArgs,
+      { fileName, fileSizeBytes, extractedText, sourceType, storageKey, extractionJson, classifierJson }: CreateExamImportJobArgs,
       context: RequestContext,
     ) => {
       const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
@@ -399,7 +399,7 @@ export const createImportQueriesAndMutations = ({
           storageKey?.trim() || null,
           fileName.trim(),
           fileSizeBytes,
-          "PDF",
+          sourceType,
           "UPLOADED",
           fallbackTitle,
           normalizedExtractedText || null,
@@ -473,7 +473,7 @@ export const createImportQueriesAndMutations = ({
       const bankId = makeId("bank");
       const examId = makeId("exam");
       const updatedAt = now();
-      const bankTitle = `${job.title} PDF import`;
+      const bankTitle = `${job.title} import`;
       const bankDescription = `${job.file_name} файлаас үүсгэсэн асуултын сан`;
       invariant(reviewedQuestions.length > 0, "Дор хаяж нэг асуултыг баталгаажуулна уу.");
       const normalizedQuestions = await replaceImportQuestions(db, job.id, updatedAt, reviewedQuestions);

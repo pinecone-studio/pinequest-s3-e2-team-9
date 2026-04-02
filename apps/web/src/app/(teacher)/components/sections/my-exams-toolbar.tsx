@@ -25,13 +25,13 @@ export function MyExamsToolbar({
   onSubjectChange,
   onLevelChange,
 }: MyExamsToolbarProps) {
-  const pdfInputRef = useRef<HTMLInputElement | null>(null);
-  const [selectedPdf, setSelectedPdf] = useState<File | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
+  const [selectedImportFile, setSelectedImportFile] = useState<File | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
   const closeImportDialog = () => {
     setIsImportDialogOpen(false);
-    setSelectedPdf(null);
+    setSelectedImportFile(null);
   };
 
   return (
@@ -71,23 +71,23 @@ export function MyExamsToolbar({
       {isLibraryMode ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <input
-            ref={pdfInputRef}
+            ref={importInputRef}
             type="file"
-            accept="application/pdf,.pdf"
+            accept="application/pdf,.pdf,image/jpeg,image/png,image/webp,image/gif,image/bmp,.jpg,.jpeg,.png,.webp,.gif,.bmp"
             className="hidden"
             onChange={(event) => {
               const nextFile = event.target.files?.[0] ?? null;
-              setSelectedPdf(nextFile);
+              setSelectedImportFile(nextFile);
               setIsImportDialogOpen(Boolean(nextFile));
               event.currentTarget.value = "";
             }}
           />
           <button
             type="button"
-            onClick={() => pdfInputRef.current?.click()}
+            onClick={() => importInputRef.current?.click()}
             className="inline-flex h-10 items-center justify-center rounded-[5px] border border-[#DDD6FE] bg-white px-5 text-[14px] font-semibold text-[#6434F8] shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)] transition hover:bg-[#F8F5FF]"
           >
-            PDF upload
+            PDF / Image upload
           </button>
           <Link
             href="/create-exam"
@@ -103,7 +103,7 @@ export function MyExamsToolbar({
       </div>
       <PdfImportDialog
         open={isImportDialogOpen}
-        selectedFile={selectedPdf}
+        selectedFile={selectedImportFile}
         onClose={closeImportDialog}
       />
     </>

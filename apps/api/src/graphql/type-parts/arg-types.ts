@@ -149,6 +149,7 @@ export type CreateExamImportJobArgs = {
   fileName: string;
   fileSizeBytes: number;
   extractedText: string;
+  sourceType: "PDF" | "IMAGE";
   storageKey?: string | null;
   extractionJson?: string | null;
   classifierJson?: string | null;

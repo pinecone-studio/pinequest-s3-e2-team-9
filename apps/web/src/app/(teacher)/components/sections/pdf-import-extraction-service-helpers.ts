@@ -1,6 +1,17 @@
 "use client";
 
+import { ExamImportSourceType } from "@/graphql/generated";
 import type { PdfImportExtractionResult } from "./pdf-import-text-extractor";
+
+const SUPPORTED_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/bmp",
+]);
+const SUPPORTED_IMAGE_EXTENSIONS = /\.(?:jpe?g|png|webp|gif|bmp)$/i;
+const PDF_EXTENSION = /\.pdf$/i;
 
 export type PdfImportServiceResult = PdfImportExtractionResult & {
   provider: "api" | "client";
@@ -128,3 +139,16 @@ export const canFallbackWithoutStoredUpload = (error: unknown) =>
 
 export const canFallbackToClient = (error: unknown) =>
   error instanceof PdfImportExtractionError;
+
+export const isPdfImportFile = (file: File) =>
+  file.type.trim().toLowerCase() === "application/pdf" || PDF_EXTENSION.test(file.name);
+
+export const isImageImportFile = (file: File) =>
+  SUPPORTED_IMAGE_MIME_TYPES.has(file.type.trim().toLowerCase()) ||
+  SUPPORTED_IMAGE_EXTENSIONS.test(file.name);
+
+export const isSupportedImportFile = (file: File) =>
+  isPdfImportFile(file) || isImageImportFile(file);
+
+export const getImportSourceType = (file: File): ExamImportSourceType =>
+  isImageImportFile(file) ? ExamImportSourceType.Image : ExamImportSourceType.Pdf;

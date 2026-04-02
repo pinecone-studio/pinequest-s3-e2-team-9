@@ -4,6 +4,7 @@ import { CloseIcon } from "../icons";
 import { PdfImportDialogFooter } from "./pdf-import-dialog-footer";
 import { PdfImportDialogPreviewPane } from "./pdf-import-dialog-preview-pane";
 import { PdfImportDialogReviewPane } from "./pdf-import-dialog-review-pane";
+import { isImageImportFile } from "./pdf-import-extraction-service-helpers";
 import { usePdfImportDialog } from "./use-pdf-import-dialog";
 
 export function PdfImportDialog({
@@ -54,9 +55,9 @@ export function PdfImportDialog({
       >
         <div className="flex items-center justify-between border-b border-[#EAECF0] px-6 py-5">
           <div>
-            <h2 className="text-[20px] font-semibold text-[#0F1216]">PDF-ээс асуулт импортлох</h2>
+            <h2 className="text-[20px] font-semibold text-[#0F1216]">Файлаас асуулт импортлох</h2>
             <p className="mt-1 text-[14px] text-[#52555B]">
-              PDF-ээ preview-лээд, гарч ирсэн draft асуултуудыг баталгаажуулна.
+              PDF эсвэл зургаа preview-лээд, гарч ирсэн draft асуултуудыг баталгаажуулна.
             </p>
           </div>
           <button
@@ -73,6 +74,7 @@ export function PdfImportDialog({
             fileName={selectedFile.name}
             fileSize={selectedFile.size}
             previewUrl={previewUrl}
+            isImage={isImageImportFile(selectedFile)}
           />
           <PdfImportDialogReviewPane
             examEditHref={examEditHref}

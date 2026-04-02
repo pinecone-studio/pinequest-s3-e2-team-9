@@ -20,8 +20,8 @@ export function ClassCard({
   completedLabel,
 }: ClassCardProps) {
   return (
-    <article className="flex h-[182px] w-[352px] flex-col items-center gap-3 rounded-[16px] border border-[#F1F2F3] bg-white p-[10px] pb-4 shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.06)]">
-      <div className="flex w-full flex-col items-start gap-2 rounded-[16px] rounded-b-[4px] bg-[#6F90FF] px-[14px] py-[18px]">
+    <article className="flex min-h-[214px] w-full flex-col gap-4 rounded-[18px] border border-[#E7E8EC] bg-white p-3 shadow-[0px_10px_30px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0px_14px_36px_rgba(15,23,42,0.12)]">
+      <div className="flex w-full flex-col items-start gap-2 rounded-[16px] bg-[linear-gradient(135deg,#5B7CFA_0%,#86A5FF_100%)] px-4 py-5">
         <h2 className="text-[18px] font-bold leading-5 text-white">{name}</h2>
         <div className="flex items-center gap-1.5 text-[14px] leading-4 text-[#F5F5F5]">
           <CastForEducationIcon className="h-4 w-4" />
@@ -32,14 +32,22 @@ export function ClassCard({
           <span>{studentCountLabel}</span>
         </div>
       </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-[14px] bg-[#F4F7FF] px-4 py-3">
+          <p className="text-[12px] font-medium text-[#5E6470]">Удахгүй</p>
+          <p className="mt-1 text-[15px] font-semibold text-[#101828]">{upcomingLabel}</p>
+        </div>
+        <div className="rounded-[14px] bg-[#F7F6FF] px-4 py-3">
+          <p className="text-[12px] font-medium text-[#5E6470]">Дууссан</p>
+          <p className="mt-1 text-[15px] font-semibold text-[#101828]">{completedLabel}</p>
+        </div>
+      </div>
       <Link
         href={href}
-        className="inline-flex h-9 w-full items-center justify-center rounded-[8px] border border-[#52555B] bg-white text-[12px] font-semibold leading-5 text-[#52555B]"
+        className="mt-auto inline-flex h-10 w-full items-center justify-center rounded-[12px] border border-[#D8DCE6] bg-white text-[13px] font-semibold leading-5 text-[#252B37] transition hover:border-[#CFC5FF] hover:bg-[#F8F6FF]"
       >
         Ангийг харах
       </Link>
-      <span className="sr-only">{upcomingLabel}</span>
-      <span className="sr-only">{completedLabel}</span>
     </article>
   );
 }

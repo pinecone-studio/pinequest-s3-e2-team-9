@@ -652,7 +652,7 @@ const handlePdfExtraction = async (
   if (!env.PDF_EXTRACTION_SERVICE_URL?.trim()) {
     return json(
       {
-        error: "PDF extraction service is not configured on the API.",
+        error: "Document extraction service is not configured on the API.",
       },
       { status: 501 },
     );
@@ -678,7 +678,7 @@ const handlePdfExtraction = async (
     if (actor.user.role !== "ADMIN" && !storageKey.includes(`/${actor.user.id}/`)) {
       return json(
         {
-          error: "You do not have access to this uploaded PDF.",
+          error: "You do not have access to this uploaded file.",
         },
         { status: 403 },
       );
@@ -689,7 +689,7 @@ const handlePdfExtraction = async (
     if (!object?.body) {
       return json(
         {
-          error: "Uploaded PDF not found.",
+          error: "Uploaded file not found.",
         },
         { status: 404 },
       );
@@ -699,7 +699,7 @@ const handlePdfExtraction = async (
     const originalName =
       object.customMetadata?.originalName?.trim() ||
       storageKey.split("/").pop() ||
-      "import.pdf";
+      "import-file";
     const storedContentType =
       object.httpMetadata?.contentType?.trim() || "application/pdf";
     file = new File([arrayBuffer], originalName, {
@@ -720,7 +720,7 @@ const handlePdfExtraction = async (
     if (!(uploadedFile instanceof File)) {
       return json(
         {
-          error: "PDF file is required.",
+          error: "Import file is required.",
         },
         { status: 400 },
       );
@@ -729,10 +729,10 @@ const handlePdfExtraction = async (
     file = uploadedFile;
   }
 
-  if (!file.name.toLowerCase().endsWith(".pdf")) {
+  if (!isSupportedImportDocument(file)) {
     return json(
       {
-        error: "Only PDF files are supported.",
+        error: "Only PDF and image files are supported.",
       },
       { status: 400 },
     );
@@ -770,7 +770,7 @@ const handlePdfExtraction = async (
         error:
           error instanceof Error
             ? error.message
-            : "PDF extraction service is unreachable.",
+            : "Document extraction service is unreachable.",
       },
       { status: 503 },
     );
@@ -779,6 +779,13 @@ const handlePdfExtraction = async (
 
 const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
 const MAX_PDF_IMPORT_UPLOAD_BYTES = 25 * 1024 * 1024;
+const SUPPORTED_IMPORT_IMAGE_CONTENT_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/bmp",
+]);
 
 const getImageExtension = (
   contentType: string,
@@ -807,6 +814,33 @@ const getImageExtension = (
 
   const [, extension] = originalName.trim().toLowerCase().match(/\.([a-z0-9]+)$/) ?? [];
   return extension || "bin";
+};
+
+const inferImportContentType = (file: Pick<File, "name" | "type">) => {
+  const normalizedType = file.type.trim().toLowerCase();
+  if (normalizedType) {
+    return normalizedType;
+  }
+
+  if (file.name.toLowerCase().endsWith(".pdf")) {
+    return "application/pdf";
+  }
+
+  return "";
+};
+
+const isSupportedImportDocument = (file: Pick<File, "name" | "type">) => {
+  const normalizedType = inferImportContentType(file);
+  return normalizedType === "application/pdf" || SUPPORTED_IMPORT_IMAGE_CONTENT_TYPES.has(normalizedType);
+};
+
+const getImportDocumentExtension = (file: Pick<File, "name" | "type">) => {
+  const normalizedType = inferImportContentType(file);
+  if (normalizedType === "application/pdf") {
+    return "pdf";
+  }
+
+  return getImageExtension(normalizedType, file.name);
 };
 
 const requireAuthenticatedActor = async (
@@ -866,16 +900,16 @@ const handlePdfImportUpload = async (
     if (!(file instanceof File)) {
       return json(
         {
-          error: "PDF file is required.",
+          error: "Import file is required.",
         },
         { status: 400 },
       );
     }
 
-    if (!file.name.toLowerCase().endsWith(".pdf")) {
+    if (!isSupportedImportDocument(file)) {
       return json(
         {
-          error: "Only PDF files are supported.",
+          error: "Only PDF and image files are supported.",
         },
         { status: 400 },
       );
@@ -884,14 +918,15 @@ const handlePdfImportUpload = async (
     if (file.size > MAX_PDF_IMPORT_UPLOAD_BYTES) {
       return json(
         {
-          error: "PDF size must be 25MB or less.",
+          error: "Import file size must be 25MB or less.",
         },
         { status: 400 },
       );
     }
 
-    const key = `imports/pdf/${actor.user.role.toLowerCase()}/${actor.user.id}/${crypto.randomUUID()}.pdf`;
-    const contentType = file.type.trim() || "application/pdf";
+    const contentType = inferImportContentType(file) || "application/pdf";
+    const extension = getImportDocumentExtension(file);
+    const key = `imports/document/${actor.user.role.toLowerCase()}/${actor.user.id}/${crypto.randomUUID()}.${extension}`;
 
     await bucket.put(key, await file.arrayBuffer(), {
       httpMetadata: {
@@ -914,7 +949,7 @@ const handlePdfImportUpload = async (
   } catch (error) {
     const status = error instanceof ApiAuthError ? error.status : 500;
     const message =
-      error instanceof Error ? error.message : "PDF upload failed.";
+      error instanceof Error ? error.message : "Import upload failed.";
 
     return json(
       {

@@ -326,6 +326,7 @@ export type ExamImportQuestionReviewInput = {
 };
 
 export enum ExamImportSourceType {
+  Image = 'IMAGE',
   Pdf = 'PDF'
 }
 
@@ -493,6 +494,7 @@ export type MutationCreateExamImportJobArgs = {
   extractionJson?: InputMaybe<Scalars['String']['input']>;
   fileName: Scalars['String']['input'];
   fileSizeBytes: Scalars['Int']['input'];
+  sourceType: ExamImportSourceType;
   storageKey?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -821,6 +823,7 @@ export type CreateExamImportJobMutationMutationVariables = Exact<{
   fileName: Scalars['String']['input'];
   fileSizeBytes: Scalars['Int']['input'];
   extractedText: Scalars['String']['input'];
+  sourceType: ExamImportSourceType;
   storageKey?: InputMaybe<Scalars['String']['input']>;
   extractionJson?: InputMaybe<Scalars['String']['input']>;
   classifierJson?: InputMaybe<Scalars['String']['input']>;
@@ -1455,11 +1458,12 @@ export type CreateExamDraftVariantsMutationMutationHookResult = ReturnType<typeo
 export type CreateExamDraftVariantsMutationMutationResult = ApolloReactCommon.MutationResult<CreateExamDraftVariantsMutationMutation>;
 export type CreateExamDraftVariantsMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateExamDraftVariantsMutationMutation, CreateExamDraftVariantsMutationMutationVariables>;
 export const CreateExamImportJobMutationDocument = gql`
-    mutation CreateExamImportJobMutation($fileName: String!, $fileSizeBytes: Int!, $extractedText: String!, $storageKey: String, $extractionJson: String, $classifierJson: String) {
+    mutation CreateExamImportJobMutation($fileName: String!, $fileSizeBytes: Int!, $extractedText: String!, $sourceType: ExamImportSourceType!, $storageKey: String, $extractionJson: String, $classifierJson: String) {
   createExamImportJob(
     fileName: $fileName
     fileSizeBytes: $fileSizeBytes
     extractedText: $extractedText
+    sourceType: $sourceType
     storageKey: $storageKey
     extractionJson: $extractionJson
     classifierJson: $classifierJson
@@ -1517,6 +1521,7 @@ export type CreateExamImportJobMutationMutationFn = ApolloReactCommon.MutationFu
  *      fileName: // value for 'fileName'
  *      fileSizeBytes: // value for 'fileSizeBytes'
  *      extractedText: // value for 'extractedText'
+ *      sourceType: // value for 'sourceType'
  *      storageKey: // value for 'storageKey'
  *      extractionJson: // value for 'extractionJson'
  *      classifierJson: // value for 'classifierJson'

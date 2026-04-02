@@ -165,6 +165,11 @@ const waitForReconnect = (delayMs: number, signal: AbortSignal) =>
     signal.addEventListener("abort", handleAbort, { once: true });
   });
 
+const isLocalDevelopment = () =>
+  typeof window !== "undefined" &&
+  process.env.NODE_ENV === "development" &&
+  window.location.hostname === "localhost";
+
 export const connectToLiveExamEvents = async ({
   classId,
   getToken,
@@ -202,6 +207,12 @@ export const connectToLiveExamEvents = async ({
       }
 
       if (!response.ok || !response.body) {
+        if (response.status >= 500 && isLocalDevelopment()) {
+          console.warn("Live exam SSE is unavailable in local development.", {
+            status: response.status,
+          });
+          return;
+        }
         throw new Error(`SSE request failed with status ${response.status}`);
       }
 

@@ -5,7 +5,15 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from config import HOST, PORT, SHARED_TOKEN
-from service import dumps, extract_pdf
+from service import dumps, extract_document
+
+SUPPORTED_IMAGE_CONTENT_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/bmp",
+}
 
 
 class PdfExtractionHandler(BaseHTTPRequestHandler):
@@ -43,6 +51,7 @@ class PdfExtractionHandler(BaseHTTPRequestHandler):
               "ok": True,
               "service": "pdf-extraction-python-service",
               "mode": "multi-engine",
+              "supports": ["pdf", "image"],
           },
         )
 
@@ -67,16 +76,21 @@ class PdfExtractionHandler(BaseHTTPRequestHandler):
         form = cgi.FieldStorage(fp=self.rfile, headers=self.headers, environ=environ)
         file_item = form["file"] if "file" in form else None
         if file_item is None or not getattr(file_item, "file", None):
-            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "PDF file is required."})
+            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "Import file is required."})
             return
 
         file_name = getattr(file_item, "filename", "upload.pdf") or "upload.pdf"
-        if not file_name.lower().endswith(".pdf"):
-            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "Only PDF files are supported."})
+        file_type = (getattr(file_item, "type", "") or "").strip().lower()
+        is_pdf = file_name.lower().endswith(".pdf") or file_type == "application/pdf"
+        is_image = file_type in SUPPORTED_IMAGE_CONTENT_TYPES or file_name.lower().endswith(
+            (".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp")
+        )
+        if not is_pdf and not is_image:
+            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "Only PDF and image files are supported."})
             return
 
         try:
-            payload = extract_pdf(file_item.file.read())
+            payload = extract_document(file_item.file.read(), file_name=file_name, content_type=file_type)
             self._send_json(HTTPStatus.OK, payload)
         except RuntimeError as error:
             self._send_json(HTTPStatus.UNPROCESSABLE_ENTITY, {"error": str(error)})

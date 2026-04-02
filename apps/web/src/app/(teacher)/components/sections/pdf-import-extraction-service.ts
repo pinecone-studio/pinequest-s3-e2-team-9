@@ -1,7 +1,7 @@
 "use client";
 
 import { getApiBaseUrl } from "@/lib/graphql-endpoint";
-import { extractPdfText } from "./pdf-import-text-extractor";
+import { extractDocumentText } from "./pdf-import-text-extractor";
 import {
   canFallbackToClient,
   canRetryWithoutStoredFile,
@@ -95,7 +95,7 @@ export const extractPdfImportContent = async (
       throw error;
     }
 
-    const result = await extractPdfText(file);
+    const result = await extractDocumentText(file);
     return {
       ...result,
       provider: "client",

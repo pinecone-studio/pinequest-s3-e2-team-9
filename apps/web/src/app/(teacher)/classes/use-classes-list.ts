@@ -7,6 +7,8 @@ import { buildClassesListViewModel } from "./classes-view-model";
 
 export function useClassesList() {
   const [search, setSearch] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("ALL");
+  const [gradeFilter, setGradeFilter] = useState("ALL");
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
   const query = useClassesListQuery({
     ssr: false,
@@ -21,8 +23,37 @@ export function useClassesList() {
     },
   });
 
+  const allClasses = useMemo(
+    () => (query.data ? buildClassesListViewModel(query.data) : []),
+    [query.data],
+  );
+
+  const availableSubjects = useMemo(
+    () => Array.from(new Set(allClasses.map((item) => item.subject))).sort((left, right) => left.localeCompare(right, "mn")),
+    [allClasses],
+  );
+
+  const availableGrades = useMemo(
+    () => Array.from(new Set(allClasses.map((item) => item.grade))).sort((left, right) => left - right),
+    [allClasses],
+  );
+
   const classes = useMemo(() => {
-    const rows = query.data ? buildClassesListViewModel(query.data) : [];
+    const normalizedGradeFilter =
+      gradeFilter === "ALL" ? null : Number.parseInt(gradeFilter, 10);
+
+    const rows = allClasses.filter((item) => {
+      if (subjectFilter !== "ALL" && item.subject !== subjectFilter) {
+        return false;
+      }
+
+      if (normalizedGradeFilter !== null && item.grade !== normalizedGradeFilter) {
+        return false;
+      }
+
+      return true;
+    });
+
     if (!deferredSearch) {
       return rows;
     }
@@ -30,16 +61,33 @@ export function useClassesList() {
     return rows.filter((item) =>
       item.searchText.toLowerCase().includes(deferredSearch),
     );
-  }, [deferredSearch, query.data]);
+  }, [allClasses, deferredSearch, gradeFilter, subjectFilter]);
+
+  const summary = useMemo(
+    () => ({
+      classCount: classes.length,
+      totalStudents: classes.reduce((sum, item) => sum + item.studentCount, 0),
+      totalUpcomingExams: classes.reduce((sum, item) => sum + item.upcomingExamCount, 0),
+      totalCompletedExams: classes.reduce((sum, item) => sum + item.completedExamCount, 0),
+    }),
+    [classes],
+  );
 
   return {
     classes,
+    summary,
     search,
     setSearch,
+    subjectFilter,
+    setSubjectFilter,
+    gradeFilter,
+    setGradeFilter,
+    availableSubjects,
+    availableGrades,
     loading: query.loading,
     error: query.error ?? null,
     refetch: query.refetch,
     hasData: classes.length > 0,
-    hasServerData: (query.data?.classes.length ?? 0) > 0,
+    hasServerData: allClasses.length > 0,
   };
 }
