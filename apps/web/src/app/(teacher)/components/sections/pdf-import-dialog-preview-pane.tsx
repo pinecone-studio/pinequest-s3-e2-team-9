@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { formatFileSize } from "./pdf-import-dialog-utils";
 
 export function PdfImportDialogPreviewPane({
@@ -27,11 +28,15 @@ export function PdfImportDialogPreviewPane({
       <div className="h-[320px] bg-[#EEF4FF] p-4 xl:h-full">
         {previewUrl ? (
           isImage ? (
-            <img
-              alt={fileName}
-              src={previewUrl}
-              className="h-full w-full rounded-[18px] border border-[#D0D5DD] bg-white object-contain"
-            />
+            <div className="relative h-full w-full overflow-hidden rounded-[18px] border border-[#D0D5DD] bg-white">
+              <Image
+                alt={fileName}
+                src={previewUrl}
+                fill
+                unoptimized
+                className="object-contain"
+              />
+            </div>
           ) : (
             <iframe
               title="PDF preview"

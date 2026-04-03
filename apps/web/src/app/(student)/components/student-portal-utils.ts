@@ -1,5 +1,5 @@
 import { AttemptStatus, ExamMode, type StudentHomeQuery } from "@/graphql/generated";
-import { formatClock, formatMonthDay, formatMonthDayWithYear, getExamEnd, getExamStart, parseDate } from "./student-home-time";
+import { formatClock, formatMonthDayWithYear, getExamEnd, getExamStart, parseDate } from "./student-home-time";
 
 type QueryExam = StudentHomeQuery["exams"][number];
 type QueryAttempt = StudentHomeQuery["attempts"][number];
