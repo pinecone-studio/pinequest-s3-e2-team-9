@@ -1,10 +1,22 @@
 export const schemaRootTypes = /* GraphQL */ `
   input ExamGenerationRuleInput {
     label: String!
-    bankIds: [ID!]!
+    bankIds: [ID!]
+    repository: QuestionRepositoryFilter = ALL
+    subject: String
+    grade: Int
+    topic: String
+    subtopics: [String!]
     difficulty: Difficulty
     count: Int!
     points: Int!
+  }
+
+  input ExamDiagnosticConfigInput {
+    enabled: Boolean = false
+    questionLimit: Int = 10
+    startDifficulty: Difficulty = MEDIUM
+    retakeMode: ExamRetakeMode = RANDOM_VARIANT
   }
 
   input UpdateExamDraftQuestionInput {
@@ -41,9 +53,12 @@ export const schemaRootTypes = /* GraphQL */ `
     communityExamPreview(examId: ID!, communityId: ID): CommunityExamPreview
     classes: [Class!]!
     class(id: ID!): Class
-    questionBanks: [QuestionBank!]!
+    questionBanks(repository: QuestionRepositoryFilter = ALL): [QuestionBank!]!
     questionBank(id: ID!): QuestionBank
-    questions(bankId: ID): [Question!]!
+    questions(bankId: ID, repository: QuestionRepositoryFilter = ALL): [Question!]!
+    questionRepositoryTree(
+      repository: QuestionRepositoryFilter = ALL
+    ): [QuestionRepositorySubjectGroup!]!
     questionAccessRequests: [QuestionAccessRequest!]!
     exams: [Exam!]!
     exam(id: ID!): Exam
@@ -88,16 +103,21 @@ export const schemaRootTypes = /* GraphQL */ `
       grade: Int = 10
       subject: String = "Ерөнхий"
       topic: String = "Ерөнхий"
+      repositoryKind: QuestionRepositoryKind = MINE
       visibility: QuestionBankVisibility = PRIVATE
     ): QuestionBank!
     createQuestion(
-      bankId: ID!
+      bankId: ID
+      grade: Int
+      subject: String
+      topic: String
       type: QuestionType!
       title: String!
       prompt: String!
       options: [String!]
       correctAnswer: String
       difficulty: Difficulty = MEDIUM
+      repositoryKind: QuestionRepositoryKind
       shareScope: QuestionShareScope = PRIVATE
       requiresAccessRequest: Boolean = false
       tags: [String!]
@@ -110,6 +130,7 @@ export const schemaRootTypes = /* GraphQL */ `
       options: [String!]
       correctAnswer: String
       difficulty: Difficulty = MEDIUM
+      repositoryKind: QuestionRepositoryKind
       shareScope: QuestionShareScope
       requiresAccessRequest: Boolean
       tags: [String!]
@@ -129,6 +150,7 @@ export const schemaRootTypes = /* GraphQL */ `
       shuffleAnswers: Boolean = false
       generationMode: ExamGenerationMode = MANUAL
       rules: [ExamGenerationRuleInput!]
+      diagnosticConfig: ExamDiagnosticConfigInput
       passingCriteriaType: PassingCriteriaType = PERCENTAGE
       passingThreshold: Int = 40
     ): Exam!
@@ -146,6 +168,7 @@ export const schemaRootTypes = /* GraphQL */ `
       shuffleAnswers: Boolean = false
       generationMode: ExamGenerationMode = MANUAL
       rules: [ExamGenerationRuleInput!]
+      diagnosticConfig: ExamDiagnosticConfigInput
       passingCriteriaType: PassingCriteriaType = PERCENTAGE
       passingThreshold: Int = 40
       questionItems: [UpdateExamDraftQuestionInput!]

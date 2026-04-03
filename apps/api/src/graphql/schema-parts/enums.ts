@@ -25,6 +25,17 @@ export const schemaEnums = /* GraphQL */ `
     PUBLIC
   }
 
+  enum QuestionRepositoryKind {
+    MINE
+    UNIFIED
+  }
+
+  enum QuestionRepositoryFilter {
+    ALL
+    MINE
+    UNIFIED
+  }
+
   enum QuestionAccessRequestStatus {
     PENDING
     APPROVED
@@ -73,6 +84,11 @@ export const schemaEnums = /* GraphQL */ `
   enum ExamGenerationMode {
     MANUAL
     RULE_BASED
+  }
+
+  enum ExamRetakeMode {
+    SAME_POOL
+    RANDOM_VARIANT
   }
 
   enum AttemptStatus {

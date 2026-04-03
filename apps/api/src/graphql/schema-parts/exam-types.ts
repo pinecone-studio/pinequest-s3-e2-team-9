@@ -8,9 +8,21 @@ export const schemaExamTypes = /* GraphQL */ `
   type ExamGenerationRule {
     label: String!
     bankIds: [ID!]!
+    repository: QuestionRepositoryFilter
+    subject: String
+    grade: Int
+    topic: String
+    subtopics: [String!]!
     difficulty: Difficulty
     count: Int!
     points: Int!
+  }
+
+  type ExamDiagnosticConfig {
+    enabled: Boolean!
+    questionLimit: Int!
+    startDifficulty: Difficulty!
+    retakeMode: ExamRetakeMode!
   }
 
   type ExamQuestion {
@@ -37,6 +49,7 @@ export const schemaExamTypes = /* GraphQL */ `
     shuffleAnswers: Boolean!
     generationMode: ExamGenerationMode!
     generationRules: [ExamGenerationRule!]!
+    diagnosticConfig: ExamDiagnosticConfig
     passingCriteriaType: PassingCriteriaType!
     passingThreshold: Int!
     questions: [ExamQuestion!]!
@@ -60,6 +73,9 @@ export const schemaExamTypes = /* GraphQL */ `
     exam: Exam!
     student: User!
     status: AttemptStatus!
+    isAdaptiveDiagnostic: Boolean!
+    questionLimit: Int!
+    plannedQuestions: [ExamQuestion!]!
     generationSeed: String
     answers: [Answer!]!
     autoScore: Float!

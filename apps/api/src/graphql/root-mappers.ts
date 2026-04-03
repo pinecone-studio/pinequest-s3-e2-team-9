@@ -6,6 +6,7 @@ import type {
   AnswerRow,
   AttemptRow,
   ClassRow,
+  ExamDiagnosticConfig,
   ExamGenerationRule,
   ExamQuestionRow,
   ExamRow,
@@ -78,6 +79,27 @@ const createPlaceholders = (count: number) =>
   Array.from({ length: count }, () => "?").join(", ");
 
 const D1_SAFE_IN_CHUNK = 20;
+
+const hashString = (value: string) => {
+  let hash = 2166136261;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
+};
+
+const stableShuffle = <T,>(items: T[], seed: string, getKey: (item: T) => string) =>
+  items
+    .map((item, index) => ({
+      item,
+      index,
+      rank: hashString(`${seed}:${getKey(item)}:${index}`),
+    }))
+    .sort((left, right) => left.rank - right.rank || left.index - right.index)
+    .map(({ item }) => item);
 
 const chunkArray = <T,>(items: T[], chunkSize: number) => {
   const chunks: T[][] = [];
@@ -562,10 +584,15 @@ ${legacyQuestionSelectFields}
   const parseExamRules = (value: string): ExamGenerationRule[] => {
     try {
       const parsed = JSON.parse(value) as unknown;
-      if (!Array.isArray(parsed)) {
+      const rawRules = Array.isArray(parsed)
+        ? parsed
+        : parsed && typeof parsed === "object" && Array.isArray((parsed as { rules?: unknown }).rules)
+          ? (parsed as { rules: unknown[] }).rules
+          : [];
+      if (!Array.isArray(rawRules)) {
         return [];
       }
-      const normalizedRules = parsed
+      const normalizedRules = rawRules
         .map((entry): ExamGenerationRule | null => {
           if (!entry || typeof entry !== "object") {
             return null;
@@ -573,14 +600,23 @@ ${legacyQuestionSelectFields}
           const candidate = entry as {
             label?: unknown;
             bankIds?: unknown;
+            repository?: unknown;
+            subject?: unknown;
+            grade?: unknown;
+            topic?: unknown;
+            subtopics?: unknown;
             difficulty?: unknown;
             count?: unknown;
             points?: unknown;
           };
           if (
             typeof candidate.label !== "string" ||
-            !Array.isArray(candidate.bankIds) ||
-            !candidate.bankIds.every((item) => typeof item === "string") ||
+            (candidate.bankIds !== undefined &&
+              (!Array.isArray(candidate.bankIds) ||
+                !candidate.bankIds.every((item) => typeof item === "string"))) ||
+            (candidate.subtopics !== undefined &&
+              (!Array.isArray(candidate.subtopics) ||
+                !candidate.subtopics.every((item) => typeof item === "string"))) ||
             typeof candidate.count !== "number" ||
             typeof candidate.points !== "number"
           ) {
@@ -588,7 +624,17 @@ ${legacyQuestionSelectFields}
           }
           return {
             label: candidate.label,
-            bankIds: candidate.bankIds,
+            bankIds: Array.isArray(candidate.bankIds) ? candidate.bankIds : [],
+            repository:
+              candidate.repository === "ALL" ||
+              candidate.repository === "MINE" ||
+              candidate.repository === "UNIFIED"
+                ? candidate.repository
+                : null,
+            subject: typeof candidate.subject === "string" ? candidate.subject : null,
+            grade: typeof candidate.grade === "number" ? candidate.grade : null,
+            topic: typeof candidate.topic === "string" ? candidate.topic : null,
+            subtopics: Array.isArray(candidate.subtopics) ? candidate.subtopics : [],
             difficulty:
               candidate.difficulty === "EASY" ||
               candidate.difficulty === "MEDIUM" ||
@@ -604,6 +650,51 @@ ${legacyQuestionSelectFields}
       );
     } catch {
       return [];
+    }
+  };
+
+  const parseExamDiagnosticConfig = (value: string): ExamDiagnosticConfig | null => {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return null;
+      }
+
+      const config = (parsed as { diagnosticConfig?: unknown }).diagnosticConfig;
+      if (!config || typeof config !== "object" || Array.isArray(config)) {
+        return null;
+      }
+
+      const candidate = config as {
+        enabled?: unknown;
+        questionLimit?: unknown;
+        startDifficulty?: unknown;
+        retakeMode?: unknown;
+      };
+
+      const startDifficulty =
+        candidate.startDifficulty === "EASY" ||
+        candidate.startDifficulty === "MEDIUM" ||
+        candidate.startDifficulty === "HARD"
+          ? candidate.startDifficulty
+          : "MEDIUM";
+
+      const retakeMode =
+        candidate.retakeMode === "SAME_POOL" || candidate.retakeMode === "RANDOM_VARIANT"
+          ? candidate.retakeMode
+          : "RANDOM_VARIANT";
+
+      return {
+        enabled: candidate.enabled === true,
+        questionLimit:
+          typeof candidate.questionLimit === "number" && Number.isFinite(candidate.questionLimit)
+            ? candidate.questionLimit
+            : 10,
+        startDifficulty,
+        retakeMode,
+      };
+    } catch {
+      return null;
     }
   };
 
@@ -678,6 +769,7 @@ ${legacyQuestionSelectFields}
     id: bank.id,
     title: bank.title,
     description: bank.description,
+    repositoryKind: bank.visibility === "PUBLIC" ? "UNIFIED" : "MINE",
     grade: bank.grade,
     subject: bank.subject,
     topic: bank.topic,
@@ -692,6 +784,7 @@ ${legacyQuestionSelectFields}
 
   const toQuestion = (question: QuestionRow) => ({
     id: question.id,
+    repositoryKind: question.share_scope === "PRIVATE" ? "MINE" : "UNIFIED",
     type: question.type,
     canonicalQuestionId: question.canonical_question_id,
     forkedFromQuestionId: question.forked_from_question_id,
@@ -725,9 +818,40 @@ ${legacyQuestionSelectFields}
     question: async () => toQuestion(await loadQuestionsById.load(answer.question_id)),
   });
 
+  const getAttemptPlannedQuestions = async (attempt: AttemptRow) => {
+    const exam = await loadExamsById.load(attempt.exam_id);
+    const examQuestions = await loadExamQuestionsByExamId.load(attempt.exam_id);
+    const diagnosticConfig = parseExamDiagnosticConfig(exam.rules_json);
+
+    if (
+      exam.mode !== "PRACTICE" ||
+      !diagnosticConfig?.enabled ||
+      !attempt.generation_seed
+    ) {
+      return examQuestions;
+    }
+
+    const shuffled = stableShuffle(
+      examQuestions,
+      attempt.generation_seed,
+      (item) => item.question_id,
+    );
+
+    return shuffled
+      .slice(0, diagnosticConfig.questionLimit)
+      .map((item, index) => ({
+        ...item,
+        display_order: index + 1,
+      }));
+  };
+
   const toAttempt = (attempt: AttemptRow) => ({
     id: attempt.id,
     status: attempt.status,
+    isAdaptiveDiagnostic: async () => {
+      const exam = await loadExamsById.load(attempt.exam_id);
+      return Boolean(parseExamDiagnosticConfig(exam.rules_json)?.enabled);
+    },
     autoScore: attempt.auto_score,
     manualScore: attempt.manual_score,
     totalScore: attempt.total_score,
@@ -736,6 +860,13 @@ ${legacyQuestionSelectFields}
     submittedAt: attempt.submitted_at,
     exam: async () => toExam(await loadExamsById.load(attempt.exam_id)),
     student: async () => toUser(await loadUsersById.load(attempt.student_id)),
+    questionLimit: async () => {
+      const exam = await loadExamsById.load(attempt.exam_id);
+      const diagnosticConfig = parseExamDiagnosticConfig(exam.rules_json);
+      const examQuestions = await loadExamQuestionsByExamId.load(attempt.exam_id);
+      return diagnosticConfig?.enabled ? diagnosticConfig.questionLimit : examQuestions.length;
+    },
+    plannedQuestions: async () => (await getAttemptPlannedQuestions(attempt)).map(toExamQuestion),
     answers: async () => (await loadAnswersByAttemptId.load(attempt.id)).map(toAnswer),
   });
 
@@ -751,11 +882,12 @@ ${legacyQuestionSelectFields}
     startedAt: exam.started_at,
     endsAt: exam.ends_at,
     scheduledFor: exam.scheduled_for,
-    shuffleQuestions: Boolean(exam.shuffle_questions),
-    shuffleAnswers: Boolean(exam.shuffle_answers),
-    generationMode: exam.generation_mode,
-    generationRules: parseExamRules(exam.rules_json),
-    passingCriteriaType: exam.passing_criteria_type,
+      shuffleQuestions: Boolean(exam.shuffle_questions),
+      shuffleAnswers: Boolean(exam.shuffle_answers),
+      generationMode: exam.generation_mode,
+      generationRules: parseExamRules(exam.rules_json),
+      diagnosticConfig: parseExamDiagnosticConfig(exam.rules_json),
+      passingCriteriaType: exam.passing_criteria_type,
     passingThreshold: exam.passing_threshold,
     createdAt: exam.created_at,
     class: async () => toClass(await loadClassesById.load(exam.class_id)),

@@ -4,10 +4,13 @@ import type {
   CommunityVisibility,
   Difficulty,
   ExamGenerationMode,
+  ExamDiagnosticConfig,
   ExamGenerationRule,
   ExamMode,
   PassingCriteriaType,
   QuestionBankVisibility,
+  QuestionRepositoryFilter,
+  QuestionRepositoryKind,
   QuestionShareScope,
   QuestionType,
 } from "./model-types";
@@ -21,6 +24,7 @@ export type CreateQuestionBankArgs = {
   subject?: string;
   topic?: string;
   visibility?: QuestionBankVisibility;
+  repositoryKind?: QuestionRepositoryKind;
 };
 
 export type CreateCommunityArgs = {
@@ -32,13 +36,17 @@ export type CreateCommunityArgs = {
 };
 
 export type CreateQuestionArgs = {
-  bankId: string;
+  bankId?: string;
+  grade?: number;
+  subject?: string;
+  topic?: string;
   type: QuestionType;
   title: string;
   prompt: string;
   options?: string[];
   correctAnswer?: string;
   difficulty?: Difficulty;
+  repositoryKind?: QuestionRepositoryKind;
   shareScope?: QuestionShareScope;
   requiresAccessRequest?: boolean;
   tags?: string[];
@@ -52,6 +60,7 @@ export type UpdateQuestionArgs = {
   options?: string[];
   correctAnswer?: string;
   difficulty?: Difficulty;
+  repositoryKind?: QuestionRepositoryKind;
   shareScope?: QuestionShareScope;
   requiresAccessRequest?: boolean;
   tags?: string[];
@@ -132,6 +141,7 @@ export type CreateExamArgs = {
   shuffleAnswers?: boolean;
   generationMode?: ExamGenerationMode;
   rules?: ExamGenerationRule[];
+  diagnosticConfig?: ExamDiagnosticConfig;
   passingCriteriaType?: PassingCriteriaType;
   passingThreshold?: number;
 };
@@ -159,6 +169,7 @@ export type UpdateExamDraftArgs = {
   shuffleAnswers?: boolean;
   generationMode?: ExamGenerationMode;
   rules?: ExamGenerationRule[];
+  diagnosticConfig?: ExamDiagnosticConfig;
   passingCriteriaType?: PassingCriteriaType;
   passingThreshold?: number;
   questionItems?: UpdateExamDraftQuestionArgs[];
@@ -224,6 +235,7 @@ export type ReviewAttemptArgs = {
   attemptId: string;
   answers: ReviewAttemptAnswerInput[];
 };
-export type QuestionsArgs = { bankId?: string };
+export type QuestionBanksArgs = { repository?: QuestionRepositoryFilter };
+export type QuestionsArgs = { bankId?: string; repository?: QuestionRepositoryFilter };
 export type ByIdArgs = { id: string };
 export type CommunityExamPreviewArgs = { examId: string; communityId?: string | null };

@@ -18,10 +18,13 @@ export type QuestionType =
   | "IMAGE_UPLOAD";
 export type Difficulty = "EASY" | "MEDIUM" | "HARD";
 export type QuestionShareScope = "PRIVATE" | "COMMUNITY" | "PUBLIC";
+export type QuestionRepositoryKind = "MINE" | "UNIFIED";
+export type QuestionRepositoryFilter = "ALL" | "MINE" | "UNIFIED";
 export type QuestionAccessRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type ExamMode = "SCHEDULED" | "OPEN_WINDOW" | "PRACTICE";
 export type ExamStatus = "DRAFT" | "PUBLISHED" | "CLOSED";
 export type ExamGenerationMode = "MANUAL" | "RULE_BASED";
+export type ExamRetakeMode = "SAME_POOL" | "RANDOM_VARIANT";
 export type AttemptStatus = "IN_PROGRESS" | "SUBMITTED" | "GRADED";
 export type ClassStudentStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 export type PassingCriteriaType = "PERCENTAGE" | "POINTS";
@@ -38,9 +41,20 @@ export type IntegrityRiskLevel = "LOW" | "MEDIUM" | "HIGH";
 export type ExamGenerationRule = {
   label: string;
   bankIds: string[];
+  repository?: QuestionRepositoryFilter | null;
+  subject?: string | null;
+  grade?: number | null;
+  topic?: string | null;
+  subtopics?: string[];
   difficulty?: Difficulty | null;
   count: number;
   points: number;
+};
+export type ExamDiagnosticConfig = {
+  enabled: boolean;
+  questionLimit: number;
+  startDifficulty: Difficulty;
+  retakeMode: ExamRetakeMode;
 };
 export type ExamImportJobStatus =
   | "UPLOADED"

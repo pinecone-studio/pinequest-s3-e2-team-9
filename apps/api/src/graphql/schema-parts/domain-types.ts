@@ -66,6 +66,7 @@ export const schemaDomainTypes = /* GraphQL */ `
     id: ID!
     title: String!
     description: String
+    repositoryKind: QuestionRepositoryKind!
     grade: Int!
     subject: String!
     topic: String!
@@ -80,6 +81,7 @@ export const schemaDomainTypes = /* GraphQL */ `
   type Question {
     id: ID!
     bank: QuestionBank!
+    repositoryKind: QuestionRepositoryKind!
     canonicalQuestionId: ID
     forkedFromQuestionId: ID
     type: QuestionType!
@@ -103,6 +105,29 @@ export const schemaDomainTypes = /* GraphQL */ `
     status: QuestionAccessRequestStatus!
     createdAt: String!
     reviewedAt: String
+  }
+
+  type QuestionRepositorySubjectGroup {
+    subject: String!
+    grades: [QuestionRepositoryGradeGroup!]!
+  }
+
+  type QuestionRepositoryGradeGroup {
+    grade: Int!
+    topics: [QuestionRepositoryTopicGroup!]!
+  }
+
+  type QuestionRepositoryTopicGroup {
+    topic: String!
+    bankCount: Int!
+    questionCount: Int!
+    subtopics: [QuestionRepositorySubtopicGroup!]!
+  }
+
+  type QuestionRepositorySubtopicGroup {
+    name: String!
+    questionCount: Int!
+    bankIds: [ID!]!
   }
 
   type CommunityMember {

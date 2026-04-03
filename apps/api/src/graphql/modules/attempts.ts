@@ -142,8 +142,8 @@ const scoreAnswer = (
     : 0;
 };
 
-const buildAttemptSeed = (examId: string, studentId: string) =>
-  `${examId}:${studentId}`;
+const buildAttemptSeed = (examId: string, studentId: string, attemptId: string) =>
+  `${examId}:${studentId}:${attemptId}`;
 
 const roundScore = (value: number) => Math.round(value * 10) / 10;
 type ReviewableAnswerRow = AnswerRow & {
@@ -512,7 +512,7 @@ export const createAttemptMutations = ({
           examId,
           effectiveStudentId,
           "IN_PROGRESS",
-          buildAttemptSeed(examId, effectiveStudentId),
+          buildAttemptSeed(examId, effectiveStudentId, id),
           startedAt,
         ],
       );
