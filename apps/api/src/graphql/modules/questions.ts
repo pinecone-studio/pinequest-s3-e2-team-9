@@ -19,6 +19,7 @@ import {
   type QuestionBanksArgs,
   type QuestionRepositoryFilter,
   type QuestionRepositoryKind,
+  type QuestionShareScope,
   type QuestionRow,
   type QuestionsArgs,
   type RequestQuestionAccessArgs,
@@ -139,6 +140,147 @@ export const findQuestionBankById = async (
   return bank;
 };
 
+const findUnifiedQuestionBankByScope = async (
+  db: D1DatabaseLike,
+  {
+    grade,
+    subject,
+    topic,
+  }: {
+    grade: number;
+    subject: string;
+    topic: string;
+  },
+): Promise<QuestionBankRow | null> =>
+  first<QuestionBankRow>(
+    db,
+    `SELECT id, title, description, grade, subject, topic, visibility, owner_id, created_at
+     FROM question_banks
+     WHERE visibility = 'PUBLIC'
+       AND grade = ?
+       AND subject = ?
+       AND topic = ?
+     ORDER BY created_at ASC
+     LIMIT 1`,
+    [grade, subject, topic],
+  );
+
+const findPrivateQuestionBankByScope = async (
+  db: D1DatabaseLike,
+  {
+    ownerId,
+    grade,
+    subject,
+    topic,
+  }: {
+    ownerId: string;
+    grade: number;
+    subject: string;
+    topic: string;
+  },
+): Promise<QuestionBankRow | null> =>
+  first<QuestionBankRow>(
+    db,
+    `SELECT id, title, description, grade, subject, topic, visibility, owner_id, created_at
+     FROM question_banks
+     WHERE visibility = 'PRIVATE'
+       AND owner_id = ?
+       AND grade = ?
+       AND subject = ?
+       AND topic = ?
+     ORDER BY created_at ASC
+     LIMIT 1`,
+    [ownerId, grade, subject, topic],
+  );
+
+const ensureRepositoryQuestionBank = async ({
+  actor,
+  db,
+  repositoryKind,
+  bankId,
+  grade,
+  subject,
+  topic,
+}: {
+  actor: UserRow;
+  db: D1DatabaseLike;
+  repositoryKind?: QuestionRepositoryKind;
+  bankId?: string;
+  grade?: number;
+  subject?: string;
+  topic?: string;
+}): Promise<QuestionBankRow> => {
+  if (bankId) {
+    return findQuestionBankById(db, bankId);
+  }
+
+  const normalizedGrade = grade ?? 10;
+  const normalizedSubject = subject?.trim() || "Ерөнхий";
+  const normalizedTopic = topic?.trim() || "Ерөнхий";
+  const nextRepositoryKind = repositoryKind ?? "MINE";
+
+  if (nextRepositoryKind === "UNIFIED") {
+    const existingUnifiedBank = await findUnifiedQuestionBankByScope(db, {
+      grade: normalizedGrade,
+      subject: normalizedSubject,
+      topic: normalizedTopic,
+    });
+    if (existingUnifiedBank) {
+      return existingUnifiedBank;
+    }
+
+    const id = makeId("bank");
+    const createdAt = now();
+    await run(
+      db,
+      `INSERT INTO question_banks (id, title, description, grade, subject, topic, visibility, owner_id, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, 'PUBLIC', ?, ?)`,
+      [
+        id,
+        `${normalizedGrade}-р анги · ${normalizedSubject} · ${normalizedTopic}`,
+        "Нэгдсэн санд автоматаар нэгтгэсэн сан.",
+        normalizedGrade,
+        normalizedSubject,
+        normalizedTopic,
+        actor.id,
+        createdAt,
+      ],
+    );
+
+    return findQuestionBankById(db, id);
+  }
+
+  const existingPrivateBank = await findPrivateQuestionBankByScope(db, {
+    ownerId: actor.id,
+    grade: normalizedGrade,
+    subject: normalizedSubject,
+    topic: normalizedTopic,
+  });
+  if (existingPrivateBank) {
+    return existingPrivateBank;
+  }
+
+  const id = makeId("bank");
+  const createdAt = now();
+  await run(
+    db,
+    `INSERT INTO question_banks (id, title, description, grade, subject, topic, visibility, owner_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, 'PRIVATE', ?, ?)`,
+    [
+      id,
+      `${normalizedGrade}-р анги · ${normalizedSubject} · ${normalizedTopic}`,
+      "Миний санд автоматаар үүссэн сан.",
+      normalizedGrade,
+      normalizedSubject,
+      normalizedTopic,
+      actor.id,
+      createdAt,
+    ],
+  );
+
+  return findQuestionBankById(db, id);
+};
+
 export const findQuestionById = async (
   db: D1DatabaseLike,
   id: string,
@@ -189,6 +331,14 @@ const stripVariantTags = (tags: string[]) =>
       !tag.startsWith(VARIANT_LABEL_TAG) &&
       !tag.startsWith(VARIANT_COUNT_TAG),
   );
+
+const isSystemQuestionTag = (tag: string) =>
+  tag.startsWith(VARIANT_GROUP_TAG) ||
+  tag.startsWith(VARIANT_LABEL_TAG) ||
+  tag.startsWith(VARIANT_COUNT_TAG) ||
+  tag === DRAFT_VARIANT_TAG ||
+  tag.startsWith("forked_from_question:") ||
+  tag.startsWith("forked_from_bank:");
 
 const toVariantTags = (tags: string[], groupId: string, label: string, totalVariants: number) => [
   ...stripVariantTags(tags),
@@ -375,6 +525,29 @@ type AccessibleQuestionBank = {
   communityAccessible: boolean;
 };
 
+type QuestionRepositorySubtopicNode = {
+  name: string;
+  questionCount: number;
+  bankIds: string[];
+};
+
+type QuestionRepositoryTopicNode = {
+  topic: string;
+  bankCount: number;
+  questionCount: number;
+  subtopics: QuestionRepositorySubtopicNode[];
+};
+
+type QuestionRepositoryGradeNode = {
+  grade: number;
+  topics: QuestionRepositoryTopicNode[];
+};
+
+type QuestionRepositorySubjectNode = {
+  subject: string;
+  grades: QuestionRepositoryGradeNode[];
+};
+
 const getRepositoryKindForBank = ({
   bank,
   communityAccessible,
@@ -385,10 +558,54 @@ const getRepositoryKindForBank = ({
   return bank.visibility === "PUBLIC" || communityAccessible ? "UNIFIED" : "MINE";
 };
 
+const resolveQuestionShareScopeForBank = ({
+  bank,
+  repositoryKind,
+  shareScope,
+  currentShareScope,
+}: {
+  bank: QuestionBankRow;
+  repositoryKind?: QuestionRepositoryKind;
+  shareScope?: QuestionShareScope;
+  currentShareScope?: QuestionShareScope;
+}): QuestionShareScope => {
+  if (bank.visibility === "PUBLIC") {
+    return "PUBLIC";
+  }
+
+  if (repositoryKind === "UNIFIED") {
+    return "PUBLIC";
+  }
+
+  if (repositoryKind === "MINE") {
+    return "PRIVATE";
+  }
+
+  return shareScope ?? currentShareScope ?? "PRIVATE";
+};
+
 const matchesRepositoryFilter = (
   repository: QuestionRepositoryFilter | undefined,
   repositoryKind: QuestionRepositoryKind,
 ) => !repository || repository === "ALL" || repository === repositoryKind;
+
+const deriveQuestionSubtopics = ({
+  bank,
+  question,
+}: {
+  bank: QuestionBankRow;
+  question: QuestionRow;
+}) => {
+  const tags = parseJsonArray(question.tags_json)
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .filter((tag) => !isSystemQuestionTag(tag))
+    .filter((tag) => tag !== bank.subject)
+    .filter((tag) => tag !== bank.topic)
+    .filter((tag) => !tag.includes("анги"));
+
+  return tags.length > 0 ? [...new Set(tags)] : [bank.topic];
+};
 
 type VisibleQuestionGraphDependencies = {
   actor: UserRow;
@@ -645,6 +862,142 @@ const listDiscoverableQuestionsForBank = async ({
   );
 };
 
+const buildQuestionRepositoryTree = async ({
+  actor,
+  accessibleBanks,
+  db,
+}: {
+  actor: UserRow;
+  accessibleBanks: AccessibleQuestionBank[];
+  db: D1DatabaseLike;
+}): Promise<QuestionRepositorySubjectNode[]> => {
+  if (accessibleBanks.length === 0) {
+    return [];
+  }
+
+  const bankMetaById = new Map(
+    accessibleBanks.map((item) => [item.bank.id, item] as const),
+  );
+
+  const rows = await listQuestionsByBankIdsCompat(
+    db,
+    accessibleBanks.map((item) => item.bank.id),
+  );
+
+  const subjectMap = new Map<
+    string,
+    Map<
+      number,
+      Map<
+        string,
+        {
+          bankIds: Set<string>;
+          questionIds: Set<string>;
+          subtopics: Map<string, { questionIds: Set<string>; bankIds: Set<string> }>;
+        }
+      >
+    >
+  >();
+
+  for (const row of rows) {
+    const bankMeta = bankMetaById.get(row.bank_id);
+    if (!bankMeta) {
+      continue;
+    }
+
+    if (
+      !canActorDiscoverQuestion({
+        actor,
+        bank: bankMeta.bank,
+        communityAccessible: bankMeta.communityAccessible,
+        question: row,
+      })
+    ) {
+      continue;
+    }
+
+    const subjectEntry =
+      subjectMap.get(bankMeta.bank.subject) ??
+      new Map<
+        number,
+        Map<
+          string,
+          {
+            bankIds: Set<string>;
+            questionIds: Set<string>;
+            subtopics: Map<string, { questionIds: Set<string>; bankIds: Set<string> }>;
+          }
+        >
+      >();
+    subjectMap.set(bankMeta.bank.subject, subjectEntry);
+
+    const gradeEntry =
+      subjectEntry.get(bankMeta.bank.grade) ??
+      new Map<
+        string,
+        {
+          bankIds: Set<string>;
+          questionIds: Set<string>;
+          subtopics: Map<string, { questionIds: Set<string>; bankIds: Set<string> }>;
+        }
+      >();
+    subjectEntry.set(bankMeta.bank.grade, gradeEntry);
+
+    const topicName = bankMeta.bank.topic || "Ерөнхий";
+    const topicEntry =
+      gradeEntry.get(topicName) ?? {
+        bankIds: new Set<string>(),
+        questionIds: new Set<string>(),
+        subtopics: new Map<string, { questionIds: Set<string>; bankIds: Set<string> }>(),
+      };
+    gradeEntry.set(topicName, topicEntry);
+
+    topicEntry.bankIds.add(bankMeta.bank.id);
+    topicEntry.questionIds.add(row.id);
+
+    for (const subtopic of deriveQuestionSubtopics({
+      bank: bankMeta.bank,
+      question: row,
+    })) {
+      const subtopicEntry =
+        topicEntry.subtopics.get(subtopic) ?? {
+          questionIds: new Set<string>(),
+          bankIds: new Set<string>(),
+        };
+      subtopicEntry.questionIds.add(row.id);
+      subtopicEntry.bankIds.add(bankMeta.bank.id);
+      topicEntry.subtopics.set(subtopic, subtopicEntry);
+    }
+  }
+
+  return [...subjectMap.entries()]
+    .sort(([left], [right]) => left.localeCompare(right, "mn"))
+    .map(([subject, gradeMap]) => ({
+      subject,
+      grades: [...gradeMap.entries()]
+        .sort(([left], [right]) => left - right)
+        .map(([grade, topicMap]) => ({
+          grade,
+          topics: [...topicMap.entries()]
+            .sort(([left], [right]) => left.localeCompare(right, "mn"))
+            .map(([topic, topicEntry]) => ({
+              topic,
+              bankCount: topicEntry.bankIds.size,
+              questionCount: topicEntry.questionIds.size,
+              subtopics: [...topicEntry.subtopics.entries()]
+                .sort(([left], [right]) => left.localeCompare(right, "mn"))
+                .map(([name, subtopicEntry]) => ({
+                  name,
+                  questionCount: subtopicEntry.questionIds.size,
+                  bankIds: [...subtopicEntry.bankIds].sort((left, right) =>
+                    left.localeCompare(right, "en"),
+                  ),
+                })),
+            })),
+        })),
+    }));
+};
+
 const buildVisibleQuestionBankObject = ({
   actor,
   bank,
@@ -877,6 +1230,42 @@ export const createQuestionQueriesAndMutations = ({
         })
       : null;
   },
+  questionRepositoryTree: async (
+    { repository }: QuestionBanksArgs,
+    context: RequestContext,
+  ) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const accessibleBanks =
+      actor.role === "ADMIN"
+        ? (
+            await all<QuestionBankRow>(
+              db,
+              `SELECT ${questionBankSelectFields}
+               FROM question_banks
+               ORDER BY created_at DESC`,
+            )
+          ).map((bank) => ({
+            bank,
+            communityAccessible: false,
+          }))
+        : await getAccessibleQuestionBanksForTeacher(db, actor.id);
+
+    const filteredAccessibleBanks = accessibleBanks.filter(({ bank, communityAccessible }) =>
+      matchesRepositoryFilter(
+        repository,
+        getRepositoryKindForBank({
+          bank,
+          communityAccessible,
+        }),
+      ),
+    );
+
+    return buildQuestionRepositoryTree({
+      actor,
+      accessibleBanks: filteredAccessibleBanks,
+      db,
+    });
+  },
   questions: async ({ bankId, repository }: QuestionsArgs, context: RequestContext) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
     if (actor.role === "ADMIN") {
@@ -1052,8 +1441,25 @@ export const createQuestionQueriesAndMutations = ({
     context: RequestContext,
   ) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const normalizedGrade = grade ?? 10;
+    const normalizedSubject = subject?.trim() || "Ерөнхий";
+    const normalizedTopic = topic?.trim() || "Ерөнхий";
+
+    if (repositoryKind === "UNIFIED") {
+      const existingUnifiedBank = await findUnifiedQuestionBankByScope(db, {
+        grade: normalizedGrade,
+        subject: normalizedSubject,
+        topic: normalizedTopic,
+      });
+
+      if (existingUnifiedBank) {
+        return toQuestionBank(db, existingUnifiedBank);
+      }
+    }
+
     const id = makeId("bank");
     const createdAt = now();
+    const isUnified = repositoryKind === "UNIFIED";
 
     await run(
       db,
@@ -1061,12 +1467,14 @@ export const createQuestionQueriesAndMutations = ({
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
-        title,
-        description ?? null,
-        grade ?? 10,
-        subject?.trim() || "Ерөнхий",
-        topic?.trim() || "Ерөнхий",
-        repositoryKind === "UNIFIED" ? "PUBLIC" : (visibility ?? "PRIVATE"),
+        isUnified
+          ? `${normalizedGrade}-р анги · ${normalizedSubject} · ${normalizedTopic}`
+          : title,
+        isUnified ? "Нэгдсэн санд автоматаар нэгтгэсэн сан." : (description ?? null),
+        normalizedGrade,
+        normalizedSubject,
+        normalizedTopic,
+        isUnified ? "PUBLIC" : (visibility ?? "PRIVATE"),
         actor.id,
         createdAt,
       ],
@@ -1088,6 +1496,9 @@ export const createQuestionQueriesAndMutations = ({
   createQuestion: async (
     {
       bankId,
+      grade,
+      subject,
+      topic,
       type,
       title,
       prompt,
@@ -1101,10 +1512,22 @@ export const createQuestionQueriesAndMutations = ({
     }: CreateQuestionArgs,
     context: RequestContext,
   ) => {
-    const bank = await findQuestionBankById(db, bankId);
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const bank = await ensureRepositoryQuestionBank({
+      actor,
+      db,
+      repositoryKind,
+      bankId,
+      grade,
+      subject,
+      topic,
+    });
     if (actor.role === "TEACHER") {
-      invariant(bank.owner_id === actor.id, "You can only create questions in your own question banks.");
+      invariant(
+        bank.owner_id === actor.id ||
+          (repositoryKind === "UNIFIED" && bank.visibility === "PUBLIC"),
+        "You can only create questions in your own or unified question banks.",
+      );
     }
     const id = makeId("question");
     const createdAt = now();
@@ -1141,9 +1564,11 @@ export const createQuestionQueriesAndMutations = ({
         toJsonArray(normalizedOptions),
         correctAnswer ?? null,
         difficulty ?? "MEDIUM",
-        repositoryKind === "UNIFIED"
-          ? "PUBLIC"
-          : (shareScope ?? (bank.visibility === "PUBLIC" ? "PUBLIC" : "PRIVATE")),
+        resolveQuestionShareScopeForBank({
+          bank,
+          repositoryKind,
+          shareScope,
+        }),
         requiresAccessRequest ? 1 : 0,
         toJsonArray(tags),
         actor.id,
@@ -1430,11 +1855,12 @@ export const createQuestionQueriesAndMutations = ({
         toJsonArray(normalizeQuestionOptions(type, options)),
         correctAnswer ?? null,
         difficulty ?? question.difficulty,
-        repositoryKind === "UNIFIED"
-          ? "PUBLIC"
-          : repositoryKind === "MINE"
-            ? "PRIVATE"
-            : (shareScope ?? question.share_scope),
+        resolveQuestionShareScopeForBank({
+          bank,
+          repositoryKind,
+          shareScope,
+          currentShareScope: question.share_scope,
+        }),
         typeof requiresAccessRequest === "boolean"
           ? (requiresAccessRequest ? 1 : 0)
           : question.requires_access_request,

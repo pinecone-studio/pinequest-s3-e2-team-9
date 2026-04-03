@@ -107,6 +107,29 @@ export const schemaDomainTypes = /* GraphQL */ `
     reviewedAt: String
   }
 
+  type QuestionRepositorySubjectGroup {
+    subject: String!
+    grades: [QuestionRepositoryGradeGroup!]!
+  }
+
+  type QuestionRepositoryGradeGroup {
+    grade: Int!
+    topics: [QuestionRepositoryTopicGroup!]!
+  }
+
+  type QuestionRepositoryTopicGroup {
+    topic: String!
+    bankCount: Int!
+    questionCount: Int!
+    subtopics: [QuestionRepositorySubtopicGroup!]!
+  }
+
+  type QuestionRepositorySubtopicGroup {
+    name: String!
+    questionCount: Int!
+    bankIds: [ID!]!
+  }
+
   type CommunityMember {
     id: ID!
     role: CommunityMemberRole!

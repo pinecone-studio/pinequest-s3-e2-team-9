@@ -86,6 +86,11 @@ export const schemaEnums = /* GraphQL */ `
     RULE_BASED
   }
 
+  enum ExamRetakeMode {
+    SAME_POOL
+    RANDOM_VARIANT
+  }
+
   enum AttemptStatus {
     IN_PROGRESS
     SUBMITTED

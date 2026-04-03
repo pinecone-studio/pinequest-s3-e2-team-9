@@ -4,6 +4,7 @@ import type {
   CommunityVisibility,
   Difficulty,
   ExamGenerationMode,
+  ExamDiagnosticConfig,
   ExamGenerationRule,
   ExamMode,
   PassingCriteriaType,
@@ -35,7 +36,10 @@ export type CreateCommunityArgs = {
 };
 
 export type CreateQuestionArgs = {
-  bankId: string;
+  bankId?: string;
+  grade?: number;
+  subject?: string;
+  topic?: string;
   type: QuestionType;
   title: string;
   prompt: string;
@@ -137,6 +141,7 @@ export type CreateExamArgs = {
   shuffleAnswers?: boolean;
   generationMode?: ExamGenerationMode;
   rules?: ExamGenerationRule[];
+  diagnosticConfig?: ExamDiagnosticConfig;
   passingCriteriaType?: PassingCriteriaType;
   passingThreshold?: number;
 };
@@ -164,6 +169,7 @@ export type UpdateExamDraftArgs = {
   shuffleAnswers?: boolean;
   generationMode?: ExamGenerationMode;
   rules?: ExamGenerationRule[];
+  diagnosticConfig?: ExamDiagnosticConfig;
   passingCriteriaType?: PassingCriteriaType;
   passingThreshold?: number;
   questionItems?: UpdateExamDraftQuestionArgs[];
