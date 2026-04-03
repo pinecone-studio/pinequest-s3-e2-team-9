@@ -49,6 +49,21 @@ function PlusIcon({ solid = false }: { solid?: boolean }) {
   );
 }
 
+function QuestionSectionIcon() {
+  return (
+    <svg className="h-4 w-4 text-[#2466D0]" viewBox="0 0 16 16" fill="none">
+      <path
+        d="M5.333 2.667h5.334M5.333 13.333h5.334M4.667 2.667A1.333 1.333 0 0 0 3.333 4v8c0 .736.597 1.333 1.334 1.333h6.666A1.333 1.333 0 0 0 12.667 12V4a1.333 1.333 0 0 0-1.334-1.333H4.667Z"
+        stroke="currentColor"
+        strokeWidth="1.333"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M5.333 6.333h5.334M5.333 9h3.334" stroke="currentColor" strokeWidth="1.333" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function CreateExamQuestionCard({
   values,
   viewerId,
@@ -89,8 +104,23 @@ export function CreateExamQuestionCard({
 
   return (
     <section className="space-y-3">
-      <div className="h-5 text-[14px] font-medium leading-5 text-[#52555B]">
-        Асуултууд ({selectedCount})
+      <div className="rounded-[16px] border border-[#DFE1E5] bg-[linear-gradient(180deg,#FFFFFF_0%,#F8FAFC_100%)] px-4 py-3 shadow-[0px_1px_2px_rgba(16,24,40,0.04)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#EEF4FF]">
+              <QuestionSectionIcon />
+            </div>
+            <div>
+              <p className="text-[15px] font-semibold leading-6 text-[#101828]">Асуултууд</p>
+              <p className="text-[12px] leading-5 text-[#667085]">
+                Шалгалтад орох асуултуудаа гараар эсвэл дүрмээр бүрдүүлнэ.
+              </p>
+            </div>
+          </div>
+          <div className="inline-flex items-center rounded-full border border-[#D5E7FF] bg-white px-3 py-1 text-[13px] font-medium text-[#175CD3] shadow-[0px_1px_2px_rgba(16,24,40,0.04)]">
+            {selectedCount} асуулт
+          </div>
+        </div>
       </div>
 
       {values.generationMode === ExamGenerationMode.RuleBased ? (

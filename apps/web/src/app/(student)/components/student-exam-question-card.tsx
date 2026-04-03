@@ -15,6 +15,7 @@ import {
   serializeOpenTaskAnswer,
 } from "@/lib/open-task-answer";
 import { getQuestionPromptImageValue } from "@/lib/question-prompt-image";
+import { getQuestionDisplayCopy } from "./student-question-display";
 import type { StudentExamQuestion } from "./student-exam-room-types";
 
 const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
@@ -74,6 +75,7 @@ export function StudentExamQuestionCard({
     isLoading: isPromptImageLoading,
     src: promptImageSrc,
   } = useProtectedImageSource(promptImageValue ?? "");
+  const displayCopy = getQuestionDisplayCopy(question.question);
   const imagePreviewSrc = localPreviewUrl ?? protectedImageSrc;
   const essayImagePreviewSrc = localPreviewUrl ?? protectedEssayImageSrc;
   const shouldShowImagePreview = Boolean(imagePreviewSrc);
@@ -175,8 +177,10 @@ export function StudentExamQuestionCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-2">
           <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-[#2466D0]">Асуулт {questionIndex + 1}</p>
-          <h3 className="text-[18px] font-semibold text-[#0F1216]">{question.question.title || question.question.prompt}</h3>
-          <p className="text-[15px] leading-6 text-[#475467]">{question.question.prompt}</p>
+          <h3 className="text-[18px] font-semibold text-[#0F1216]">{displayCopy.primary}</h3>
+          {displayCopy.secondary ? (
+            <p className="text-[15px] leading-6 text-[#475467]">{displayCopy.secondary}</p>
+          ) : null}
           {promptImageSrc ? (
             <div className="mt-3 overflow-hidden rounded-[14px] border border-[#D0D5DD] bg-[#F8FAFC] p-2">
               <img
