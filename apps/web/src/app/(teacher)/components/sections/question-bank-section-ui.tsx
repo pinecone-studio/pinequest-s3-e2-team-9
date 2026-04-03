@@ -26,7 +26,7 @@ export const QuestionBankTabButton = ({
     onClick={onClick}
     className={`inline-flex h-9 items-center rounded-full border px-4 text-[14px] font-medium transition ${
       active
-        ? "border-[#00267F] bg-[#00267F] text-white"
+        ? "border-[#6434F8] bg-[#6434F8] text-white"
         : "border-[#DFE1E5] bg-white text-[#344054] hover:border-[#BFC5D0]"
     }`}
   >
@@ -120,7 +120,7 @@ export function QuestionBankTopicGrid({
                 ))}
               </div>
             ) : null}
-            <p className="mt-3 text-[13px] font-medium text-[#175CD3]">
+            <p className="mt-3 text-[13px] font-medium text-[#6434F8]">
               Энэ дэд сэдвийг нээх
             </p>
           </button>
@@ -155,12 +155,12 @@ export function QuestionBankBrowseGrid({
             onClick={() => onSelect(item.key)}
             className="rounded-xl border border-[#DFE1E5] bg-white p-5 text-left shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] transition hover:-translate-y-0.5 hover:shadow-[0px_8px_24px_rgba(15,18,22,0.08)]"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EEF4FF] text-[#175CD3]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F3E8FF] text-[#6434F8]">
               <MenuIcon className="h-5 w-5" />
             </div>
             <h3 className="mt-4 text-[16px] font-medium text-[#0F1216]">{item.label}</h3>
             <p className="mt-1 text-[14px] text-[#667085]">{item.subtitle}</p>
-            <p className="mt-3 text-[13px] font-medium text-[#175CD3]">Нээх</p>
+            <p className="mt-3 text-[13px] font-medium text-[#6434F8]">Нээх</p>
           </button>
         ))}
       </div>
@@ -198,13 +198,13 @@ export function QuestionBankFilterPanel({
   return (
     <div className="rounded-xl border border-[#DFE1E5] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
       <div className="mb-4 flex flex-wrap items-center gap-2 text-[13px] text-[#667085]">
-        <span className="rounded-full bg-[#EEF4FF] px-3 py-1 font-medium text-[#175CD3]">
+        <span className="rounded-full bg-[#F3E8FF] px-3 py-1 font-medium text-[#6434F8]">
           1. Анги сонгоно
         </span>
-        <span className="rounded-full bg-[#EEF4FF] px-3 py-1 font-medium text-[#175CD3]">
+        <span className="rounded-full bg-[#F3E8FF] px-3 py-1 font-medium text-[#6434F8]">
           2. Хичээл сонгоно
         </span>
-        <span className="rounded-full bg-[#EEF4FF] px-3 py-1 font-medium text-[#175CD3]">
+        <span className="rounded-full bg-[#F3E8FF] px-3 py-1 font-medium text-[#6434F8]">
           3. Дэд сэдэв сонгоно
         </span>
       </div>
@@ -276,7 +276,7 @@ export function QuestionBankEmptyState({
         <button
           type="button"
           onClick={onCreate}
-          className="mt-4 inline-flex items-center gap-2 rounded-md bg-[#00267F] px-4 py-2 text-[14px] font-medium text-white"
+          className="mt-4 inline-flex items-center gap-2 rounded-md bg-[#6434F8] px-4 py-2 text-[14px] font-medium text-white"
         >
           <PlusIcon className="h-4 w-4" />
           Энэ сэдэвт сан үүсгэх
@@ -346,7 +346,7 @@ export function QuestionBankGrid({
                   className={`rounded-md px-2.5 py-1 text-[12px] font-medium ${
                     item.repositoryKind === "UNIFIED"
                       ? "bg-[#ECFDF3] text-[#027A48]"
-                      : "bg-[#EEF4FF] text-[#175CD3]"
+                      : "bg-[#F3E8FF] text-[#6434F8]"
                   }`}
                 >
                   {formatRepositoryKindLabel(item.repositoryKind)}

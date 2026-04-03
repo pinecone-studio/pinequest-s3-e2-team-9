@@ -178,7 +178,7 @@ export function QuestionBankDetailTable({
               ) : null}
               <button
                 type="button"
-                className="rounded-md bg-[#6F90FF] px-3 py-2 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:bg-[#D0D5DD]"
+                className="rounded-md bg-[#6434F8] px-3 py-2 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:bg-[#D0D5DD]"
                 disabled={!canGroupSelectedQuestions}
                 onClick={() => void handleGroupSelectedQuestions()}
               >
@@ -263,7 +263,7 @@ export function QuestionBankDetailTable({
                       <div className="space-y-2">
                         <button
                           type="button"
-                          className="cursor-pointer text-left transition hover:text-[#00267F] hover:underline hover:underline-offset-4"
+                          className="cursor-pointer text-left transition hover:text-[#6434F8] hover:underline hover:underline-offset-4"
                           title="Дарж дэлгэрэнгүй харах"
                           onClick={() => setSelectedRow(row)}
                         >
@@ -271,7 +271,7 @@ export function QuestionBankDetailTable({
                         </button>
                         {row.variantLabel ? (
                           <div className="flex flex-wrap items-center gap-2 text-[12px]">
-                            <span className="inline-flex rounded-md border border-[#B2DDFF] bg-[#EFF8FF] px-2 py-1 font-medium text-[#175CD3]">
+                            <span className="inline-flex rounded-md border border-[#D6BBFB] bg-[#F4EBFF] px-2 py-1 font-medium text-[#6434F8]">
                               {`${row.variantLabel} хувилбар`}
                             </span>
                             {row.variantCount ? (

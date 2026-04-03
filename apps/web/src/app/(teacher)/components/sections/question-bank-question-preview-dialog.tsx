@@ -110,7 +110,7 @@ function QuestionBankQuestionPreviewContent({
                   className={[
                     "rounded-full border px-2 py-1",
                     row.shareScope === "PUBLIC"
-                      ? "border-[#B2DDFF] bg-[#EFF8FF] text-[#175CD3]"
+                      ? "border-[#D6BBFB] bg-[#F4EBFF] text-[#6434F8]"
                       : row.shareScope === "COMMUNITY"
                         ? "border-[#D6BBFB] bg-[#F4EBFF] text-[#7A2EAB]"
                         : "border-[#FECACA] bg-[#FEF2F2] text-[#B42318]",
@@ -205,7 +205,7 @@ function QuestionBankQuestionPreviewContent({
                   </p>
                   <button
                     type="button"
-                    className="inline-flex h-9 items-center justify-center rounded-md bg-[#00267F] px-4 text-[14px] font-medium text-white disabled:cursor-not-allowed disabled:bg-[#98A2B3]"
+                    className="inline-flex h-9 items-center justify-center rounded-md bg-[#6434F8] px-4 text-[14px] font-medium text-white disabled:cursor-not-allowed disabled:bg-[#98A2B3]"
                     disabled={isRequesting || requestStatus === "PENDING"}
                     onClick={() => void onRequestAccess?.(row.id)}
                   >
@@ -237,7 +237,7 @@ function QuestionBankQuestionPreviewContent({
                     </select>
                     <button
                       type="button"
-                      className="inline-flex h-10 items-center justify-center rounded-md border border-[#00267F] px-4 text-[14px] font-medium text-[#00267F] disabled:cursor-not-allowed disabled:border-[#D0D5DD] disabled:text-[#98A2B3]"
+                      className="inline-flex h-10 items-center justify-center rounded-md border border-[#6434F8] px-4 text-[14px] font-medium text-[#6434F8] disabled:cursor-not-allowed disabled:border-[#D0D5DD] disabled:text-[#98A2B3]"
                       disabled={!targetBankId || isForking}
                       onClick={() => void onForkQuestion?.(row.id, targetBankId)}
                     >

@@ -24,7 +24,7 @@ const STATUS_LABELS: Record<ExamStatus, string> = {
 };
 
 const STATUS_TONES: Record<ExamStatus, string> = {
-  DRAFT: "bg-[#EEF4FF] text-[#175CD3]",
+  DRAFT: "bg-[#F3E8FF] text-[#6434F8]",
   PUBLISHED: "bg-[#ECFDF3] text-[#027A48]",
   CLOSED: "bg-[#F2F4F7] text-[#344054]",
 };
@@ -81,7 +81,7 @@ export function QuestionBankRelatedExams({
             <span className="rounded-md bg-[#F2F4F7] px-2.5 py-1 font-medium text-[#344054]">
               {row.isTemplate ? "Template" : "Assigned"}
             </span>
-            <span className="rounded-md bg-[#EEF4FF] px-2.5 py-1 font-medium text-[#175CD3]">
+            <span className="rounded-md bg-[#F3E8FF] px-2.5 py-1 font-medium text-[#6434F8]">
               {row.reusedQuestionCount} асуулт ашигласан
             </span>
             <span className="rounded-md bg-[#FFF4ED] px-2.5 py-1 font-medium text-[#B54708]">

@@ -83,7 +83,7 @@ export function QuestionBankDialogFooter({
         <button
           type="button"
           disabled={loading || disabled}
-          className="inline-flex h-8 items-center justify-center gap-2 rounded-md bg-[#00267F] px-4 text-[14px] font-medium text-white disabled:opacity-50"
+          className="inline-flex h-8 items-center justify-center gap-2 rounded-md bg-[#6434F8] px-4 text-[14px] font-medium text-white disabled:opacity-50"
           onClick={onSubmit}
         >
           <PlusIcon className="h-4 w-4" />

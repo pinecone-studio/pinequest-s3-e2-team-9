@@ -244,7 +244,7 @@ export function QuestionBankDialogRepositorySection({
           checked={requiresAccessRequest}
           onChange={(event) => onRequiresAccessRequestChange(event.target.checked)}
           disabled={disabled || isUnified}
-          className="h-4 w-4 rounded border-[#D0D5DD] text-[#00267F] focus:ring-[#00267F]"
+          className="h-4 w-4 rounded border-[#D0D5DD] text-[#6434F8] focus:ring-[#6434F8]"
         />
         <span>
           {isUnified

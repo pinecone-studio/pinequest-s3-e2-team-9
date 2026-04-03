@@ -271,7 +271,7 @@ export function QuestionBankDetailSection({
           {bank ? (
             <Link
               href={`/create-exam?bankId=${bank.id}`}
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-[#00267F] bg-white px-4 text-[14px] font-medium text-[#00267F]"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-[#6434F8] bg-white px-4 text-[14px] font-medium text-[#6434F8]"
             >
               Энэ сэдвээс шалгалт үүсгэх
             </Link>
@@ -280,7 +280,7 @@ export function QuestionBankDetailSection({
             type="button"
             onClick={onAddQuestion}
             disabled={!isEditable}
-            className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md bg-[#00267F] px-4 text-[14px] font-medium text-white disabled:cursor-not-allowed disabled:bg-[#98A2B3]"
+            className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md bg-[#6434F8] px-4 text-[14px] font-medium text-white disabled:cursor-not-allowed disabled:bg-[#98A2B3]"
           >
             <PlusIcon className="h-4 w-4" />
             {isEditable ? "Асуулт нэмэх" : "Read only сан"}
@@ -320,7 +320,7 @@ export function QuestionBankDetailSection({
           onClick={() => setActiveTab("questions")}
           className={`inline-flex h-9 items-center rounded-full border px-4 text-[14px] font-medium transition ${
             activeTab === "questions"
-              ? "border-[#00267F] bg-[#00267F] text-white"
+              ? "border-[#6434F8] bg-[#6434F8] text-white"
               : "border-[#DFE1E5] bg-white text-[#344054] hover:border-[#BFC5D0]"
           }`}
         >
@@ -331,7 +331,7 @@ export function QuestionBankDetailSection({
           onClick={() => setActiveTab("related-exams")}
           className={`inline-flex h-9 items-center rounded-full border px-4 text-[14px] font-medium transition ${
             activeTab === "related-exams"
-              ? "border-[#00267F] bg-[#00267F] text-white"
+              ? "border-[#6434F8] bg-[#6434F8] text-white"
               : "border-[#DFE1E5] bg-white text-[#344054] hover:border-[#BFC5D0]"
           }`}
         >
