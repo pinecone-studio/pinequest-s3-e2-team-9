@@ -1,0 +1,3 @@
+mutation DeleteExam($examId: ID!) {
+  deleteExam(examId: $examId)
+}

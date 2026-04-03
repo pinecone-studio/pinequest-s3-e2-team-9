@@ -70,6 +70,9 @@ export const buildStudentHomeViewModel = (data: StudentHomeQuery): StudentHomeVi
     .filter((exam) => exam.mode === ExamMode.Practice && exam.status === ExamStatus.Published)
     .map((exam) => {
       const attempts = data.attempts.filter((attempt) => attempt.exam.id === exam.id);
+      const completedAttempts = attempts.filter(
+        (attempt) => attempt.status !== AttemptStatus.InProgress,
+      );
       const level = getPracticeLevel(exam);
       const copy = getPracticeCopy(level);
       return {
@@ -78,12 +81,14 @@ export const buildStudentHomeViewModel = (data: StudentHomeQuery): StudentHomeVi
         durationLabel: `${exam.durationMinutes} минут`,
         href: `/student/exams/${exam.id}`,
         id: exam.id,
+        hasResult: completedAttempts.length > 0,
         level,
         levelLabel: copy.label,
         progressLabel: attempts.length
           ? "Оноогоо ахиулж, дараагийн шатны сорил руу шилжээрэй."
           : "Шинэ сорил эхлүүлээд анхны XP-ээ аваарай.",
         questionCountLabel: `${exam.questions.length} асуулт`,
+        resultHref: completedAttempts.length ? `/student/exams/${exam.id}` : null,
         searchText: `${exam.title} ${exam.class.subject}`.toLowerCase(),
         subject: exam.class.subject || exam.class.name,
         title: exam.title,

@@ -1,4 +1,5 @@
 /* eslint-disable max-lines */
+import Image from "next/image";
 import Link from "next/link";
 import {
   ClockIcon,
@@ -16,34 +17,26 @@ type MyExamCardProps = {
   onResults: () => void;
 };
 
+function getHeaderToneClass(statusLabel: string) {
+  if (statusLabel === "Явагдаж буй") {
+    return "border-[#EAB53266]";
+  }
+  if (statusLabel === "Дууссан") {
+    return "border-[#31AA4066]";
+  }
+  return "border-[#C4B5FD]";
+}
+
 function ExamCardIllustration() {
   return (
-    <div className="relative flex h-16 w-16 items-center justify-center rounded-[4px] bg-[#FFD780]">
-      <svg className="h-9 w-9" viewBox="0 0 48 48" fill="none">
-        <path
-          d="m15 9 12 7-5 8-12-7 5-8Z"
-          stroke="#3A2B55"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2.6"
-        />
-        <path
-          d="m18 23 14-6 6 13-14 6-6-13Z"
-          fill="#FFBC1F"
-          stroke="#3A2B55"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2.6"
-        />
-        <path
-          d="m11 27 14-6 6 13-14 6-6-13Z"
-          fill="#fff"
-          stroke="#3A2B55"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2.6"
-        />
-      </svg>
+    <div className="relative h-16 w-16 overflow-hidden rounded-[4px] bg-[#FFD780]">
+      <Image
+        alt="Шалгалтын зураг"
+        className="object-cover"
+        fill
+        sizes="64px"
+        src="/exam-card-physics.jpeg"
+      />
     </div>
   );
 }
@@ -75,7 +68,6 @@ function downloadExamSummary(exam: MyExamListView) {
 }
 
 export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
-  const isPractice = exam.mode === "PRACTICE";
   const durationLabel = exam.durationLabel.replace("минут", "мин");
   const showResults = mode === "evaluation" && exam.actions.results;
   const canEdit = mode === "library" && exam.actions.edit;
@@ -87,8 +79,9 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
   const primaryClassName =
     "inline-flex h-8 items-center justify-center gap-1 rounded-[4px] bg-[#6434F8] px-4 text-[10px] font-semibold text-white transition hover:bg-[#5628E8]";
   const secondaryClassName =
-    "inline-flex h-8 items-center justify-center gap-1 rounded-[4px] bg-[#FDF1ED] px-4 text-[10px] font-medium text-[#6434F8] transition hover:bg-[#F9E5DF]";
+    "inline-flex h-8 items-center justify-center gap-1 rounded-[4px] bg-[#F3E8FF] px-4 text-[10px] font-medium text-[#6434F8] transition hover:bg-[#E9D5FF]";
   const statusTone = exam.status.tone;
+  const headerToneClass = getHeaderToneClass(exam.status.label);
   const startedLabel =
     exam.startedAtLabel ??
     (exam.status.label === "Ноорог" ? "Хараахан эхлээгүй" : "Эхлэх хугацаагүй");
@@ -100,19 +93,14 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
     return (
       <article className="box-border flex h-[215px] w-[268px] max-w-full flex-none flex-col items-start gap-[10px] rounded-[5.74216px] border border-[#E4E4E4] bg-white p-3 shadow-[0px_3.22191px_4.83286px_rgba(0,0,0,0.09)]">
         <div className="flex h-[191px] w-[244px] flex-col items-start gap-4 self-stretch">
-          <div className="relative flex h-24 w-[244px] items-center gap-[11px] overflow-hidden rounded-[4px] border border-[#F2E8C9] bg-[#FFF9EC] px-3">
-            <div className="absolute inset-0 bg-[radial-gradient(circle,#EBDDB6_1px,transparent_1.2px)] [background-size:10px_10px] opacity-45" />
+          <div className={`relative flex h-24 w-[244px] items-center gap-[11px] overflow-hidden rounded-[4px] border bg-[#F3E8FF] px-3 ${headerToneClass}`}>
+            <div className="absolute inset-0 bg-[radial-gradient(circle,#D8B4FE_1px,transparent_1.2px)] [background-size:10px_10px] opacity-35" />
             <div className="relative z-10 shrink-0">
               <ExamCardIllustration />
             </div>
             <div className="relative z-10 flex min-w-0 flex-1 flex-col items-start justify-center gap-2">
-              <div className="ml-auto box-border inline-flex h-5 max-w-full items-center justify-center rounded-[8.4px] border border-[#6E11B0] bg-[#F3E8FF] px-2">
-                <span className="truncate font-[var(--font-inter)] text-[10px] font-semibold leading-3 text-[#6E11B0]">
-                  {exam.subjectName}, {exam.classGrade}-р анги
-                </span>
-              </div>
-              <p className="line-clamp-1 font-[var(--font-inter)] text-[19px] font-bold leading-[24px] text-[#D5A12D]">
-                {exam.subjectName}
+              <p className="line-clamp-1 font-[var(--font-inter)] text-[19px] font-bold leading-[24px] text-[#6434F8]">
+                10-р анги
               </p>
             </div>
           </div>
@@ -160,7 +148,7 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
             )}
 
             <button
-              className="inline-flex h-6 w-[93px] items-center justify-center gap-1 rounded-[4px] bg-[rgba(255,75,0,0.06)] px-3 font-[var(--font-inter)] text-[10px] font-medium leading-3 text-[#6434F8] transition hover:bg-[rgba(255,75,0,0.1)]"
+              className="inline-flex h-6 w-[93px] items-center justify-center gap-1 rounded-[4px] bg-[#F3E8FF] px-3 font-[var(--font-inter)] text-[10px] font-medium leading-3 text-[#6434F8] transition hover:bg-[#E9D5FF]"
               onClick={() => downloadExamSummary(exam)}
               type="button"
             >
@@ -175,14 +163,14 @@ export function MyExamCard({ exam, mode, onView, onResults }: MyExamCardProps) {
 
   return (
     <article className="flex min-h-[300px] w-[268px] max-w-full flex-none flex-col gap-4 rounded-[6px] border border-[#E4E4E4] bg-white p-3 shadow-[0px_3.22px_4.83px_rgba(0,0,0,0.09)]">
-      <div className="relative flex h-24 items-center gap-3 overflow-hidden rounded-[4px] border border-[#F7E8C5] bg-[#FFF9EE] px-4">
-        <div className="absolute inset-0 bg-[radial-gradient(circle,#F5E8C5_1px,transparent_1.2px)] [background-size:12px_12px] opacity-70" />
+      <div className={`relative flex h-24 items-center gap-3 overflow-hidden rounded-[4px] border bg-[#F3E8FF] px-4 ${headerToneClass}`}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle,#D8B4FE_1px,transparent_1.2px)] [background-size:12px_12px] opacity-45" />
         <div className="relative shrink-0">
           <ExamCardIllustration />
         </div>
         <div className="relative min-w-0">
-          <p className="truncate text-[14px] font-bold leading-[1.2] text-[#D8A028]">
-            {isPractice ? "Нээлттэй чөлөөт сорил" : exam.className}
+          <p className="truncate text-[14px] font-bold leading-[1.2] text-[#6434F8]">
+            10-р анги
           </p>
         </div>
         <span

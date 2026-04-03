@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CommunityCommentEntityType,
   CommunityVisibility,
@@ -11,7 +11,6 @@ import {
   useCommunityOverviewQuery,
   useMyExamsSectionQueryQuery,
   useCopyCommunitySharedBankToMyBankActionMutation,
-  useCreateCommunityActionMutation,
   useJoinCommunityActionMutation,
   useRateCommunityItemActionMutation,
   useShareExamToCommunityActionMutation,
@@ -364,13 +363,6 @@ function CommunityRatingRow({
 export function CommunitySection() {
   const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>("ALL");
-  const [name, setName] = useState("");
-  const [subject, setSubject] = useState("");
-  const [grade, setGrade] = useState("");
-  const [description, setDescription] = useState("");
-  const [visibility, setVisibility] = useState<CommunityVisibility>(
-    CommunityVisibility.Public,
-  );
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [previewBankId, setPreviewBankId] = useState<string | null>(null);
@@ -384,7 +376,6 @@ export function CommunitySection() {
     fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
   });
-  const [createCommunity, createCommunityState] = useCreateCommunityActionMutation();
   const [joinCommunity, joinCommunityState] = useJoinCommunityActionMutation();
   const [shareQuestionBank, shareQuestionBankState] =
     useShareQuestionBankToCommunityActionMutation();
@@ -406,25 +397,14 @@ export function CommunitySection() {
   const viewerId = overviewQuery.data?.me?.id ?? null;
   const viewerName = overviewQuery.data?.me?.fullName ?? "";
   const communityHome = overviewQuery.data?.communityHome ?? null;
-
-  useEffect(() => {
-    if (!communities.length) {
-      setSelectedCommunityId(null);
-      return;
-    }
-
-    setSelectedCommunityId((currentId) => {
-      if (currentId && communities.some((community) => community.id === currentId)) {
-        return currentId;
-      }
-
-      return null;
-    });
-  }, [communities]);
+  const effectiveSelectedCommunityId =
+    selectedCommunityId && communities.some((community) => community.id === selectedCommunityId)
+      ? selectedCommunityId
+      : null;
 
   const detailQuery = useCommunityDetailQuery({
-    variables: { id: selectedCommunityId ?? "" },
-    skip: !selectedCommunityId,
+    variables: { id: effectiveSelectedCommunityId ?? "" },
+    skip: !effectiveSelectedCommunityId,
     fetchPolicy: "cache-and-network",
   });
 
@@ -473,13 +453,26 @@ export function CommunitySection() {
       return first.localeCompare(second, "mn");
     });
   }, [communities, teacherSubjects]);
+  const effectiveSelectedSubjectFilter = useMemo(() => {
+    if (selectedSubjectFilter !== "ALL" && availableSubjects.includes(selectedSubjectFilter)) {
+      return selectedSubjectFilter;
+    }
+
+    if (teacherSubjects.length === 1) {
+      return teacherSubjects[0];
+    }
+
+    return "ALL";
+  }, [availableSubjects, selectedSubjectFilter, teacherSubjects]);
   const filteredCommunities = useMemo(() => {
-    if (selectedSubjectFilter === "ALL") {
+    if (effectiveSelectedSubjectFilter === "ALL") {
       return communities;
     }
 
-    return communities.filter((community) => community.subject === selectedSubjectFilter);
-  }, [communities, selectedSubjectFilter]);
+    return communities.filter(
+      (community) => community.subject === effectiveSelectedSubjectFilter,
+    );
+  }, [communities, effectiveSelectedSubjectFilter]);
 
   const sharedBankIds = useMemo(
     () => new Set(selectedCommunity?.sharedBanks.map((item) => item.bank.id) ?? []),
@@ -514,9 +507,14 @@ export function CommunitySection() {
           return secondMatches - firstMatches;
         }
 
+        const attemptDifference = second.attempts.length - first.attempts.length;
+        if (attemptDifference !== 0) {
+          return attemptDifference;
+        }
+
         return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
       })
-      .slice(0, 4);
+      .slice(0, 6);
   }, [
     myExamsQuery.data?.exams,
     myExamsQuery.data?.me?.id,
@@ -603,67 +601,10 @@ export function CommunitySection() {
       ) / selectedCommunityMissedQuestions.length,
     );
   }, [selectedCommunityMissedQuestions]);
-  useEffect(() => {
-    if (selectedSubjectFilter !== "ALL" && availableSubjects.includes(selectedSubjectFilter)) {
-      return;
-    }
-
-    if (teacherSubjects.length === 1) {
-      setSelectedSubjectFilter(teacherSubjects[0]);
-      return;
-    }
-
-    if (teacherSubjects.length > 1 && selectedSubjectFilter === "ALL") {
-      return;
-    }
-
-    setSelectedSubjectFilter("ALL");
-  }, [availableSubjects, selectedSubjectFilter, teacherSubjects]);
-
-  const isMutating =
-    createCommunityState.loading ||
-    joinCommunityState.loading ||
-    shareQuestionBankState.loading ||
-    shareExamState.loading ||
-    addCommunityCommentState.loading ||
-    rateCommunityItemState.loading ||
-    copySharedBankState.loading;
-
   const refreshAll = async () => {
     await overviewQuery.refetch();
-    if (selectedCommunityId) {
-      await detailQuery.refetch({ id: selectedCommunityId });
-    }
-  };
-
-  const handleCreateCommunity = async () => {
-    try {
-      setErrorMessage(null);
-      setFeedbackMessage(null);
-      const result = await createCommunity({
-        variables: {
-          name: name.trim(),
-          description: description.trim() || null,
-          subject: subject.trim() || "Ерөнхий",
-          grade: Number.parseInt(grade.trim(), 10) || 0,
-          visibility,
-        },
-      });
-      const community = result.data?.createCommunity;
-      if (!community) {
-        throw new Error("Community үүсгэсэн хариу ирсэнгүй.");
-      }
-      setSelectedCommunityId(community.id);
-      setName("");
-      setSubject("");
-      setGrade("");
-      setDescription("");
-      setVisibility(CommunityVisibility.Public);
-      setFeedbackMessage("Community амжилттай үүслээ.");
-      await refreshAll();
-    } catch (error) {
-      console.error("Failed to create community", error);
-      setErrorMessage("Community үүсгэх үед алдаа гарлаа.");
+    if (effectiveSelectedCommunityId) {
+      await detailQuery.refetch({ id: effectiveSelectedCommunityId });
     }
   };
 
@@ -811,7 +752,7 @@ export function CommunitySection() {
     ...(communityHome?.topExams.map((item) => item.attemptCount) ?? [0]),
     1,
   );
-  const isDetailView = selectedCommunityId !== null;
+  const isDetailView = effectiveSelectedCommunityId !== null;
 
   return (
     <section className="mx-auto w-full max-w-[1120px] space-y-6">
@@ -841,65 +782,7 @@ export function CommunitySection() {
 
       {!isDetailView ? (
         <div className="space-y-6">
-          <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="rounded-[28px] border border-[#D9D6FE] bg-[linear-gradient(180deg,#FFFFFF_0%,#FAF7FF_100%)] p-5 shadow-[0px_20px_40px_-34px_rgba(109,40,217,0.42)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7A5AF8]">
-                Үүсгэх
-              </p>
-              <h2 className="mt-2 text-[18px] font-semibold text-[#0F1216]">
-                Шинэ community
-              </h2>
-              <p className="mt-1 text-[13px] text-[#667085]">
-                Эхлээд group-ээ үүсгэнэ. Дараа нь community дээр дарж тусдаа
-                дэлгэрэнгүй хэсэг рүү орно.
-              </p>
-              <div className="mt-4 space-y-3">
-                <input
-                  className="w-full rounded-xl border border-[#D0D5DD] px-4 py-3 text-[14px] outline-none"
-                  placeholder="Жишээ: 10-р ангийн математикийн багш нар"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                />
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                  <input
-                    className="w-full rounded-xl border border-[#D0D5DD] px-4 py-3 text-[14px] outline-none"
-                    placeholder="Хичээл"
-                    value={subject}
-                    onChange={(event) => setSubject(event.target.value)}
-                  />
-                  <input
-                    className="w-full rounded-xl border border-[#D0D5DD] px-4 py-3 text-[14px] outline-none"
-                    placeholder="Анги"
-                    value={grade}
-                    inputMode="numeric"
-                    onChange={(event) => setGrade(event.target.value)}
-                  />
-                </div>
-                <select
-                  className="w-full rounded-xl border border-[#D0D5DD] px-4 py-3 text-[14px] outline-none"
-                  value={visibility}
-                  onChange={(event) => setVisibility(event.target.value as CommunityVisibility)}
-                >
-                  <option value={CommunityVisibility.Public}>Нээлттэй community</option>
-                  <option value={CommunityVisibility.Private}>Хаалттай community</option>
-                </select>
-                <textarea
-                  className="min-h-[88px] w-full rounded-xl border border-[#D0D5DD] px-4 py-3 text-[14px] outline-none"
-                  placeholder="Энэ community ямар багш нарт зориулагдсан бэ?"
-                  value={description}
-                  onChange={(event) => setDescription(event.target.value)}
-                />
-                <button
-                  type="button"
-                  className="w-full rounded-xl bg-[#0F172A] px-4 py-3 text-[14px] font-medium text-white disabled:opacity-60"
-                  onClick={() => void handleCreateCommunity()}
-                  disabled={isMutating || name.trim().length < 3}
-                >
-                  {createCommunityState.loading ? "Үүсгэж байна..." : "Community үүсгэх"}
-                </button>
-              </div>
-            </div>
-
+          <div>
             <CommunitySectionCard
               title="Community-үүд"
               description="Хичээлээр нь ангилаад group-оо сонгоно. Дарахад дэлгэрэнгүй хэсэг рүү орно."
@@ -916,7 +799,7 @@ export function CommunitySection() {
                       type="button"
                       className={[
                         "rounded-full border px-3 py-1.5 text-[12px] font-medium transition",
-                        selectedSubjectFilter === "ALL"
+                        effectiveSelectedSubjectFilter === "ALL"
                           ? "border-[#0F172A] bg-[#0F172A] text-white"
                           : "border-[#D0D5DD] bg-white text-[#344054]",
                       ].join(" ")}
@@ -930,7 +813,7 @@ export function CommunitySection() {
                         type="button"
                         className={[
                           "rounded-full border px-3 py-1.5 text-[12px] font-medium transition",
-                          selectedSubjectFilter === subjectOption
+                          effectiveSelectedSubjectFilter === subjectOption
                             ? "border-[#7C3AED] bg-[#F5F3FF] text-[#5B21B6]"
                             : teacherSubjects.includes(subjectOption)
                               ? "border-[#C7D7FE] bg-[#EEF4FF] text-[#1D4ED8]"
@@ -957,7 +840,7 @@ export function CommunitySection() {
                       {filteredCommunities.map((community) => (
                         <CommunityPickerCard
                           key={community.id}
-                          selected={selectedCommunityId === community.id}
+                          selected={effectiveSelectedCommunityId === community.id}
                           name={community.name}
                           subject={community.subject}
                           grade={community.grade}
@@ -978,7 +861,7 @@ export function CommunitySection() {
                                 disabled={joinCommunityState.loading}
                               >
                                 {joinCommunityState.loading &&
-                                selectedCommunityId === community.id
+                                effectiveSelectedCommunityId === community.id
                                   ? "Нэгдэж байна..."
                                   : "Нэгдэх"}
                               </button>
@@ -995,7 +878,7 @@ export function CommunitySection() {
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-[#D0D5DD] px-4 py-8 text-center text-[14px] text-[#667085]">
-                  Одоогоор community алга. Зүүн талаас эхний community-гээ үүсгээд эхэлье.
+                  Одоогоор community алга.
                 </div>
               )}
             </CommunitySectionCard>
@@ -1603,7 +1486,7 @@ export function CommunitySection() {
 
               <CommunitySectionCard
                 title="Шалгалт хуваалцах"
-                description="Тухайн хичээлтэй холбоотой шалгалтаа материал + нууцалсан анализтай нь хуваалцана."
+                description="Өөрийн байгаа шалгалтуудаас сонгож community руу материал + нууцалсан анализтай нь хуваалцана. Хамгийн их оролдлоготой шалгалтууд эхэнд харагдана."
               >
                 {!selectedCommunity.viewerRole ? (
                   <div className="rounded-2xl border border-dashed border-[#D0D5DD] px-4 py-6 text-[14px] text-[#667085]">
@@ -1611,6 +1494,9 @@ export function CommunitySection() {
                   </div>
                 ) : myShareableExams.length ? (
                   <div className="space-y-3">
+                    <div className="rounded-2xl border border-[#E4E7EC] bg-[#F8FAFC] px-4 py-3 text-[13px] text-[#667085]">
+                      Доорх жагсаалт нь таны өмнө үүсгэсэн, одоогоор энэ community-д share хийгдээгүй шалгалтуудаас бүрдэнэ.
+                    </div>
                     {myShareableExams.map((exam) => (
                       <div
                         key={exam.id}
@@ -1629,7 +1515,7 @@ export function CommunitySection() {
                           {exam.title}
                         </button>
                         <p className="mt-1 text-[13px] text-[#667085]">
-                          {exam.class.name} · {exam.questions.length} асуулт
+                          {exam.class.name} · {exam.questions.length} асуулт · {exam.attempts.length} оролдлого
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           <span
@@ -1646,6 +1532,11 @@ export function CommunitySection() {
                           <span className="rounded-full bg-[#EEF2FF] px-2.5 py-1 text-[11px] font-medium text-[#4F46E5]">
                             {formatExamStatusLabel(exam.status)}
                           </span>
+                          {exam.attempts.length ? (
+                            <span className="rounded-full bg-[#FFF7E6] px-2.5 py-1 text-[11px] font-medium text-[#B54708]">
+                              {exam.attempts.length} хүүхэд өгсөн
+                            </span>
+                          ) : null}
                         </div>
                         <button
                           type="button"
@@ -1711,7 +1602,7 @@ export function CommunitySection() {
             </div>
           </div>
         </div>
-      ) : selectedCommunityId && detailQuery.loading ? (
+      ) : effectiveSelectedCommunityId && detailQuery.loading ? (
         <div className="rounded-2xl border border-[#DFE1E5] bg-white px-6 py-12 text-center text-[14px] text-[#667085] shadow-[0px_4px_8px_-2px_rgba(0,0,0,0.08)]">
           Community-ийн дэлгэрэнгүй мэдээллийг ачаалж байна...
         </div>

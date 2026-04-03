@@ -30,12 +30,22 @@ export function StudentPracticeCard({ exam }: StudentPracticeCardProps) {
           <span className="rounded-full bg-[#F2F4F7] px-3 py-1">{exam.attemptLabel}</span>
         </div>
         <p className="text-[14px] leading-6 text-[#667085]">{exam.progressLabel}</p>
-        <Link
-          className="inline-flex h-11 w-full items-center justify-center rounded-[16px] bg-[#101828] text-[14px] font-semibold text-white transition hover:bg-[#1F2937]"
-          href={exam.href}
-        >
-          {exam.ctaLabel}
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            className="inline-flex h-11 flex-1 items-center justify-center rounded-[16px] bg-[#101828] text-[14px] font-semibold text-white transition hover:bg-[#1F2937]"
+            href={exam.href}
+          >
+            {exam.ctaLabel}
+          </Link>
+          {exam.hasResult && exam.resultHref ? (
+            <Link
+              className="inline-flex h-11 items-center justify-center rounded-[16px] border border-[#D0D5DD] bg-white px-5 text-[14px] font-semibold text-[#344054] transition hover:bg-[#F9FAFB]"
+              href={exam.resultHref}
+            >
+              Үр дүн
+            </Link>
+          ) : null}
+        </div>
       </div>
     </article>
   );

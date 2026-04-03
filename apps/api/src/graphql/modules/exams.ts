@@ -7,6 +7,7 @@ import {
   now,
   type AddQuestionToExamArgs,
   type CloseExamArgs,
+  type DeleteExamArgs,
   type ByIdArgs,
   type CreateExamArgs,
   type ExamDiagnosticConfig,
@@ -347,6 +348,16 @@ const replaceExamQuestions = async (
 ) => {
   await run(db, "DELETE FROM exam_questions WHERE exam_id = ?", [examId]);
   await insertExamQuestions(db, examId, items);
+};
+
+const countExamAttempts = async (db: D1DatabaseLike, examId: string) => {
+  const row = await first<{ count: number }>(
+    db,
+    "SELECT COUNT(*) AS count FROM attempts WHERE exam_id = ?",
+    [examId],
+  );
+
+  return row?.count ?? 0;
 };
 
 const buildRuleBasedQuestions = async ({
@@ -1089,6 +1100,30 @@ export const createExamQueriesAndMutations = ({
     await replaceExamQuestions(db, examId, nextItems);
 
     return toExam(db, await findExamById(db, examId));
+  },
+  deleteExam: async ({ examId }: DeleteExamArgs, context: RequestContext) => {
+    const actor = await requireActor(context, ["ADMIN", "TEACHER"]);
+    const exam = await findExamById(db, examId);
+    invariant(!exam.is_template, "Template шалгалтыг эндээс устгах боломжгүй.");
+    invariant(exam.status === "DRAFT", "Зөвхөн эхлээгүй draft шалгалтыг устгана.");
+
+    if (actor.role === "TEACHER") {
+      const classroom = await findClass(db, exam.class_id);
+      invariant(
+        classroom.teacher_id === actor.id,
+        "You can only delete exams for your own classes.",
+      );
+    }
+
+    invariant(
+      (await countExamAttempts(db, examId)) === 0,
+      "Хүүхэд оролдсон шалгалтыг устгах боломжгүй.",
+    );
+
+    await run(db, "DELETE FROM exam_questions WHERE exam_id = ?", [examId]);
+    await run(db, "DELETE FROM exams WHERE id = ?", [examId]);
+
+    return true;
   },
   publishExam: async ({ examId }: PublishExamArgs, context: RequestContext) => {
     const actor = await requireActor(context, ["ADMIN", "TEACHER"]);

@@ -182,6 +182,7 @@ export type AssignExamToClassArgs = {
 
 export type PublishExamArgs = { examId: string };
 export type CloseExamArgs = { examId: string };
+export type DeleteExamArgs = { examId: string };
 export type StartAttemptArgs = { examId: string; studentId: string };
 export type SaveAnswerArgs = { attemptId: string; questionId: string; value: string };
 export type ReviewAnswerArgs = {

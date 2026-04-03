@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { usePublishExamMutation } from "@/graphql/generated";
+import { useDeleteExamMutation, usePublishExamMutation } from "@/graphql/generated";
 
 type ClassExamRow = {
   id: string;
@@ -23,9 +23,11 @@ export function useClassDetailActions(
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [assignedExamId, setAssignedExamId] = useState<string | null>(null);
   const [startExamId, setStartExamId] = useState<string | null>(null);
+  const [deleteExamId, setDeleteExamId] = useState<string | null>(null);
   const [activeStudentCount, setActiveStudentCount] = useState(0);
   const [startExamError, setStartExamError] = useState<string | null>(null);
   const [runPublishExam, publishExamState] = usePublishExamMutation();
+  const [runDeleteExam, deleteExamState] = useDeleteExamMutation();
   const highlightedExamId = useMemo(
     () => assignedExamId ?? searchParams.get("assignedExamId"),
     [assignedExamId, searchParams],
@@ -55,6 +57,24 @@ export function useClassDetailActions(
     }
   };
 
+  const handleDeleteExam = async (examId: string) => {
+    const accepted = window.confirm("Энэ эхлээгүй шалгалтыг устгах уу?");
+    if (!accepted) {
+      return;
+    }
+
+    try {
+      setDeleteExamId(examId);
+      await runDeleteExam({ variables: { examId } });
+      await refetch();
+    } catch (deleteError) {
+      console.error("Failed to delete exam", deleteError);
+      window.alert("Шалгалт устгах үед алдаа гарлаа.");
+    } finally {
+      setDeleteExamId(null);
+    }
+  };
+
   return {
     highlightedExamId,
     isAssignDialogOpen,
@@ -65,7 +85,9 @@ export function useClassDetailActions(
     startExamError,
     activeStudentCount,
     startingExamId: publishExamState.loading ? startExamId : null,
+    deletingExamId: deleteExamState.loading ? deleteExamId : null,
     isStarting: publishExamState.loading,
+    isDeleting: deleteExamState.loading,
     openStartDialog: (examId: string) => {
       const nextActiveStudentCount = studentInsights.filter((entry) => {
         if (!entry.lastActiveAt) {
@@ -83,5 +105,6 @@ export function useClassDetailActions(
       setStartExamId(null);
     },
     handleStartExam,
+    handleDeleteExam,
   };
 }

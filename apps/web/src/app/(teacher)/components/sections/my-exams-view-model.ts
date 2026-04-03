@@ -83,6 +83,10 @@ const buildPreviewQuestions = (exam: QueryExamDetail): MyExamQuestionPreview[] =
 const buildBaseExamView = (
   exam: QueryExamList | QueryExamDetail,
 ): MyExamListView => {
+  const resolvedSubjectName =
+    exam.class.subject && exam.class.subject !== "Ерөнхий"
+      ? exam.class.subject
+      : exam.class.name;
   const totalStudents = exam.class.studentCount;
   const totalPoints = exam.questions.reduce((sum, question) => sum + question.points, 0);
   const questionCountLabel = `${exam.questions.length} асуулт`;
@@ -134,7 +138,7 @@ const buildBaseExamView = (
     title: exam.title,
     subject: exam.mode === "PRACTICE" ? "Нээлттэй сорил" : exam.class.name,
     className: exam.mode === "PRACTICE" ? "Чөлөөт сорил" : exam.class.name,
-    subjectName: exam.class.subject,
+    subjectName: resolvedSubjectName,
     classGrade: exam.class.grade,
     createdDateLabel: formatDateOnly(exam.createdAt),
     startedAtLabel: exam.startedAt ? formatDate(exam.startedAt) : null,

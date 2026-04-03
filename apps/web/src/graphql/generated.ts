@@ -621,6 +621,7 @@ export type Mutation = {
   createQuestion: Question;
   createQuestionBank: QuestionBank;
   createQuestionVariants: Array<Question>;
+  deleteExam: Scalars['Boolean']['output'];
   deleteQuestion: Scalars['Boolean']['output'];
   forkQuestionToMyBank: Question;
   groupQuestionsAsVariants: Array<Question>;
@@ -761,6 +762,11 @@ export type MutationCreateQuestionBankArgs = {
 export type MutationCreateQuestionVariantsArgs = {
   sourceQuestionId: Scalars['ID']['input'];
   totalVariants?: Scalars['Int']['input'];
+};
+
+
+export type MutationDeleteExamArgs = {
+  examId: Scalars['ID']['input'];
 };
 
 
@@ -1259,6 +1265,13 @@ export type CreateQuestionMutationMutationVariables = Exact<{
 
 
 export type CreateQuestionMutationMutation = { __typename?: 'Mutation', createQuestion: { __typename?: 'Question', id: string } };
+
+export type DeleteExamMutationVariables = Exact<{
+  examId: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteExamMutation = { __typename?: 'Mutation', deleteExam: boolean };
 
 export type DeleteQuestionMutationMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -2240,6 +2253,37 @@ export function useCreateQuestionMutationMutation(baseOptions?: ApolloReactHooks
 export type CreateQuestionMutationMutationHookResult = ReturnType<typeof useCreateQuestionMutationMutation>;
 export type CreateQuestionMutationMutationResult = ApolloReactCommon.MutationResult<CreateQuestionMutationMutation>;
 export type CreateQuestionMutationMutationOptions = ApolloReactCommon.BaseMutationOptions<CreateQuestionMutationMutation, CreateQuestionMutationMutationVariables>;
+export const DeleteExamDocument = gql`
+    mutation DeleteExam($examId: ID!) {
+  deleteExam(examId: $examId)
+}
+    `;
+export type DeleteExamMutationFn = ApolloReactCommon.MutationFunction<DeleteExamMutation, DeleteExamMutationVariables>;
+
+/**
+ * __useDeleteExamMutation__
+ *
+ * To run a mutation, you first call `useDeleteExamMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteExamMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteExamMutation, { data, loading, error }] = useDeleteExamMutation({
+ *   variables: {
+ *      examId: // value for 'examId'
+ *   },
+ * });
+ */
+export function useDeleteExamMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<DeleteExamMutation, DeleteExamMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<DeleteExamMutation, DeleteExamMutationVariables>(DeleteExamDocument, options);
+      }
+export type DeleteExamMutationHookResult = ReturnType<typeof useDeleteExamMutation>;
+export type DeleteExamMutationResult = ApolloReactCommon.MutationResult<DeleteExamMutation>;
+export type DeleteExamMutationOptions = ApolloReactCommon.BaseMutationOptions<DeleteExamMutation, DeleteExamMutationVariables>;
 export const DeleteQuestionMutationDocument = gql`
     mutation DeleteQuestionMutation($id: ID!) {
   deleteQuestion(id: $id)

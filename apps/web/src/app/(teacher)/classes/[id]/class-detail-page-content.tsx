@@ -355,7 +355,9 @@ export function ClassDetailPageContent({
                     exam={exam}
                     classNameLabel={viewModel.name}
                     highlighted={exam.id === actions.highlightedExamId}
+                    deleting={actions.deletingExamId === exam.id}
                     starting={actions.startingExamId === exam.id}
+                    onDelete={() => void actions.handleDeleteExam(exam.id)}
                     onStart={() => actions.openStartDialog(exam.id)}
                     onView={() => {
                       router.push(
@@ -410,7 +412,9 @@ function ExamInsightCard({
   exam,
   classNameLabel,
   highlighted,
+  deleting,
   starting,
+  onDelete,
   onStart,
   onView,
 }: {
@@ -429,7 +433,9 @@ function ExamInsightCard({
   };
   classNameLabel: string;
   highlighted: boolean;
+  deleting: boolean;
   starting: boolean;
+  onDelete: () => void;
   onStart: () => void;
   onView: () => void;
 }) {
@@ -490,15 +496,26 @@ function ExamInsightCard({
         </div>
 
         {exam.rawStatus === ExamStatus.Draft ? (
-          <button
-            type="button"
-            onClick={onStart}
-            disabled={starting}
-            className="flex h-6 w-[244px] items-center justify-center gap-1 self-stretch rounded-[4px] bg-[#6434F8] px-3 py-[6px] font-[var(--font-inter)] text-[10px] font-semibold leading-3 text-white transition hover:bg-[#5A2EF0] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <PlayIcon className="h-3 w-3" />
-            <span>{starting ? "Эхлүүлж байна..." : "Эхлүүлэх"}</span>
-          </button>
+          <div className="flex w-[244px] items-center gap-2 self-stretch">
+            <button
+              type="button"
+              onClick={onStart}
+              disabled={starting || deleting}
+              className="flex h-6 flex-1 items-center justify-center gap-1 rounded-[4px] bg-[#6434F8] px-3 py-[6px] font-[var(--font-inter)] text-[10px] font-semibold leading-3 text-white transition hover:bg-[#5A2EF0] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <PlayIcon className="h-3 w-3" />
+              <span>{starting ? "Эхлүүлж байна..." : "Эхлүүлэх"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={starting || deleting}
+              className="flex h-6 flex-1 items-center justify-center gap-1 rounded-[4px] bg-[#FEF3F2] px-3 py-[6px] font-[var(--font-inter)] text-[10px] font-semibold leading-3 text-[#B42318] transition hover:bg-[#FEE4E2] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <TrashIcon className="h-3 w-3" />
+              <span>{deleting ? "Устгаж байна..." : "Устгах"}</span>
+            </button>
+          </div>
         ) : (
           <button
             type="button"
@@ -511,6 +528,25 @@ function ExamInsightCard({
         )}
       </div>
     </article>
+  );
+}
+
+function TrashIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 12 12"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M2.5 3h7m-6.167 0 .417 5.25A.75.75 0 0 0 4.5 9h3a.75.75 0 0 0 .748-.75L8.667 3M4.5 3V2.5c0-.276.224-.5.5-.5h2c.276 0 .5.224.5.5V3m-4 .833h4"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.2"
+      />
+    </svg>
   );
 }
 

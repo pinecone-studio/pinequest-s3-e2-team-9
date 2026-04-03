@@ -29,6 +29,10 @@ const EVALUATION_GROUPS = [
   { key: "Хараахан эхлээгүй", title: "Хараахан эхлээгүй шалгалтууд" },
   { key: "Дууссан", title: "Дууссан шалгалтууд" },
 ] as const;
+const EVALUATION_OPEN_PRACTICE_GROUP = {
+  title: "Нээлттэй сорилууд",
+  description: "Одоогоор бүх сурагчид өгч болох published free test-үүд.",
+} as const;
 const LIBRARY_GROUPS = [
   {
     key: "practice",
@@ -38,12 +42,19 @@ const LIBRARY_GROUPS = [
   {
     key: "assignable",
     title: "Ангид оноох шалгалтууд",
-    description: "Тодорхой ангид оноож ашиглах ноорог шалгалтууд.",
+    description: "Ангид оноох болон эхлээгүй товлосон бүх ноорог шалгалтууд.",
   },
 ] as const;
 
+const isScheduledDraftLike = (exam: MyExamsSectionQueryQuery["exams"][number]) => {
+  if (exam.mode === "PRACTICE") return false;
+  if (!exam.scheduledFor || exam.startedAt) return false;
+  if (exam.attempts.length > 0) return false;
+  return true;
+};
+
 const isLibraryExam = (exam: MyExamsSectionQueryQuery["exams"][number]) =>
-  exam.isTemplate || (!exam.sourceExamId && exam.status === ExamStatus.Draft);
+  exam.status === ExamStatus.Draft || exam.isTemplate || isScheduledDraftLike(exam);
 
 export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
   const [search, setSearch] = useState("");
@@ -77,17 +88,33 @@ export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
         mode === "evaluation"
           ? ownExams.filter((exam) => !isLibraryExam(exam))
           : ownExams.filter(isLibraryExam);
-      const listViews = buildMyExamListViews(scopedExams).map((exam) =>
-        mode === "evaluation" && exam.status.label === "Ноорог"
-          ? {
-              ...exam,
-              status: {
-                ...exam.status,
-                label: "Хараахан эхлээгүй",
-              },
-            }
-          : exam,
+      const scheduledDraftLikeIds = new Set(
+        scopedExams.filter(isScheduledDraftLike).map((exam) => exam.id),
       );
+      const listViews = buildMyExamListViews(scopedExams).map((exam) => {
+        if (mode === "evaluation" && exam.status.label === "Ноорог") {
+          return {
+            ...exam,
+            status: {
+              ...exam.status,
+              label: "Хараахан эхлээгүй",
+            },
+          };
+        }
+
+        if (mode === "library" && scheduledDraftLikeIds.has(exam.id)) {
+          return {
+            ...exam,
+            status: {
+              ...exam.status,
+              label: "Ноорог",
+              tone: "border-[#DFE1E5] bg-[#F2F4F7] text-[#52555B]",
+            },
+          };
+        }
+
+        return exam;
+      });
       return {
         exams: listViews,
         errorMessage: error
@@ -152,8 +179,24 @@ export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
     () =>
       EVALUATION_GROUPS.map((group) => ({
         ...group,
-        exams: filteredExams.filter((exam) => exam.status.label === group.key),
-      })).filter((group) => group.exams.length > 0),
+        exams: filteredExams.filter(
+          (exam) =>
+            exam.status.label === group.key &&
+            (group.key !== "Явагдаж буй" || exam.mode !== "PRACTICE"),
+        ),
+        practiceExams:
+          group.key === "Явагдаж буй"
+            ? filteredExams.filter(
+                (exam) =>
+                  exam.status.label === group.key && exam.mode === "PRACTICE",
+              )
+            : [],
+      }))
+        .map((group) => ({
+          ...group,
+          totalCount: group.exams.length + group.practiceExams.length,
+        }))
+        .filter((group) => group.totalCount > 0),
     [filteredExams],
   );
   const groupedLibraryExams = useMemo(
@@ -191,34 +234,77 @@ export function MyExamsSection({ mode = "library" }: MyExamsSectionProps) {
       {!loading && mode === "evaluation" ? (
         <div className="space-y-8">
           {groupedEvaluationExams.map((group) => (
-            <section key={group.key} className="space-y-4">
+            <section
+              key={group.key}
+              className="space-y-4 rounded-[24px] border border-[#E4E7EC] bg-[#FCFCFD] p-5"
+            >
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-[18px] font-semibold text-[#0F1216]">
                   {group.title}
                 </h2>
                 <span className="rounded-full bg-[#F2F4F7] px-3 py-1 text-[12px] font-medium text-[#344054]">
-                  {group.exams.length}
+                  {group.totalCount}
                 </span>
               </div>
-              <div className="flex flex-wrap items-start gap-4">
-                {group.exams.map((exam) => (
-                  <MyExamCard
-                    key={exam.id}
-                    exam={exam}
-                    mode={mode}
-                    onView={() => {
-                      setSelectedExam(exam);
-                      setIsResultsOpen(false);
-                      setIsPreviewOpen(true);
-                    }}
-                    onResults={() => {
-                      setSelectedExam(exam);
-                      setIsPreviewOpen(false);
-                      setIsResultsOpen(true);
-                    }}
-                  />
-                ))}
-              </div>
+              {group.exams.length ? (
+                <div className="rounded-[16px] border border-[#E4E7EC] bg-white p-5">
+                  <div className="flex flex-wrap items-start gap-4">
+                    {group.exams.map((exam) => (
+                      <MyExamCard
+                        key={exam.id}
+                        exam={exam}
+                        mode={mode}
+                        onView={() => {
+                          setSelectedExam(exam);
+                          setIsResultsOpen(false);
+                          setIsPreviewOpen(true);
+                        }}
+                        onResults={() => {
+                          setSelectedExam(exam);
+                          setIsPreviewOpen(false);
+                          setIsResultsOpen(true);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {group.practiceExams.length ? (
+                <div className="space-y-4 rounded-[16px] border border-[#E4E7EC] bg-white p-5">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <h3 className="text-[16px] font-semibold text-[#0F1216]">
+                        {EVALUATION_OPEN_PRACTICE_GROUP.title}
+                      </h3>
+                      <p className="text-[13px] text-[#667085]">
+                        {EVALUATION_OPEN_PRACTICE_GROUP.description}
+                      </p>
+                    </div>
+                    <span className="w-fit rounded-full bg-white px-3 py-1 text-[12px] font-medium text-[#344054] ring-1 ring-[#EAECF0]">
+                      {group.practiceExams.length}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-start gap-4">
+                    {group.practiceExams.map((exam) => (
+                      <MyExamCard
+                        key={exam.id}
+                        exam={exam}
+                        mode={mode}
+                        onView={() => {
+                          setSelectedExam(exam);
+                          setIsResultsOpen(false);
+                          setIsPreviewOpen(true);
+                        }}
+                        onResults={() => {
+                          setSelectedExam(exam);
+                          setIsPreviewOpen(false);
+                          setIsResultsOpen(true);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </section>
           ))}
           {!errorMessage && !groupedEvaluationExams.length ? (

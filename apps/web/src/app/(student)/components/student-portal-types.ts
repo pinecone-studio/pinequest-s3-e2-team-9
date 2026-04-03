@@ -41,7 +41,9 @@ export type StudentPracticeExamCard = {
   ctaLabel: string;
   durationLabel: string;
   href: string;
+  resultHref: string | null;
   id: string;
+  hasResult: boolean;
   level: "easy" | "medium" | "hard";
   levelLabel: string;
   progressLabel: string;

@@ -173,6 +173,7 @@ export const schemaRootTypes = /* GraphQL */ `
       passingThreshold: Int = 40
       questionItems: [UpdateExamDraftQuestionInput!]
     ): Exam!
+    deleteExam(examId: ID!): Boolean!
     publishExam(examId: ID!): Exam!
     closeExam(examId: ID!): Exam!
     createExamImportJob(
