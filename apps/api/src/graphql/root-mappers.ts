@@ -762,7 +762,15 @@ ${legacyQuestionSelectFields}
           [classroom.id],
         )
       ).map(toExam),
-    ...createClassAnalytics({ db, classroom, findExam, findUser, toExam: (_, exam) => toExam(exam), toUser: (_, user) => toUser(user) }),
+    ...createClassAnalytics({
+      db,
+      classroom,
+      // Reuse batch loaders so ClassDetail doesn't trigger N+1 lookups.
+      findExam: async (_db, id) => loadExamsById.load(id),
+      findUser: async (_db, id) => loadUsersById.load(id),
+      toExam: (_, exam) => toExam(exam),
+      toUser: (_, user) => toUser(user),
+    }),
   });
 
   const toQuestionBank = (bank: QuestionBankRow) => ({
