@@ -5,6 +5,7 @@ import { QuestionType } from "@/graphql/generated";
 import { useProtectedImageSource } from "@/lib/image-answer";
 import { getQuestionPromptImageValue } from "@/lib/question-prompt-image";
 import { getPracticeAnswerResult } from "./student-exam-practice-utils";
+import { getQuestionDisplayCopy } from "./student-question-display";
 import type { StudentExamQuestion } from "./student-exam-room-types";
 
 type StudentExamPracticeQuestionPanelProps = {
@@ -34,6 +35,7 @@ export function StudentExamPracticeQuestionPanel({
     question.question.type === QuestionType.TrueFalse;
   const result = getPracticeAnswerResult(question, value);
   const correctAnswer = question.question.correctAnswer?.trim() ?? "";
+  const displayCopy = getQuestionDisplayCopy(question.question);
 
   return (
     <article className="w-full max-w-[920px] rounded-[36px] border border-white/55 bg-white/92 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.22)] backdrop-blur md:p-8">
@@ -46,11 +48,13 @@ export function StudentExamPracticeQuestionPanel({
         </span>
       </div>
       <h2 className="mt-5 text-center text-[28px] font-semibold leading-tight text-[#101828] md:text-[36px]">
-        {question.question.title || question.question.prompt}
+        {displayCopy.primary}
       </h2>
-      <p className="mt-4 text-center text-[17px] leading-8 text-[#475467]">
-        {question.question.prompt}
-      </p>
+      {displayCopy.secondary ? (
+        <p className="mt-4 text-center text-[17px] leading-8 text-[#475467]">
+          {displayCopy.secondary}
+        </p>
+      ) : null}
       {src ? (
         <div className="mt-6 overflow-hidden rounded-[24px] border border-[#D9E6FF] bg-[#F8FAFF] p-2">
           <img alt={`Асуулт ${questionNumber}`} className="max-h-[320px] w-full rounded-[18px] object-contain" src={src} />

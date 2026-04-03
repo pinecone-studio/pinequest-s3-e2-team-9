@@ -7,6 +7,7 @@ import { getQuestionPromptImageValue } from "@/lib/question-prompt-image";
 import { buildPracticeMasterySummary } from "./student-exam-practice-mastery";
 import type { StudentExamAttempt, StudentExamData } from "./student-exam-room-types";
 import { formatClock, formatMonthDay } from "./student-home-time";
+import { getQuestionDisplayCopy } from "./student-question-display";
 
 const isUrl = (value: string) => /^https?:\/\//i.test(value);
 
@@ -362,6 +363,7 @@ export function StudentExamSubmittedScreen({
             {exam.questions.map((item, index) => {
               const answer = answersByQuestionId.get(item.question.id) ?? null;
               const score = (answer?.autoScore ?? 0) + (answer?.manualScore ?? 0);
+              const displayCopy = getQuestionDisplayCopy(item.question);
 
               return (
                 <article
@@ -382,8 +384,13 @@ export function StudentExamSubmittedScreen({
                         </span>
                       </div>
                       <p className="mt-3 text-[16px] font-medium leading-7 text-[#101828]">
-                        {item.question.prompt || item.question.title}
+                        {displayCopy.primary}
                       </p>
+                      {displayCopy.secondary ? (
+                        <p className="mt-1 text-[14px] leading-6 text-[#667085]">
+                          {displayCopy.secondary}
+                        </p>
+                      ) : null}
                     </div>
                     <span className="rounded-md bg-[#ECFDF3] px-3 py-1 text-[13px] font-semibold text-[#027A48]">
                       {score} / {item.points}
